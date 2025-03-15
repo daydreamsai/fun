@@ -41,7 +41,7 @@ export function MessagesList({ messages }: MessagesListProps) {
 
           case "assistant":
             containerClass += " justify-start";
-            bubbleClass += ` bg-card text-foreground border hover:brightness-105`;
+            bubbleClass += ` bg-card text-foreground border hover:brightness-105 border-primary/50`;
             break;
 
           case "thought":
