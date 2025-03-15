@@ -178,7 +178,7 @@ function StateSidebar({
   }
 
   return (
-    <div className="w-96 border-l bg-background/95 backdrop-blur h-full flex flex-col">
+    <div className="w-96 border-l bg-background/95 backdrop-blur flex flex-col">
       <div className="flex justify-between items-center p-4">
         <h3 className="font-medium">Chat State</h3>
         <div className="flex gap-1">
@@ -252,18 +252,18 @@ function StateSidebar({
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="flex-1 flex flex-col"
+        className="flex-1 flex flex-col "
       >
-        <TabsList className="grid grid-cols-2 mx-4">
+        <TabsList className="grid grid-cols-2 mx-4 ">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="memory">Memory</TabsTrigger>
         </TabsList>
 
         <TabsContent
           value="overview"
-          className="flex-1 p-4 pt-2 overflow-hidden"
+          className="flex-1 px-4  overflow-hidden  border-primary/20 "
         >
-          <ScrollArea className="h-[calc(100vh-180px)]">
+          <ScrollArea className="h-[calc(100vh-180px)] pb-36 ">
             <Card className="p-4 mb-4 border-2 border-primary/20 bg-primary/5">
               <h4 className="text-base font-semibold mb-3 text-primary">
                 Game State
@@ -528,7 +528,7 @@ function StateSidebar({
 
         <TabsContent
           value="memory"
-          className="flex-1 flex flex-col p-4 pt-2 overflow-hidden"
+          className="flex-1 flex flex-col pt-2 overflow-hidden"
         >
           <div className="flex justify-between items-center mb-2">
             <h4 className="text-sm font-medium">Working Memory</h4>
@@ -727,7 +727,7 @@ function RouteComponent() {
         </div>
 
         {/* State Sidebar */}
-        <div className="fixed right-0 top-0">
+        <div className="fixed right-0 top-18 h-screen">
           <StateSidebar
             contextId={contextId}
             messages={messages}
@@ -736,7 +736,7 @@ function RouteComponent() {
         </div>
       </div>
       <form
-        className="bg-background flex items-center mt-auto sticky bottom-0 left-0 right-0 z-10 pr-96"
+        className="bg-background flex items-center mt-auto sticky bottom-0 left-0 right-0 z-10"
         onSubmit={async (e) => {
           e.preventDefault();
           const msg = new FormData(e.currentTarget).get("message") as string;
