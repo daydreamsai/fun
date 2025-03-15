@@ -33,8 +33,7 @@ import { string, z } from "zod";
 
 import { getUserSettings } from "@/utils/settings";
 
-export const GIGA_TOKEN =
-  getUserSettings()?.gigaverseToken || import.meta.env.VITE_PUBLIC_GIGA_TOKEN;
+export const GIGA_TOKEN = getUserSettings()?.gigaverseToken;
 
 // Add a helper function to get the API base URL
 export const getApiBaseUrl = () => {

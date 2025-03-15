@@ -15,11 +15,11 @@ importers:
         specifier: ^1.1.17
         version: 1.2.5(zod@3.24.2)
       '@daydreamsai/chromadb':
-        specifier: ^0.2.14
-        version: 0.2.14(openai@4.87.3(zod@3.24.2))(react@18.3.1)(typescript@5.6.3)
+        specifier: ^0.2.15
+        version: 0.2.15(openai@4.87.3(zod@3.24.2))(react@18.3.1)(typescript@5.6.3)
       '@daydreamsai/core':
-        specifier: ^0.2.14
-        version: 0.2.14(react@18.3.1)(typescript@5.6.3)
+        specifier: ^0.2.15
+        version: 0.2.15(react@18.3.1)(typescript@5.6.3)
       '@radix-ui/react-accordion':
         specifier: ^1.2.2
         version: 1.2.3(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -301,11 +301,11 @@ packages:
   '@cfworker/json-schema@4.1.1':
     resolution: {integrity: sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==}
 
-  '@daydreamsai/chromadb@0.2.14':
-    resolution: {integrity: sha512-0OMqUTp/A5RvOg85Z39lyH6aWqws5YhGSnQh4JIFl1DgU2BrqYOX/HuuB1PHOWsEtAsSK+gIVp68ckjfs9S7LA==}
+  '@daydreamsai/chromadb@0.2.15':
+    resolution: {integrity: sha512-bqIBqSFG8/ELN8N3cCv3A2gArxRVeR0olrm6mekfD9RZ+A/0gEbBrg92z6BgHGfjf0kw7SP51EJtooukEJF7VQ==}
 
-  '@daydreamsai/core@0.2.14':
-    resolution: {integrity: sha512-H+uthDxuC1jDRmchOQxinOawQKG7/VWrKA3hMhUSwm535epM6IpMRzLB1KYdTbQbMkucbgUzlTYN6T351Zz6eg==}
+  '@daydreamsai/core@0.2.15':
+    resolution: {integrity: sha512-grVHwkEybpHrb++oADl2tE2hARjtPgDLRBoLrLf7RTFmngP2Ud1hB7U9FHnM2K4p2IdEkpM6LAMpIf86zi8Jzw==}
     peerDependencies:
       typescript: ^5.8.2
 
@@ -3221,9 +3221,9 @@ snapshots:
 
   '@cfworker/json-schema@4.1.1': {}
 
-  '@daydreamsai/chromadb@0.2.14(openai@4.87.3(zod@3.24.2))(react@18.3.1)(typescript@5.6.3)':
+  '@daydreamsai/chromadb@0.2.15(openai@4.87.3(zod@3.24.2))(react@18.3.1)(typescript@5.6.3)':
     dependencies:
-      '@daydreamsai/core': 0.2.14(react@18.3.1)(typescript@5.6.3)
+      '@daydreamsai/core': 0.2.15(react@18.3.1)(typescript@5.6.3)
       chromadb: 1.10.5(openai@4.87.3(zod@3.24.2))
       zod: 3.24.2
     transitivePeerDependencies:
@@ -3240,7 +3240,7 @@ snapshots:
       - voyageai
       - ws
 
-  '@daydreamsai/core@0.2.14(react@18.3.1)(typescript@5.6.3)':
+  '@daydreamsai/core@0.2.15(react@18.3.1)(typescript@5.6.3)':
     dependencies:
       '@ai-sdk/openai': 1.2.5(zod@3.24.2)
       '@langchain/core': 0.3.42(openai@4.87.3(zod@3.24.2))
@@ -5544,7 +5544,7 @@ snapshots:
 
   send@1.1.0:
     dependencies:
-      debug: 4.3.6
+      debug: 4.4.0
       destroy: 1.2.0
       encodeurl: 2.0.0
       escape-html: 1.0.3

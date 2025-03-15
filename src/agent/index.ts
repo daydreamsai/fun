@@ -1,6 +1,5 @@
 import {
   type MemoryStore,
-  createContainer,
   createDreams,
   createMemory,
   createMemoryStore,
@@ -9,21 +8,21 @@ import {
 import { chat } from "./chat";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { tavily } from "@tavily/core";
 
 import { giga, goalContexts } from "./giga";
 import { getUserSettings } from "@/utils/settings";
 
+console.log(getUserSettings());
+
 export const anthropic = createAnthropic({
-  apiKey:
-    getUserSettings()?.anthropicKey || import.meta.env.VITE_ANTHROPIC_API_KEY,
+  apiKey: getUserSettings()?.anthropicKey,
   headers: {
     "anthropic-dangerous-direct-browser-access": "true",
   },
 });
 
 export const openai = createOpenAI({
-  apiKey: getUserSettings()?.openaiKey || import.meta.env.VITE_OPENAI_API_KEY,
+  apiKey: getUserSettings()?.openaiKey,
 });
 
 const browserStorage = (): MemoryStore => {
@@ -57,18 +56,10 @@ const browserStorage = (): MemoryStore => {
 
 export function createAgent() {
   const memoryStorage = browserStorage();
-  const container = createContainer();
-
-  container.singleton("tavily", () =>
-    tavily({
-      apiKey: import.meta.env.VITE_TAVILY_API_KEY,
-    })
-  );
 
   return createDreams({
     model: anthropic("claude-3-7-sonnet-latest"),
     context: goalContexts,
-    container,
     memory: createMemory(
       memoryStorage,
       createVectorStore(),

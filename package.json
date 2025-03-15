@@ -12,8 +12,8 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^1.1.17",
     "@ai-sdk/openai": "^1.1.17",
-    "@daydreamsai/chromadb": "^0.2.14",
-    "@daydreamsai/core": "^0.2.14",
+    "@daydreamsai/chromadb": "^0.2.15",
+    "@daydreamsai/core": "^0.2.15",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-collapsible": "^1.1.3",
