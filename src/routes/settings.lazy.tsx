@@ -12,10 +12,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   UserSettings,
   getUserSettings,
   saveUserSettings,
   clearUserSettings,
+  VALID_MODELS,
 } from "@/utils/settings";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -25,6 +33,7 @@ export const Route = createLazyFileRoute("/settings")({
 
 function RouteComponent() {
   const [settings, setSettings] = useState<UserSettings>({
+    model: "anthropic/claude-3.7-sonnet:beta",
     openaiKey: "",
     openrouterKey: "",
     anthropicKey: "",
@@ -54,6 +63,13 @@ function RouteComponent() {
     }));
   };
 
+  const handleModelChange = (value: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      model: value as (typeof VALID_MODELS)[number],
+    }));
+  };
+
   const toggleVisibility = (field: string) => {
     setVisibleFields((prev) => ({
       ...prev,
@@ -70,6 +86,7 @@ function RouteComponent() {
   const handleClearSettings = () => {
     clearUserSettings();
     setSettings({
+      model: "anthropic/claude-3.7-sonnet:beta",
       openaiKey: "",
       openrouterKey: "",
       anthropicKey: "",
@@ -89,6 +106,22 @@ function RouteComponent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="model">Model</Label>
+            <Select value={settings.model} onValueChange={handleModelChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a model" />
+              </SelectTrigger>
+              <SelectContent>
+                {VALID_MODELS.map((model: (typeof VALID_MODELS)[number]) => (
+                  <SelectItem key={model} value={model}>
+                    {model}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* 
           <div className="space-y-2">
             <Label htmlFor="openaiKey">OpenAI API Key</Label>
             <div className="flex relative">
@@ -118,7 +151,7 @@ function RouteComponent() {
                 )}
               </button>
             </div>
-          </div>
+          </div> */}
 
           <div className="space-y-2">
             <Label htmlFor="openrouterKey">OpenRouter API Key</Label>
@@ -151,7 +184,7 @@ function RouteComponent() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="anthropicKey">Anthropic API Key</Label>
             <div className="flex relative">
               <Input
@@ -180,7 +213,7 @@ function RouteComponent() {
                 )}
               </button>
             </div>
-          </div>
+          </div> */}
 
           <div className="space-y-2">
             <Label htmlFor="gigaverseToken">Gigaverse Token</Label>

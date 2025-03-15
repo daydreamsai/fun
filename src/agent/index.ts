@@ -8,11 +8,16 @@ import {
 import { chat } from "./chat";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 import { giga, goalContexts } from "./giga";
 import { getUserSettings } from "@/utils/settings";
 
 console.log(getUserSettings());
+
+const openrouter = createOpenRouter({
+  apiKey: getUserSettings()?.openrouterKey,
+});
 
 export const anthropic = createAnthropic({
   apiKey: getUserSettings()?.anthropicKey,
@@ -58,12 +63,12 @@ export function createAgent() {
   const memoryStorage = browserStorage();
 
   return createDreams({
-    model: anthropic("claude-3-7-sonnet-latest"),
+    model: openrouter(getUserSettings()?.model || "claude-3-7-sonnet-latest"),
     context: goalContexts,
     memory: createMemory(
       memoryStorage,
       createVectorStore(),
-      openai("gpt-4-turbo")
+      openrouter("openai/gpt-4-turbo")
     ),
     extensions: [chat, giga],
   });

@@ -2,7 +2,15 @@
  * Settings utility functions for managing API keys and tokens
  */
 
+export const VALID_MODELS = [
+  "anthropic/claude-3.7-sonnet:beta",
+  "deepseek/deepseek-r1-distill-llama-70b",
+  "deepseek/deepseek-r1",
+  "google/gemma-3-27b-it",
+] as const;
+
 export interface UserSettings {
+  model: (typeof VALID_MODELS)[number];
   openaiKey: string;
   openrouterKey: string;
   anthropicKey: string;
@@ -65,17 +73,29 @@ export function hasApiKey(key: keyof UserSettings): boolean {
 
 /**
  * Set a specific API key or token
- * @param key The key to set ('openaiKey', 'openrouterKey', 'anthropicKey', or 'gigaverseToken')
+ * @param key The key to set ('model', 'openaiKey', 'openrouterKey', 'anthropicKey', or 'gigaverseToken')
  * @param value The value to set
  */
 export function setApiKey(key: keyof UserSettings, value: string): void {
   const settings = getUserSettings() || {
+    model: "anthropic/claude-3.7-sonnet:beta" as const,
     openaiKey: "",
     openrouterKey: "",
     anthropicKey: "",
     gigaverseToken: "",
   };
 
-  settings[key] = value;
+  if (key === "model") {
+    // Validate that the value is one of the allowed model types
+    if (VALID_MODELS.includes(value as (typeof VALID_MODELS)[number])) {
+      (settings[key] as string) = value;
+    } else {
+      console.error(`Invalid model type: ${value}`);
+      return;
+    }
+  } else {
+    settings[key] = value;
+  }
+
   saveUserSettings(settings);
 }
