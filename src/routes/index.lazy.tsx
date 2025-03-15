@@ -109,7 +109,7 @@ function Index() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="p-6 max-w-7xl mx-auto"
+      className="p-6 w-full mx-auto"
     >
       <div className="flex items-center justify-between mb-8 mt-8">
         <motion.h1
@@ -118,7 +118,7 @@ function Index() {
           transition={{ type: "spring", stiffness: 100 }}
           className="text-3xl font-bold"
         >
-          <img src="/Daydreams.svg" className="h-16" />
+          <img src="/Daydreams.svg" className="h-12" />
         </motion.h1>
         <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants}>
           <Button asChild variant="outline">
@@ -184,7 +184,7 @@ function Index() {
               whileTap="tap"
               variants={buttonVariants}
             >
-              <Button asChild>
+              <Button asChild variant="outline">
                 <Link
                   to="/chats/$chatId"
                   params={{ chatId: `new-${Date.now()}` }}

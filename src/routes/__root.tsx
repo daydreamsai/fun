@@ -54,12 +54,12 @@ export const Route = createRootRouteWithContext<{
                       </BreadcrumbList>
                     </Breadcrumb>
                   </div>
-                  <Button asChild>
+                  {/* <Button asChild>
                     <Link to="/chats/$chatId" params={{ chatId: "new" }}>
                       <Plus className="w-4 h-4 mr-2 stroke-black" />
                       New Chat
                     </Link>
-                  </Button>
+                  </Button> */}
                 </header>
                 <Outlet />
               </SidebarInset>
