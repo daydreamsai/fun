@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MessagesList } from "@/components/message-list";
 import { getWorkingMemoryLogs } from "@daydreamsai/core";
@@ -16,11 +16,25 @@ import {
   Eye,
   EyeOff,
   Code,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { giga } from "@/agent/giga";
+import {
+  hasApiKey,
+  getUserSettings,
+  setApiKey,
+  VALID_MODELS,
+} from "@/utils/settings";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/chats/$chatId")({
   component: RouteComponent,
@@ -34,6 +48,18 @@ export const Route = createFileRoute("/chats/$chatId")({
     };
   },
   loader({ params }) {
+    // Check if user has required API keys
+    const hasOpenRouterKey = hasApiKey("openrouterKey");
+    const hasGigaverseToken = hasApiKey("gigaverseToken");
+
+    // If neither key is available, redirect to settings
+    if (!hasOpenRouterKey && !hasGigaverseToken) {
+      return redirect({
+        to: "/settings",
+      });
+    }
+
+    // Handle "new" chat redirect
     if (params.chatId === "new") {
       return redirect({
         to: "/chats/$chatId",
@@ -67,6 +93,24 @@ function StateSidebar({
   });
   const [workingMemory, setWorkingMemory] = useState<any>(null);
   const [showFullMemory, setShowFullMemory] = useState(false);
+
+  // Model selection state
+  const [selectedModel, setSelectedModel] = useState<
+    (typeof VALID_MODELS)[number]
+  >(getUserSettings()?.model || "anthropic/claude-3.7-sonnet:beta");
+  const [modelChangeNotification, setModelChangeNotification] = useState(false);
+
+  // Handle model change
+  const handleModelChange = (value: string) => {
+    setSelectedModel(value as (typeof VALID_MODELS)[number]);
+    setApiKey("model", value);
+
+    // Show notification
+    setModelChangeNotification(true);
+    setTimeout(() => {
+      setModelChangeNotification(false);
+    }, 3000);
+  };
 
   const refreshMemoryStats = async () => {
     setIsRefreshing(true);
@@ -147,6 +191,53 @@ function StateSidebar({
           </Button>
         </div>
       </div>
+
+      {/* Model Selection Dropdown */}
+      <div className="px-4 pb-2">
+        <div className="flex items-center gap-2 mb-2">
+          <Settings className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Model</span>
+        </div>
+        <Select value={selectedModel} onValueChange={handleModelChange}>
+          <SelectTrigger className="w-full text-sm">
+            <SelectValue placeholder="Select a model" />
+          </SelectTrigger>
+          <SelectContent>
+            {VALID_MODELS.map((model) => {
+              // Create a more user-friendly display name
+              const displayName = model
+                .split("/")
+                .pop()
+                ?.replace(/-/g, " ")
+                .replace(/:beta$/, " (Beta)");
+
+              return (
+                <SelectItem key={model} value={model} className="text-sm">
+                  {displayName || model}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+
+        {/* Model change notification */}
+        {modelChangeNotification && (
+          <div className="mt-4 text-xs p-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-md transition-opacity duration-300">
+            Model changed to{" "}
+            <span className="font-medium">
+              {selectedModel
+                .split("/")
+                .pop()
+                ?.replace(/-/g, " ")
+                .replace(/:beta$/, " (Beta)")}
+            </span>
+            . New messages will use this model.
+          </div>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className="h-px bg-border mx-4 my-2"></div>
 
       <Tabs
         value={activeTab}
@@ -498,6 +589,20 @@ function RouteComponent() {
   const dreams = useAgent();
   const { messages, setMessages, handleLog } = useMessages();
 
+  // Check API keys for notification
+  const [missingKeys, setMissingKeys] = useState<string[]>([]);
+
+  useEffect(() => {
+    const hasOpenRouterKey = hasApiKey("openrouterKey");
+    const hasGigaverseToken = hasApiKey("gigaverseToken");
+
+    const missing: string[] = [];
+    if (!hasOpenRouterKey) missing.push("OpenRouter");
+    if (!hasGigaverseToken) missing.push("Gigaverse");
+
+    setMissingKeys(missing);
+  }, []);
+
   const contextId = dreams.getContextId({
     context: chat.contexts!.chat,
     args: {
@@ -579,13 +684,49 @@ function RouteComponent() {
 
   return (
     <>
+      {/* API Key Notification */}
+      {missingKeys.length > 0 && missingKeys.length < 2 && (
+        <div className="bg-amber-100 dark:bg-amber-900 p-3 text-amber-800 dark:text-amber-200 text-sm flex justify-between items-center">
+          <div>
+            <span className="font-medium">Note:</span> You're missing the{" "}
+            {missingKeys.join(", ")} API key. You can still use the app, but
+            setting up all keys is recommended for the best experience.
+          </div>
+          <Button variant="outline" size="sm">
+            <Link to="/settings">Go to Settings</Link>
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-1 relative h-[calc(100vh-64px)]">
         <div className="flex flex-col flex-1 z-0 overflow-y-auto">
           <div
             className="flex-1 p-4 pb-36 mx-auto w-full pr-96"
             ref={scrollRef}
           >
-            <MessagesList messages={messages} />
+            {missingKeys.length === 2 ? (
+              <div className="flex flex-col items-center justify-center h-full">
+                <div className="bg-red-100 dark:bg-red-900 p-6 rounded-lg max-w-md text-center">
+                  <h3 className="text-lg font-bold text-red-800 dark:text-red-200 mb-2">
+                    API Keys Required
+                  </h3>
+                  <p className="text-red-700 dark:text-red-300 mb-4">
+                    You need to set up either an OpenRouter API key or a
+                    Gigaverse token to use this application.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      window.location.href = "/settings";
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Go to Settings
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <MessagesList messages={messages} />
+            )}
           </div>
         </div>
 
@@ -644,11 +785,18 @@ function RouteComponent() {
         <input
           type="text"
           name="message"
-          placeholder="Type your message..."
+          placeholder={
+            missingKeys.length === 2
+              ? "Please set up API keys in settings to start chatting"
+              : "Type your message..."
+          }
           className="border flex-1 px-6 py-4 rounded-lg bg-background text-foreground placeholder:text-primary focus:outline-none focus:border-primary"
-          disabled={false} // Disable input while loading history
+          disabled={missingKeys.length === 2} // Disable input if no API keys are set
         />
-        <button className="bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary h-full w-1/4 max-w-64 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button
+          className="bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary h-full w-1/4 max-w-64 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={missingKeys.length === 2} // Disable button if no API keys are set
+        >
           Send
         </button>
       </form>
