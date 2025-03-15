@@ -433,24 +433,9 @@ export const giga = extension({
                 result.data.entity.DUNGEON_ID_CID.toString();
               state.currentEnemy = result.data.entity.ENEMY_CID.toString();
             }
+
+            console.log("state", state);
           }
-
-          // if (["rock", "paper", "scissor"].includes(action)) {
-          //   simpleUI.visualizeRPSMove(action, enemyMove, battleResult);
-          // }
-
-          // // Display the updated state to the user
-          // simpleUI.printDetailedGameState(state);
-
-          // // Update game state in the UI
-          // if (result.gameState) {
-          //   simpleUI.printGameState(result.gameState);
-          // }
-
-          // // Update player stats in the UI
-          // if (result.playerState) {
-          //   simpleUI.printPlayerStats(result.playerState);
-          // }
 
           return {
             success: true,

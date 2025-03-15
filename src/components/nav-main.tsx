@@ -58,7 +58,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
                   <SidebarMenuSub>
                     {item.items?.map((subItem) =>
                       subItem.component ? (
-                        <subItem.component />
+                        <subItem.component key={subItem.title} />
                       ) : (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
@@ -74,7 +74,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
               </SidebarMenuItem>
             </Collapsible>
           ) : (
-            <SidebarMenuItem>
+            <SidebarMenuItem key={item.title}>
               <SidebarMenuButton tooltip={item.title} asChild>
                 <Link to={item.url}>
                   {item.icon && <item.icon />}

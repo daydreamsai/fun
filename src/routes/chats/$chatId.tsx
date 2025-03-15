@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { MessagesList } from "@/components/message-list";
 import { getWorkingMemoryLogs } from "@daydreamsai/core";
 import { SidebarRight } from "@/components/sidebar-right";
@@ -99,9 +99,10 @@ function StateSidebar({
     (typeof VALID_MODELS)[number]
   >(getUserSettings()?.model || "anthropic/claude-3.7-sonnet:beta");
   const [modelChangeNotification, setModelChangeNotification] = useState(false);
+  const [goalContext, setGoalContext] = useState<any>(null);
 
   // Handle model change
-  const handleModelChange = (value: string) => {
+  const handleModelChange = useCallback((value: string) => {
     setSelectedModel(value as (typeof VALID_MODELS)[number]);
     setApiKey("model", value);
 
@@ -110,9 +111,9 @@ function StateSidebar({
     setTimeout(() => {
       setModelChangeNotification(false);
     }, 3000);
-  };
+  }, []);
 
-  const refreshMemoryStats = async () => {
+  const refreshMemoryStats = useCallback(async () => {
     setIsRefreshing(true);
     try {
       const memory = await dreams.getWorkingMemory(contextId);
@@ -126,31 +127,40 @@ function StateSidebar({
     } finally {
       setIsRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    refreshMemoryStats();
-  }, [contextId]);
-
-  const [goalContext, setGoalContext] = useState<any>(null);
-
-  const context = useMemo(async () => {
-    return await dreams.getContext({
-      context: giga.contexts!.goal,
-
-      args: {
-        id: "goal:1",
-        initialGoal: "You are a helpful assistant",
-        initialTasks: ["You are a helpful assistant"],
-      },
-    });
   }, [dreams, contextId]);
 
   useEffect(() => {
-    context.then((result) => {
-      setGoalContext(result);
-    });
-  }, []);
+    refreshMemoryStats();
+  }, [refreshMemoryStats]);
+
+  // Fix async useMemo pattern
+  useEffect(() => {
+    let isMounted = true;
+    const fetchGoalContext = async () => {
+      try {
+        const result = await dreams.getContext({
+          context: giga.contexts!.goal,
+          args: {
+            id: "goal:1",
+            initialGoal: "You are a helpful assistant",
+            initialTasks: ["You are a helpful assistant"],
+          },
+        });
+
+        if (isMounted) {
+          setGoalContext(result);
+        }
+      } catch (error) {
+        console.error("Error fetching goal context:", error);
+      }
+    };
+
+    fetchGoalContext();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dreams]);
 
   if (isCollapsed) {
     return (
@@ -603,30 +613,16 @@ function RouteComponent() {
     setMissingKeys(missing);
   }, []);
 
-  const contextId = dreams.getContextId({
-    context: chat.contexts!.chat,
-    args: {
-      chatId,
-    },
-  });
-
-  const context = useMemo(async () => {
-    return await dreams.getContext({
-      context: giga.contexts!.goal,
-
-      args: {
-        id: "goal:1",
-        initialGoal: "You are a helpful assistant",
-        initialTasks: ["You are a helpful assistant"],
-      },
-    });
-  }, [dreams, chatId]);
-
-  useEffect(() => {
-    context.then((result) => {
-      console.log("context", result);
-    });
-  }, []);
+  const contextId = useMemo(
+    () =>
+      dreams.getContextId({
+        context: chat.contexts!.chat,
+        args: {
+          chatId,
+        },
+      }),
+    [dreams, chatId]
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -636,7 +632,7 @@ function RouteComponent() {
       const workingMemory = await dreams.getWorkingMemory(contextId);
       getWorkingMemoryLogs(workingMemory).map((log) => handleLog(log, true));
     });
-  }, [dreams, chatId]);
+  }, [dreams, chatId, contextId, handleLog, setMessages]);
 
   const queryClient = useQueryClient();
 
@@ -764,7 +760,7 @@ function RouteComponent() {
             input: {
               type: "message",
               data: {
-                user: "galego",
+                user: "player",
                 content: msg,
               },
             },
