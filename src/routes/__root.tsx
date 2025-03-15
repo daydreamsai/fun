@@ -19,8 +19,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 import { AnyAgent } from "@daydreamsai/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 export const Route = createRootRouteWithContext<{
   agent: AnyAgent;
