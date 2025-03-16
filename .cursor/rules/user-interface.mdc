@@ -1,0 +1,13 @@
+---
+description: for when you are doing UI work
+globs: *.tsx
+alwaysApply: false
+---
+
+# Rules
+
+- Always use tailwind and shadcnUI where possible
+- Always use zustand state where possible if state needs to exist over components.
+- Always include custom styling in the tailwind config where possible
+- Don't inlcude random comments
+

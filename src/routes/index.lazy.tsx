@@ -159,12 +159,9 @@ function Index() {
                 />
               </div>
               <div className="p-4">
-                <h2 className="font-semibold text-xl mb-1">
+                <h3 className="font-semibold text-xl mb-1">
                   {getChatDisplayName(chat.args.chatId)}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  Last played: {new Date().toLocaleDateString()}
-                </p>
+                </h3>
               </div>
             </Link>
           </motion.div>

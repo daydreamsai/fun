@@ -11,9 +11,6 @@ export function useAgent() {
   // Create a state to hold the current agent
   const [agent, setAgent] = useState(initialAgent);
 
-  // Get the settings store
-  const settings = useSettingsStore();
-
   // Subscribe to settings changes and recreate the agent when they change
   useEffect(() => {
     // Create a subscription to the settings store

@@ -2,7 +2,7 @@
  * API utility functions for making calls to various AI services
  */
 
-import { getApiKey, hasApiKey } from "./settings";
+import { getApiKey, hasApiKey } from "@/store/settingsStore";
 
 /**
  * Error thrown when an API key is missing
