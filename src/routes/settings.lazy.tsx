@@ -29,7 +29,6 @@ import { useLoginWithAbstract } from "@abstract-foundation/agw-react";
 import { useAccount } from "wagmi";
 import { useAbstractClient } from "@abstract-foundation/agw-react";
 
-
 export const Route = createLazyFileRoute("/settings")({
   component: RouteComponent,
 });
