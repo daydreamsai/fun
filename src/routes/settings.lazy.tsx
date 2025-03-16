@@ -25,14 +25,24 @@ import {
   UserSettings,
 } from "@/store/settingsStore";
 import { Eye, EyeOff } from "lucide-react";
+import { abstract } from "viem/chains"; // Use abstract for mainnet
+import { AbstractWalletProvider, useLoginWithAbstract } from "@abstract-foundation/agw-react";
+import { useAccount } from "wagmi";
+import { useAbstractClient } from "@abstract-foundation/agw-react";
+
 
 export const Route = createLazyFileRoute("/settings")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const API_BASE = "https://gigaverse.io/api";
   // Use the Zustand store directly
   const settings = useSettingsStore();
+  const { login, logout } = useLoginWithAbstract();
+  const { address, status } = useAccount();
+  const { data: abstractClient } = useAbstractClient();
+
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({
     openaiKey: false,
@@ -81,7 +91,38 @@ function RouteComponent() {
     setTimeout(() => setSaveStatus(null), 3000);
   };
 
+  async function fetchGigaToken() {
+    const payload = await signLogin(Date.now());
+    const response = await fetch(`${API_BASE}/user/auth`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  
+    const value = await handleResponse(response);
+    settings.setApiKey("gigaverseToken", value.jwt)
+  }
+
+  async function handleResponse(response: Response) {
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Request failed with status ${response.status}: ${errorText}`
+      );
+    }
+    return response.json();
+  }
+  
+  async function signLogin(timestamp: number) {
+    const message = `Login to Gigaverse at ${timestamp}`;
+    const signature = await abstractClient!.signMessage({ message })
+    return { address: address, message, signature, timestamp };
+  }
+
   return (
+    <AbstractWalletProvider chain={abstract}>
     <div className="container mx-auto py-10 px-4 max-w-3xl">
       <Card>
         <CardHeader>
@@ -200,36 +241,54 @@ function RouteComponent() {
             </div>
           </div> */}
 
-          <div className="space-y-2">
-            <Label htmlFor="gigaverseToken">Gigaverse Token</Label>
-            <div className="flex relative">
-              <Input
-                id="gigaverseToken"
-                name="gigaverseToken"
-                type={visibleFields.gigaverseToken ? "text" : "password"}
-                value={settings.gigaverseToken}
-                onChange={handleChange}
-                placeholder="Enter your token"
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => toggleVisibility("gigaverseToken")}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
-                aria-label={
-                  visibleFields.gigaverseToken
-                    ? "Hide Gigaverse Token"
-                    : "Show Gigaverse Token"
-                }
-              >
-                {visibleFields.gigaverseToken ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
-              </button>
-            </div>
+        <div className="space-y-2">
+          <Label>Gigaverse Authentication</Label>
+          <div className="flex flex-col space-y-3">
+            {status === "connected" ? (
+              <div className="border rounded-lg p-4 space-y-2">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Connected with AGW:
+                </p>
+                <p className="font-mono text-lg">{address}</p>
+                
+                <Button variant="destructive" onClick={logout} className="w-full">
+                  Disconnect
+                </Button>
+
+                <Label htmlFor="gigaverseToken">Gigaverse Token</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="gigaverseToken"
+                    name="gigaverseToken"
+                    type={visibleFields.gigaverseToken ? "text" : "password"}
+                    value={settings.gigaverseToken}
+                    onChange={handleChange}
+                    placeholder="Enter your token"
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleVisibility("gigaverseToken")}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+                    aria-label={
+                      visibleFields.gigaverseToken ? "Hide Token" : "Show Token"
+                    }
+                  >
+                    {visibleFields.gigaverseToken ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+
+                <Button onClick={() => fetchGigaToken()} className="w-full">
+                  Generate GIGA Token
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={login} className="w-full">
+                Connect with AGW
+              </Button>
+            )}
           </div>
+        </div>
 
           {saveStatus && (
             <div className="bg-green-100 dark:bg-green-900 p-3 rounded-md text-green-800 dark:text-green-200">
@@ -245,5 +304,6 @@ function RouteComponent() {
         </CardFooter>
       </Card>
     </div>
+    </AbstractWalletProvider>
   );
 }
