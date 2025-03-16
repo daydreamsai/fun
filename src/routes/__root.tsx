@@ -5,6 +5,7 @@ import {
   createRootRouteWithContext,
   Link,
   Outlet,
+  ErrorComponent as TanStackErrorComponent,
 } from "@tanstack/react-router";
 
 import {
@@ -23,6 +24,11 @@ import { TokenGate } from "@/components/TokenGate";
 import { AnyAgent } from "@daydreamsai/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+// Custom error component that passes the error prop correctly
+const CustomErrorComponent = ({ error }: { error: Error }) => {
+  return <TanStackErrorComponent error={error} />;
+};
+
 export const Route = createRootRouteWithContext<{
   agent: AnyAgent;
   queryClient: QueryClient;
@@ -30,6 +36,9 @@ export const Route = createRootRouteWithContext<{
   async loader(ctx) {
     await ctx.context.agent.start();
   },
+
+  // Add error boundary to handle routing errors
+  errorComponent: CustomErrorComponent,
 
   component: () => {
     const { queryClient } = Route.useRouteContext();

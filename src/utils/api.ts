@@ -150,7 +150,12 @@ export async function callGigaverse<T>(
     options.body = JSON.stringify(data);
   }
 
-  const response = await fetch(`https://api.gigaverse.io/${endpoint}`, options);
+  // Use the proxy path instead of direct API calls
+  const baseUrl = import.meta.env.PROD
+    ? "/gigaverse-api" // In production, use the proxy path
+    : "https://api.gigaverse.io"; // In development, use direct API
+
+  const response = await fetch(`${baseUrl}/${endpoint}`, options);
 
   if (!response.ok) {
     const error = await response

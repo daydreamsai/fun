@@ -19,6 +19,10 @@ const router = createRouter({
     agent: createAgent(),
     queryClient: new QueryClient(),
   },
+  // Add dehydrate/rehydrate options for proper SSR handling
+  defaultPreload: "intent",
+  // Add proper handling for direct navigation
+  defaultPreloadStaleTime: 0,
 });
 
 // Register the router instance for type safety
@@ -30,11 +34,11 @@ declare module "@tanstack/react-router" {
 
 // Render the app
 const rootElement = document.getElementById("root")!;
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <StrictMode>
-      <RouterProvider router={router} />
-    </StrictMode>
-  );
-}
+
+// Remove the conditional check that can cause hydration mismatches
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <StrictMode>
+    <RouterProvider router={router} />
+  </StrictMode>
+);
