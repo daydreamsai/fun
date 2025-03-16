@@ -43,7 +43,7 @@ export const getApiBaseUrl = () => {
     return "/gigaverse-api";
   }
   // In production, use the direct URL
-  return "http://proxy-production-0fee.up.railway.app/api";
+  return "https://proxy-production-0fee.up.railway.app/api";
 };
 
 // Define an interface for the state
