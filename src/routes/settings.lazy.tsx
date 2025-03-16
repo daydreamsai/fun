@@ -1,5 +1,5 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -19,12 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  UserSettings,
-  getUserSettings,
-  saveUserSettings,
-  clearUserSettings,
+  useSettingsStore,
   VALID_MODELS,
-} from "@/utils/settings";
+  clearUserSettings,
+  UserSettings,
+} from "@/store/settingsStore";
 import { Eye, EyeOff } from "lucide-react";
 
 export const Route = createLazyFileRoute("/settings")({
@@ -32,13 +31,8 @@ export const Route = createLazyFileRoute("/settings")({
 });
 
 function RouteComponent() {
-  const [settings, setSettings] = useState<UserSettings>({
-    model: "anthropic/claude-3.7-sonnet:beta",
-    openaiKey: "",
-    openrouterKey: "",
-    anthropicKey: "",
-    gigaverseToken: "",
-  });
+  // Use the Zustand store directly
+  const settings = useSettingsStore();
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({
     openaiKey: false,
@@ -47,27 +41,22 @@ function RouteComponent() {
     gigaverseToken: false,
   });
 
-  // Load settings from localStorage on component mount
-  useEffect(() => {
-    const savedSettings = getUserSettings();
-    if (savedSettings) {
-      setSettings(savedSettings);
-    }
-  }, []);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setSettings((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    // Only pass valid UserSettings keys
+    if (
+      name === "openaiKey" ||
+      name === "openrouterKey" ||
+      name === "anthropicKey" ||
+      name === "gigaverseToken" ||
+      name === "model"
+    ) {
+      settings.setApiKey(name as keyof UserSettings, value);
+    }
   };
 
   const handleModelChange = (value: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      model: value as (typeof VALID_MODELS)[number],
-    }));
+    settings.setModel(value as (typeof VALID_MODELS)[number]);
   };
 
   const toggleVisibility = (field: string) => {
@@ -78,20 +67,16 @@ function RouteComponent() {
   };
 
   const handleSaveSettings = () => {
-    saveUserSettings(settings);
-    setSaveStatus("Settings saved successfully!");
+    // With Zustand persist, settings are automatically saved
+    // This function is kept for UI feedback
+    setSaveStatus(
+      "Settings saved successfully! Agent will be recreated with new settings."
+    );
     setTimeout(() => setSaveStatus(null), 3000);
   };
 
   const handleClearSettings = () => {
     clearUserSettings();
-    setSettings({
-      model: "anthropic/claude-3.7-sonnet:beta",
-      openaiKey: "",
-      openrouterKey: "",
-      anthropicKey: "",
-      gigaverseToken: "",
-    });
     setSaveStatus("Settings cleared successfully!");
     setTimeout(() => setSaveStatus(null), 3000);
   };

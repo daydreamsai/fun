@@ -31,9 +31,10 @@ import {
 
 import { string, z } from "zod";
 
-import { getUserSettings } from "@/utils/settings";
+import { useSettingsStore } from "@/store/settingsStore";
 
-export const GIGA_TOKEN = getUserSettings()?.gigaverseToken;
+// Get the token directly from the store for better reactivity
+export const getGigaToken = () => useSettingsStore.getState().gigaverseToken;
 
 // Add a helper function to get the API base URL
 export const getApiBaseUrl = () => {
@@ -341,7 +342,7 @@ export const giga = extension({
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${GIGA_TOKEN}`,
+                Authorization: `Bearer ${getGigaToken()}`,
               },
               body: JSON.stringify(payload),
             }
@@ -485,7 +486,7 @@ export const giga = extension({
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${GIGA_TOKEN}`,
+              Authorization: `Bearer ${getGigaToken()}`,
             },
           });
 
@@ -534,7 +535,7 @@ export const giga = extension({
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${GIGA_TOKEN}`,
+                Authorization: `Bearer ${getGigaToken()}`,
               },
             }
           );
@@ -696,7 +697,7 @@ export const giga = extension({
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${GIGA_TOKEN}`,
+                Authorization: `Bearer ${getGigaToken()}`,
               },
               body: JSON.stringify(payload),
             }

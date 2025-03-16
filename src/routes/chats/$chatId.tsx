@@ -24,10 +24,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { giga } from "@/agent/giga";
 import {
   hasApiKey,
-  getUserSettings,
-  setApiKey,
   VALID_MODELS,
-} from "@/utils/settings";
+  useSettingsStore,
+} from "@/store/settingsStore";
 import {
   Select,
   SelectContent,
@@ -95,23 +94,27 @@ function StateSidebar({
   const [showFullMemory, setShowFullMemory] = useState(false);
 
   // Model selection state
+  const settings = useSettingsStore();
   const [selectedModel, setSelectedModel] = useState<
     (typeof VALID_MODELS)[number]
-  >(getUserSettings()?.model || "anthropic/claude-3.7-sonnet:beta");
+  >(settings.model);
   const [modelChangeNotification, setModelChangeNotification] = useState(false);
   const [goalContext, setGoalContext] = useState<any>(null);
 
   // Handle model change
-  const handleModelChange = useCallback((value: string) => {
-    setSelectedModel(value as (typeof VALID_MODELS)[number]);
-    setApiKey("model", value);
+  const handleModelChange = useCallback(
+    (value: string) => {
+      setSelectedModel(value as (typeof VALID_MODELS)[number]);
+      settings.setModel(value as (typeof VALID_MODELS)[number]);
 
-    // Show notification
-    setModelChangeNotification(true);
-    setTimeout(() => {
-      setModelChangeNotification(false);
-    }, 3000);
-  }, []);
+      // Show notification
+      setModelChangeNotification(true);
+      setTimeout(() => {
+        setModelChangeNotification(false);
+      }, 3000);
+    },
+    [settings]
+  );
 
   const refreshMemoryStats = useCallback(async () => {
     setIsRefreshing(true);
@@ -151,7 +154,7 @@ function StateSidebar({
           setGoalContext(result);
         }
       } catch (error) {
-        console.error("Error fetching goal context:", error);
+        console.error("Failed to fetch goal context:", error);
       }
     };
 
@@ -252,7 +255,7 @@ function StateSidebar({
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="flex-1 flex flex-col "
+        className="flex-1 flex flex-col"
       >
         <TabsList className="grid grid-cols-2 mx-4 ">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -263,7 +266,7 @@ function StateSidebar({
           value="overview"
           className="flex-1 px-4  overflow-hidden  border-primary/20 "
         >
-          <ScrollArea className="h-[calc(100vh-180px)] pb-36 ">
+          <ScrollArea className="h-[calc(100vh-180px)] pb-36">
             <Card className="p-4 mb-4 border-2 border-primary/20 bg-primary/5">
               <h4 className="text-base font-semibold mb-3 text-primary">
                 Game State
@@ -528,7 +531,7 @@ function StateSidebar({
 
         <TabsContent
           value="memory"
-          className="flex-1 flex flex-col pt-2 overflow-hidden"
+          className="flex-1 flex flex-col pt-2 overflow-hidden border"
         >
           <div className="flex justify-between items-center mb-2">
             <h4 className="text-sm font-medium">Working Memory</h4>

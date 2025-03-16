@@ -6,6 +6,11 @@ import "./index.css";
 import { routeTree } from "./routeTree.gen";
 import { createAgent } from "./agent";
 import { QueryClient } from "@tanstack/react-query";
+import { useSettingsStore } from "./store/settingsStore";
+
+// Initialize settings store before creating the agent
+// This ensures the store is hydrated from localStorage before agent creation
+useSettingsStore.getState();
 
 // Create a new router instance
 const router = createRouter({

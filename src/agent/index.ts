@@ -6,29 +6,13 @@ import {
   createVectorStore,
 } from "@daydreamsai/core";
 import { chat } from "./chat";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createAnthropic } from "@ai-sdk/anthropic";
+
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 import { giga, goalContexts } from "./giga";
-import { getUserSettings } from "@/utils/settings";
+import { useSettingsStore } from "@/store/settingsStore";
 
-console.log(getUserSettings());
-
-const openrouter = createOpenRouter({
-  apiKey: getUserSettings()?.openrouterKey,
-});
-
-export const anthropic = createAnthropic({
-  apiKey: getUserSettings()?.anthropicKey,
-  headers: {
-    "anthropic-dangerous-direct-browser-access": "true",
-  },
-});
-
-export const openai = createOpenAI({
-  apiKey: getUserSettings()?.openaiKey,
-});
+// Get settings directly from the store
 
 const browserStorage = (): MemoryStore => {
   const memoryStore = createMemoryStore();
@@ -60,10 +44,19 @@ const browserStorage = (): MemoryStore => {
 };
 
 export function createAgent() {
+  // Always get fresh settings when creating the agent
+  const settings = useSettingsStore.getState();
+
   const memoryStorage = browserStorage();
 
+  const openrouter = createOpenRouter({
+    apiKey: settings.openrouterKey,
+  });
+
+  console.log("Creating agent with settings:", settings);
+
   return createDreams({
-    model: openrouter(getUserSettings()?.model || "claude-3-7-sonnet-latest"),
+    model: openrouter(settings.model || "anthropic/claude-3.7-sonnet:beta"),
     context: goalContexts,
     memory: createMemory(
       memoryStorage,
