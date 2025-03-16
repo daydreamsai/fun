@@ -1,11 +1,12 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAgent } from "@/hooks/use-agent";
+
 import { useQuery } from "@tanstack/react-query";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useAgentStore } from "@/store/agentStore";
 
 // Animation variants
 const containerVariants = {
@@ -59,15 +60,11 @@ export const Route = createLazyFileRoute("/")({
 });
 
 function Index() {
-  const agent = useAgent();
   const isMobile = useIsMobile();
 
-  const {
-    data: chats,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
+  const agent = useAgentStore((state) => state.agent);
+
+  const { data: chats } = useQuery({
     queryKey: ["agent:chats"],
     queryFn: async () => {
       const contexts = await agent.getContexts();
@@ -75,7 +72,7 @@ function Index() {
     },
   });
 
-  if (isLoading) {
+  if (!agent) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -83,18 +80,6 @@ function Index() {
         className="p-4"
       >
         Loading game sessions...
-      </motion.div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="p-4 text-red-500"
-      >
-        Error: {error.message}
       </motion.div>
     );
   }

@@ -19,8 +19,9 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Link } from "@tanstack/react-router";
-import { useAgent } from "@/hooks/use-agent";
+
 import { useQuery } from "@tanstack/react-query";
+import { useAgentStore } from "@/store/agentStore";
 
 // This is sample data.
 const data = {
@@ -100,7 +101,7 @@ const data = {
 
 // Create a new ChatHistory component
 function ChatHistoryList() {
-  const agent = useAgent();
+  const agent = useAgentStore((state) => state.agent);
 
   const chats = useQuery({
     queryKey: ["agent:chats"],

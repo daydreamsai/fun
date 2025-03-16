@@ -1,9 +1,8 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { MessagesList } from "@/components/message-list";
-import { getWorkingMemoryLogs } from "@daydreamsai/core";
+import { AnyAgent, getWorkingMemoryLogs } from "@daydreamsai/core";
 import { SidebarRight } from "@/components/sidebar-right";
-import { useAgent } from "@/hooks/use-agent";
 import { chat } from "@/agent/chat";
 import { v7 as randomUUIDv7 } from "uuid";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAgentStore } from "@/store/agentStore";
 
 export const Route = createFileRoute("/chats/$chatId")({
   component: RouteComponent,
@@ -78,7 +78,7 @@ function StateSidebar({
 }: {
   contextId: string;
   messages: any[];
-  dreams: ReturnType<typeof useAgent>;
+  dreams: AnyAgent;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -599,7 +599,7 @@ function StateSidebar({
 function RouteComponent() {
   const { chatId } = Route.useParams();
 
-  const dreams = useAgent();
+  const dreams = useAgentStore((state) => state.agent);
   const { messages, setMessages, handleLog } = useMessages();
 
   // Check API keys for notification

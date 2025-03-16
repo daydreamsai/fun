@@ -81,28 +81,6 @@
     @apply bg-background text-foreground;
   }
 }
-@font-face {
-  font-family: "ST-Tokyo";
-  src: url("/ST-Tokyo.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "The Seasons";
-  src: url("/theseasons-reg.otf") format("opentype");
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "The Seasons";
-  src: url("/theseasons-it.otf") format("opentype");
-  font-weight: normal;
-  font-style: italic;
-}
-
-
 
 @layer base {
   * {

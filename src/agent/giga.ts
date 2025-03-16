@@ -39,11 +39,11 @@ export const getGigaToken = () => useSettingsStore.getState().gigaverseToken;
 // Add a helper function to get the API base URL
 export const getApiBaseUrl = () => {
   // In development, use the Vite proxy
-  // if (import.meta.env.DEV) {
-  //   return "/gigaverse-api";
-  // }
+  if (import.meta.env.DEV) {
+    return "/gigaverse-api";
+  }
   // In production, use the direct URL
-  return "http://localhost:3000/api";
+  return "https://proxy-production-0fee.up.railway.app/api";
 };
 
 // Define an interface for the state

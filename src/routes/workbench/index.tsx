@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useAgent } from "@/hooks/use-agent";
+
 import { useMessages } from "@/hooks/use-messages";
+import { useAgentStore } from "@/store/agentStore";
 import { context, getWorkingMemoryLogs } from "@daydreamsai/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/workbench/")({
 
 function RouteComponent() {
   const queryClient = useQueryClient();
-  const dreams = useAgent();
+  const dreams = useAgentStore((state) => state.agent);
   const { messages, setMessages, handleLog } = useMessages();
 
   const [prompt, setPrompt] = useState("");

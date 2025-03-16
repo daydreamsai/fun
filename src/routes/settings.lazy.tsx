@@ -98,9 +98,9 @@ function RouteComponent() {
       },
       body: JSON.stringify(payload),
     });
-  
+
     const value = await handleResponse(response);
-    settings.setApiKey("gigaverseToken", value.jwt)
+    settings.setApiKey("gigaverseToken", value.jwt);
   }
 
   async function handleResponse(response: Response) {
@@ -112,10 +112,10 @@ function RouteComponent() {
     }
     return response.json();
   }
-  
+
   async function signLogin(timestamp: number) {
     const message = `Login to Gigaverse at ${timestamp}`;
-    const signature = await abstractClient!.signMessage({ message })
+    const signature = await abstractClient!.signMessage({ message });
     return { address: address, message, signature, timestamp };
   }
 
@@ -238,54 +238,64 @@ function RouteComponent() {
             </div>
           </div> */}
 
-        <div className="space-y-2">
-          <Label>Gigaverse Authentication</Label>
-          <div className="flex flex-col space-y-3">
-            {status === "connected" ? (
-              <div className="border rounded-lg p-4 space-y-2">
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Connected with AGW:
-                </p>
-                <p className="font-mono text-lg">{address}</p>
-                
-                <Button variant="destructive" onClick={logout} className="w-full">
-                  Disconnect
-                </Button>
+          <div className="space-y-2">
+            <Label>Gigaverse Authentication</Label>
+            <div className="flex flex-col space-y-3">
+              {status === "connected" ? (
+                <div className="border rounded-lg p-4 space-y-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Connected with AGW:
+                  </p>
+                  <p className="font-mono text-lg">{address}</p>
 
-                <Label htmlFor="gigaverseToken">Gigaverse Token</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="gigaverseToken"
-                    name="gigaverseToken"
-                    type={visibleFields.gigaverseToken ? "text" : "password"}
-                    value={settings.gigaverseToken}
-                    onChange={handleChange}
-                    placeholder="Enter your token"
-                    className="flex-1"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => toggleVisibility("gigaverseToken")}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
-                    aria-label={
-                      visibleFields.gigaverseToken ? "Hide Token" : "Show Token"
-                    }
+                  <Button
+                    variant="destructive"
+                    onClick={logout}
+                    className="w-full"
                   >
-                    {visibleFields.gigaverseToken ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
+                    Disconnect
+                  </Button>
 
-                <Button onClick={() => fetchGigaToken()} className="w-full">
-                  Generate GIGA Token
+                  <Label htmlFor="gigaverseToken">Gigaverse Token</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="gigaverseToken"
+                      name="gigaverseToken"
+                      type={visibleFields.gigaverseToken ? "text" : "password"}
+                      value={settings.gigaverseToken}
+                      onChange={handleChange}
+                      placeholder="Enter your token"
+                      className="flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleVisibility("gigaverseToken")}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+                      aria-label={
+                        visibleFields.gigaverseToken
+                          ? "Hide Token"
+                          : "Show Token"
+                      }
+                    >
+                      {visibleFields.gigaverseToken ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
+                  </div>
+
+                  <Button onClick={() => fetchGigaToken()} className="w-full">
+                    Generate GIGA Token
+                  </Button>
+                </div>
+              ) : (
+                <Button onClick={login} className="w-full">
+                  Connect with AGW
                 </Button>
-              </div>
-            ) : (
-              <Button onClick={login} className="w-full">
-                Connect with AGW
-              </Button>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
           {saveStatus && (
             <div className="bg-green-100 dark:bg-green-900 p-3 rounded-md text-green-800 dark:text-green-200">
