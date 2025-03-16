@@ -3,6 +3,10 @@
     {
       "source": "/gigaverse-api/:path*",
       "destination": "https://gigaverse.io/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
