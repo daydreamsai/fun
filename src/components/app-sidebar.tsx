@@ -20,8 +20,10 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "@tanstack/react-router";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAgentStore } from "@/store/agentStore";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 // This is sample data.
 const data = {
@@ -102,24 +104,80 @@ const data = {
 // Create a new ChatHistory component
 function ChatHistoryList() {
   const agent = useAgentStore((state) => state.agent);
+  const queryClient = useQueryClient();
+
+  // Add a state to track if we've attempted to initialize
+  const [initAttempted, setInitAttempted] = useState(false);
+
+  // Try to initialize the agent if needed
+  useEffect(() => {
+    const initializeAgent = async () => {
+      try {
+        // Check if the agent is already initialized
+        await agent.getContexts();
+        setInitAttempted(true);
+      } catch (error) {
+        console.log("Agent not initialized yet, starting...");
+        try {
+          await agent.start();
+          // Refetch chats after initialization
+          queryClient.invalidateQueries({ queryKey: ["agent:chats"] });
+        } catch (initError) {
+          console.error("Failed to initialize agent:", initError);
+        } finally {
+          setInitAttempted(true);
+        }
+      }
+    };
+
+    if (!initAttempted) {
+      initializeAgent();
+    }
+  }, [agent, initAttempted, queryClient]);
 
   const chats = useQuery({
     queryKey: ["agent:chats"],
-
     queryFn: async () => {
-      const contexts = await agent.getContexts();
-      return contexts.filter((ctx) => ctx.type === "chat");
+      try {
+        const contexts = await agent.getContexts();
+        return contexts.filter((ctx) => ctx.type === "chat");
+      } catch (error) {
+        console.error("Error fetching contexts:", error);
+        return [];
+      }
     },
+    // Only run the query if we've attempted to initialize
+    enabled: initAttempted,
+    // Retry failed queries
+    retry: 3,
+    // Refetch on window focus
+    refetchOnWindowFocus: true,
   });
 
-  if (chats.isLoading) {
+  if (!initAttempted || chats.isLoading) {
     return <div className="px-4 py-2 text-sm">Loading chats...</div>;
   }
 
   if (chats.isError) {
     return (
       <div className="px-4 py-2 text-sm text-red-500">
-        {chats.error.message}
+        Error loading chats
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => chats.refetch()}
+          className="mt-2"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!chats.data || chats.data.length === 0) {
+    return (
+      <div className="px-4 py-2 text-sm text-muted-foreground">
+        No chats found
       </div>
     );
   }
@@ -127,7 +185,7 @@ function ChatHistoryList() {
   return (
     <div>
       <SidebarSeparator className="my-4" />
-      {chats.data?.map((chat) => (
+      {chats.data.map((chat) => (
         <SidebarMenuSubItem key={chat.id}>
           <SidebarMenuSubButton asChild>
             <Link to={"/chats/$chatId"} params={{ chatId: chat.args.chatId }}>

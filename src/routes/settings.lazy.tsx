@@ -242,47 +242,50 @@ function RouteComponent() {
             <Label>Gigaverse Authentication</Label>
             <div className="flex flex-col space-y-3">
               {status === "connected" ? (
-                <div className="border rounded-lg p-4 space-y-2">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    Connected with AGW:
-                  </p>
-                  <p className="font-mono text-lg">{address}</p>
+                <div className="border rounded-lg p-4 space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Connected with Abstract Wallet:
+                    </p>
+                    <div className="flex items-center justify-between gap-2 p-2 bg-muted rounded-md">
+                      <p className="font-mono text-sm truncate">{address}</p>
+                      <Button variant="destructive" size="sm" onClick={logout}>
+                        Disconnect
+                      </Button>
+                    </div>
+                  </div>
 
-                  <Button
-                    variant="destructive"
-                    onClick={logout}
-                    className="w-full"
-                  >
-                    Disconnect
-                  </Button>
-
-                  <Label htmlFor="gigaverseToken">Gigaverse Token</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="gigaverseToken"
-                      name="gigaverseToken"
-                      type={visibleFields.gigaverseToken ? "text" : "password"}
-                      value={settings.gigaverseToken}
-                      onChange={handleChange}
-                      placeholder="Enter your token"
-                      className="flex-1"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => toggleVisibility("gigaverseToken")}
-                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
-                      aria-label={
-                        visibleFields.gigaverseToken
-                          ? "Hide Token"
-                          : "Show Token"
-                      }
-                    >
-                      {visibleFields.gigaverseToken ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
-                    </button>
+                  <div className="space-y-2">
+                    <Label htmlFor="gigaverseToken">Gigaverse Token</Label>
+                    <div className="flex relative">
+                      <Input
+                        id="gigaverseToken"
+                        name="gigaverseToken"
+                        type={
+                          visibleFields.gigaverseToken ? "text" : "password"
+                        }
+                        value={settings.gigaverseToken}
+                        onChange={handleChange}
+                        placeholder="Enter your token"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleVisibility("gigaverseToken")}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+                        aria-label={
+                          visibleFields.gigaverseToken
+                            ? "Hide Token"
+                            : "Show Token"
+                        }
+                      >
+                        {visibleFields.gigaverseToken ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <Button onClick={() => fetchGigaToken()} className="w-full">

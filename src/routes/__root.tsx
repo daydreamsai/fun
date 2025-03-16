@@ -21,7 +21,6 @@ import { WalletConnect } from "@/components/WalletConnect";
 import { WalletContextProvider } from "@/context/WalletContext";
 import { TokenGate } from "@/components/TokenGate";
 
-import { AnyAgent } from "@daydreamsai/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Custom error component that passes the error prop correctly
@@ -30,13 +29,8 @@ const CustomErrorComponent = ({ error }: { error: Error }) => {
 };
 
 export const Route = createRootRouteWithContext<{
-  agent: AnyAgent;
   queryClient: QueryClient;
 }>()({
-  async loader(ctx) {
-    await ctx.context.agent.start();
-  },
-
   // Add error boundary to handle routing errors
   errorComponent: CustomErrorComponent,
 

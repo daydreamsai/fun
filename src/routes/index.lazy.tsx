@@ -2,11 +2,11 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-import { useQuery } from "@tanstack/react-query";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAgentStore } from "@/store/agentStore";
+import { useEffect, useState } from "react";
 
 // Animation variants
 const containerVariants = {
@@ -64,15 +64,27 @@ function Index() {
 
   const agent = useAgentStore((state) => state.agent);
 
-  const { data: chats } = useQuery({
-    queryKey: ["agent:chats"],
-    queryFn: async () => {
-      const contexts = await agent.getContexts();
-      return contexts.filter((ctx) => ctx.type === "chat");
-    },
-  });
+  const [chats, setChats] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!agent) {
+  useEffect(() => {
+    async function fetchChats() {
+      try {
+        const contexts = await agent.getContexts();
+
+        console.log(contexts);
+        setChats(contexts.filter((ctx) => ctx.type === "chat") as any);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching chats:", error);
+        setIsLoading(false);
+      }
+    }
+
+    fetchChats();
+  }, [agent]);
+
+  if (isLoading) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -121,7 +133,7 @@ function Index() {
         animate="visible"
         className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-3"} gap-6`}
       >
-        {chats?.map((chat, index) => (
+        {chats?.map((chat: any, index: number) => (
           <motion.div
             key={chat.id}
             variants={itemVariants}

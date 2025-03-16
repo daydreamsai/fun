@@ -629,15 +629,31 @@ function RouteComponent() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     setMessages([]);
-    dreams.start().then(async () => {
-      const workingMemory = await dreams.getWorkingMemory(contextId);
-      getWorkingMemoryLogs(workingMemory).map((log) => handleLog(log, true));
-    });
-  }, [dreams, chatId, contextId, handleLog, setMessages]);
 
-  const queryClient = useQueryClient();
+    // Check if agent is already initialized before calling start
+    const loadMessages = async () => {
+      try {
+        // Try to access working memory - if this succeeds, agent is already initialized
+        const workingMemory = await dreams.getWorkingMemory(contextId);
+        getWorkingMemoryLogs(workingMemory).map((log) => handleLog(log, true));
+      } catch (error) {
+        console.log("Agent not initialized, starting...");
+        // If accessing working memory fails, initialize the agent
+        await dreams.start();
+        const workingMemory = await dreams.getWorkingMemory(contextId);
+        getWorkingMemoryLogs(workingMemory).map((log) => handleLog(log, true));
+      }
+
+      // Invalidate the chats query to ensure sidebar is updated
+      queryClient.invalidateQueries({ queryKey: ["agent:chats"] });
+    };
+
+    loadMessages();
+  }, [dreams, chatId, contextId, handleLog, setMessages, queryClient]);
 
   useEffect(() => {
     const SCROLL_THRESHOLD = 200;

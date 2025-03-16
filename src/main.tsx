@@ -4,7 +4,7 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import "./index.css";
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
-import { createAgent } from "./agent";
+
 import { QueryClient } from "@tanstack/react-query";
 import { useSettingsStore } from "./store/settingsStore";
 
@@ -16,7 +16,6 @@ useSettingsStore.getState();
 const router = createRouter({
   routeTree,
   context: {
-    agent: createAgent(),
     queryClient: new QueryClient(),
   },
   // Add dehydrate/rehydrate options for proper SSR handling

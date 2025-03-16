@@ -12,9 +12,25 @@ export const useAgentStore = create<AgentState>((set) => {
   // Initial agent creation
   const agent = createAgent();
 
+  // Initialize the agent immediately
+  if (typeof window !== "undefined") {
+    // Only run in browser environment
+    agent.start().catch((error) => {
+      console.error("Failed to initialize agent:", error);
+    });
+  }
+
   // Function to recreate the agent with fresh settings
-  const recreateAgent = () => {
+  const recreateAgent = async () => {
     const newAgent = createAgent();
+    // Initialize the new agent before setting it
+    if (typeof window !== "undefined") {
+      try {
+        await newAgent.start();
+      } catch (error) {
+        console.error("Failed to initialize new agent:", error);
+      }
+    }
     set({ agent: newAgent });
   };
 
