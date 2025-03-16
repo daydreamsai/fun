@@ -25,8 +25,7 @@ import {
   UserSettings,
 } from "@/store/settingsStore";
 import { Eye, EyeOff } from "lucide-react";
-import { abstract } from "viem/chains"; // Use abstract for mainnet
-import { AbstractWalletProvider, useLoginWithAbstract } from "@abstract-foundation/agw-react";
+import { useLoginWithAbstract } from "@abstract-foundation/agw-react";
 import { useAccount } from "wagmi";
 import { useAbstractClient } from "@abstract-foundation/agw-react";
 
@@ -122,7 +121,6 @@ function RouteComponent() {
   }
 
   return (
-    <AbstractWalletProvider chain={abstract}>
     <div className="container mx-auto py-10 px-4 max-w-3xl">
       <Card>
         <CardHeader>
@@ -304,6 +302,5 @@ function RouteComponent() {
         </CardFooter>
       </Card>
     </div>
-    </AbstractWalletProvider>
   );
 }
