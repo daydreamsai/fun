@@ -43,7 +43,7 @@ export const getApiBaseUrl = () => {
     return "/gigaverse-api";
   }
   // In production, use the direct URL
-  return "https://gigaverse.io/api";
+  return "/gigaverse-api";
 };
 
 // Define an interface for the state
