@@ -10,4 +10,4 @@ alwaysApply: false
 - Always use zustand state where possible if state needs to exist over components.
 - Always include custom styling in the tailwind config where possible
 - Don't inlcude random comments
-
+- always use pnpm

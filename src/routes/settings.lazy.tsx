@@ -28,6 +28,8 @@ import { Eye, EyeOff } from "lucide-react";
 import { useLoginWithAbstract } from "@abstract-foundation/agw-react";
 import { useAccount } from "wagmi";
 import { useAbstractClient } from "@abstract-foundation/agw-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserProfile } from "@/components/UserProfile";
 
 export const Route = createLazyFileRoute("/settings")({
   component: RouteComponent,
@@ -121,198 +123,129 @@ function RouteComponent() {
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-3xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>Settings</CardTitle>
-          <CardDescription>
-            Manage your API keys and preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="model">Model</Label>
-            <Select value={settings.model} onValueChange={handleModelChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                {VALID_MODELS.map((model: (typeof VALID_MODELS)[number]) => (
-                  <SelectItem key={model} value={model}>
-                    {model}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* 
-          <div className="space-y-2">
-            <Label htmlFor="openaiKey">OpenAI API Key</Label>
-            <div className="flex relative">
-              <Input
-                id="openaiKey"
-                name="openaiKey"
-                type={visibleFields.openaiKey ? "text" : "password"}
-                value={settings.openaiKey}
-                onChange={handleChange}
-                placeholder="sk-..."
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => toggleVisibility("openaiKey")}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
-                aria-label={
-                  visibleFields.openaiKey
-                    ? "Hide OpenAI API Key"
-                    : "Show OpenAI API Key"
-                }
-              >
-                {visibleFields.openaiKey ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
-              </button>
-            </div>
-          </div> */}
+      <Tabs defaultValue="api-keys" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsTrigger value="api-keys">API Keys</TabsTrigger>
+          <TabsTrigger value="profile">User Profile</TabsTrigger>
+        </TabsList>
 
-          <div className="space-y-2">
-            <Label htmlFor="openrouterKey">OpenRouter API Key</Label>
-            <div className="flex relative">
-              <Input
-                id="openrouterKey"
-                name="openrouterKey"
-                type={visibleFields.openrouterKey ? "text" : "password"}
-                value={settings.openrouterKey}
-                onChange={handleChange}
-                placeholder="sk-..."
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => toggleVisibility("openrouterKey")}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
-                aria-label={
-                  visibleFields.openrouterKey
-                    ? "Hide OpenRouter API Key"
-                    : "Show OpenRouter API Key"
-                }
-              >
-                {visibleFields.openrouterKey ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
-              </button>
-            </div>
-          </div>
+        <TabsContent value="api-keys">
+          <Card>
+            <CardHeader>
+              <CardTitle>API Settings</CardTitle>
+              <CardDescription>
+                Manage your API keys and preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="model">Model</Label>
+                <Select
+                  value={settings.model}
+                  onValueChange={handleModelChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VALID_MODELS.map(
+                      (model: (typeof VALID_MODELS)[number]) => (
+                        <SelectItem key={model} value={model}>
+                          {model}
+                        </SelectItem>
+                      )
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* <div className="space-y-2">
-            <Label htmlFor="anthropicKey">Anthropic API Key</Label>
-            <div className="flex relative">
-              <Input
-                id="anthropicKey"
-                name="anthropicKey"
-                type={visibleFields.anthropicKey ? "text" : "password"}
-                value={settings.anthropicKey}
-                onChange={handleChange}
-                placeholder="sk-..."
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => toggleVisibility("anthropicKey")}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
-                aria-label={
-                  visibleFields.anthropicKey
-                    ? "Hide Anthropic API Key"
-                    : "Show Anthropic API Key"
-                }
-              >
-                {visibleFields.anthropicKey ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
-              </button>
-            </div>
-          </div> */}
-
-          <div className="space-y-2">
-            <Label>Gigaverse Authentication</Label>
-            <div className="flex flex-col space-y-3">
-              {status === "connected" ? (
-                <div className="border rounded-lg p-4 space-y-4">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      Connected with Abstract Wallet:
-                    </p>
-                    <div className="flex items-center justify-between gap-2 p-2 bg-muted rounded-md">
-                      <p className="font-mono text-sm truncate">{address}</p>
-                      <Button variant="destructive" size="sm" onClick={logout}>
-                        Disconnect
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="gigaverseToken">Gigaverse Token</Label>
-                    <div className="flex relative">
-                      <Input
-                        id="gigaverseToken"
-                        name="gigaverseToken"
-                        type={
-                          visibleFields.gigaverseToken ? "text" : "password"
-                        }
-                        value={settings.gigaverseToken}
-                        onChange={handleChange}
-                        placeholder="Enter your token"
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => toggleVisibility("gigaverseToken")}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
-                        aria-label={
-                          visibleFields.gigaverseToken
-                            ? "Hide Token"
-                            : "Show Token"
-                        }
-                      >
-                        {visibleFields.gigaverseToken ? (
-                          <EyeOff size={18} />
-                        ) : (
-                          <Eye size={18} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button onClick={() => fetchGigaToken()} className="w-full">
-                    Generate GIGA Token
-                  </Button>
+              <div className="space-y-2">
+                <Label htmlFor="openrouterKey">OpenRouter API Key</Label>
+                <div className="flex relative">
+                  <Input
+                    id="openrouterKey"
+                    name="openrouterKey"
+                    type={visibleFields.openrouterKey ? "text" : "password"}
+                    value={settings.openrouterKey}
+                    onChange={handleChange}
+                    placeholder="sk-..."
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleVisibility("openrouterKey")}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+                    aria-label={
+                      visibleFields.openrouterKey
+                        ? "Hide OpenRouter API Key"
+                        : "Show OpenRouter API Key"
+                    }
+                  >
+                    {visibleFields.openrouterKey ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
+                  </button>
                 </div>
-              ) : (
-                <Button onClick={login} className="w-full">
-                  Connect with AGW
-                </Button>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {saveStatus && (
-            <div className="bg-green-100 dark:bg-green-900 p-3 rounded-md text-green-800 dark:text-green-200">
-              {saveStatus}
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleClearSettings}>
-            Clear Settings
-          </Button>
-          <Button onClick={handleSaveSettings}>Save Settings</Button>
-        </CardFooter>
-      </Card>
+              <div className="space-y-2">
+                <Label>Gigaverse Authentication</Label>
+                <div className="flex flex-col space-y-3">
+                  {status === "connected" ? (
+                    <div className="border rounded-lg p-4 space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Connected with Abstract Wallet:
+                        </p>
+                        <div className="flex items-center justify-between gap-2 p-2 bg-muted rounded-md">
+                          <span className="font-mono text-sm truncate">
+                            {address}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => logout()}
+                        >
+                          Disconnect
+                        </Button>
+                        <Button size="sm" onClick={fetchGigaToken}>
+                          Get Token
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button onClick={() => login()}>
+                      Connect with Abstract
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={handleClearSettings}>
+                Reset Settings
+              </Button>
+              <Button onClick={handleSaveSettings}>Save Settings</Button>
+            </CardFooter>
+            {saveStatus && (
+              <div className="px-6 pb-4">
+                <p className="text-sm text-green-600 dark:text-green-400">
+                  {saveStatus}
+                </p>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="profile">
+          <UserProfile />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
