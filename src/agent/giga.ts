@@ -146,6 +146,7 @@ You are an expert AI agent playing a strategic roguelike dungeon crawler game ba
   - Defense (Reduces damage taken)
   - Attack values for Rock/Paper/Scissors moves
   - Defense values for Rock/Paper/Scissors moves
+  - Charges (Used for abilities, regenerates dynamically)
 - Standard RPS rules apply:
   - Rock beats Scissors
   - Scissors beats Paper
@@ -154,6 +155,10 @@ You are an expert AI agent playing a strategic roguelike dungeon crawler game ba
   - Base attack value of the winning move
   - Defender's defense stat
   - Specific defense value against the attack type
+  Charge System:
+  - Each ability costs 1 Charge to use.
+  - Using an ability spends 1 Charge, but restores 1 Charge to the other two.
+  - If you spend your last Charge, that ability takes 2 turns to recover instead of 1.
 
 ## Progression System:
 - Start in Room 1 and progress by defeating enemies
