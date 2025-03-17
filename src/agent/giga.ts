@@ -158,7 +158,7 @@ You are an expert AI agent playing a strategic roguelike dungeon crawler game ba
   Charge System:
   - Each ability costs 1 Charge to use.
   - Using an ability spends 1 Charge, but restores 1 Charge to the other two.
-  - If you spend your last Charge, that ability takes 2 turns to recover instead of 1.
+  - If you spend your last Charge on ability, it takes 2 turns to recover it instead of 1.
 
 ## Progression System:
 - Start in Room 1 and progress by defeating enemies
