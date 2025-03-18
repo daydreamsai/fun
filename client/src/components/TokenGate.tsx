@@ -14,7 +14,6 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { TOKEN_GATE_CONFIG } from "@/utils/tokenGate";
 import {
   ExternalLink,
-  Lock,
   RefreshCw,
   Wallet,
   Coins,
@@ -25,6 +24,7 @@ import {
 import { authenticateWithWallet } from "@/utils/wallet";
 import { useUser } from "@/hooks/use-user";
 import { toast } from "sonner";
+import { AsciiBackgroundEffect } from "@/components/AsciiBackgroundEffect";
 
 interface TokenGateProps {
   children: ReactNode;
@@ -139,8 +139,9 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
 
   if (isChecking) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gradient-to-b from-background to-background/80 p-4">
-        <Card className="w-[350px] border-2 border-primary/10 shadow-lg">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center w-full justify-start align-bottom p-4 font-mono">
+        <AsciiBackgroundEffect />
+        <Card className="w-[350px] border-2 border-primary/10 shadow-lg self-end ">
           <CardHeader className="space-y-2">
             <CardTitle className="text-center text-xl">
               Checking Access
@@ -159,44 +160,45 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
 
   if (!accessState.hasAccess) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] w-full items-center justify-center bg-gradient-to-b from-background to-background/80 p-4">
-        <Card className="w-full max-w-md border-2 border-primary/10 shadow-xl">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center w-full justify-start align-bottom p-4 font-mono">
+        <AsciiBackgroundEffect />
+        <Card className="w-full max-w-md  border-transparent self-end shadow-2xl bg-background/80 backdrop-blur-sm">
           <CardHeader className="space-y-3 pb-6">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Lock className="h-8 w-8 text-primary" />
-            </div>
-            <CardTitle className="text-center text-2xl font-bold">
-              Login Required
-            </CardTitle>
-            <CardDescription className="text-center text-base">
-              This site is token-gated for $DREAMS holders
-            </CardDescription>
+            <img
+              src="/Daydreams.svg"
+              alt="logo"
+              className=" h-10 mx-auto mb-x"
+            />
+
+            <p className="text-center text-sm text-muted-foreground mb-5">
+              agentic automation for your web3 game
+            </p>
           </CardHeader>
           <CardContent className="space-y-8 px-6">
-            <div className="bg-muted/50 p-5 shadow-sm border border-primary/10">
-              <ul className="space-y-3">
+            <div className="bg-muted/30 p-5 shadow-sm border border-primary/10 backdrop-blur-sm">
+              <ul className="space-y-4">
                 <li className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 backdrop-blur-sm">
                     <Wallet className="h-3.5 w-3.5 text-primary" />
                   </div>
                   <span className="text-sm">Connect your Solana wallet</span>
                   {connected && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
+                    <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto animate-pulse" />
                   )}
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 backdrop-blur-sm">
                     <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
                   </div>
                   <span className="text-sm">
                     Verify wallet ownership with a signature
                   </span>
                   {accessState.isAuthenticated && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
+                    <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto animate-pulse" />
                   )}
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 backdrop-blur-sm">
                     <span className="text-xs font-bold text-primary">
                       {TOKEN_GATE_CONFIG.REQUIRED_BALANCE}
                     </span>
@@ -208,16 +210,16 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
                   {accessState.tokenBalance !== undefined &&
                     accessState.tokenBalance >=
                       TOKEN_GATE_CONFIG.REQUIRED_BALANCE && (
-                      <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
+                      <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto animate-pulse" />
                     )}
                 </li>
               </ul>
             </div>
 
             {connected && accessState.tokenBalance !== undefined && (
-              <div className="rounded-xl border border-primary/10 bg-background p-5 shadow-sm">
+              <div className="rounded-xl border border-primary/20 bg-background/80 p-5 shadow-md backdrop-blur-sm">
                 <h3 className="mb-3 flex items-center gap-2 font-semibold text-foreground">
-                  <Coins className="h-5 w-5 text-primary/70" />
+                  <Coins className="h-5 w-5 text-primary" />
                   Your Token Balance
                 </h3>
                 <div className="flex items-center justify-between">
@@ -237,7 +239,7 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
                       {TOKEN_GATE_CONFIG.REQUIRED_BALANCE}
                     </span>
                   </div>
-                  <div className="mx-2 h-12 w-px bg-border"></div>
+                  <div className="mx-2 h-12 w-px bg-border/50"></div>
                   <div className="flex flex-col items-end">
                     <span className="text-sm text-muted-foreground">
                       Needed
@@ -251,9 +253,9 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
                     </span>
                   </div>
                 </div>
-                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-muted/50">
                   <div
-                    className="h-full bg-primary"
+                    className="h-full bg-gradient-to-r from-primary to-primary-foreground/90 transition-all duration-500 ease-in-out"
                     style={{
                       width: `${Math.min(100, (accessState.tokenBalance / TOKEN_GATE_CONFIG.REQUIRED_BALANCE) * 100)}%`,
                     }}
@@ -282,7 +284,7 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
               accessState.tokenBalance !== undefined &&
               accessState.tokenBalance >=
                 TOKEN_GATE_CONFIG.REQUIRED_BALANCE && (
-                <div className="rounded-xl border border-primary/10 bg-background p-5 shadow-sm">
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 shadow-md backdrop-blur-sm">
                   <h3 className="mb-3 flex items-center gap-2 font-semibold text-foreground">
                     <AlertCircle className="h-5 w-5 text-amber-500" />
                     Wallet Verification Required
@@ -292,7 +294,7 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
                     wallet by signing a message.
                   </p>
                   <Button
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:opacity-90"
                     onClick={verifyWalletOwnership}
                     disabled={isAuthenticating}
                   >
@@ -317,7 +319,7 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
                   <p className="text-center text-sm text-muted-foreground">
                     Connect your wallet to verify access
                   </p>
-                  <WalletMultiButton className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg" />
+                  <WalletMultiButton className="rounded-lg bg-gradient-to-r from-primary to-primary-foreground/90 px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-md transition-all hover:opacity-90 hover:shadow-lg" />
                 </>
               ) : (
                 <>
@@ -336,11 +338,11 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-3 border-t bg-muted/20 px-6 py-4">
+          <CardFooter className="flex flex-col gap-3 border-t border-primary/10 bg-muted/10 px-6 py-4 backdrop-blur-sm">
             <div className="flex gap-3 justify-center">
               <Button
                 variant="link"
-                className="flex items-center gap-1.5 text-primary hover:text-primary/80"
+                className="flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors"
                 onClick={() => window.open(RAYDIUM_SWAP_URL, "_blank")}
               >
                 <span>Buy on Raydium</span>
