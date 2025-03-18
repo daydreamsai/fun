@@ -17,7 +17,6 @@ import {
   Code,
   Settings,
   Loader2,
-  X,
   HelpCircle,
   Command,
   Info,

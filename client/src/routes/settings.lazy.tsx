@@ -44,7 +44,7 @@ function RouteComponent() {
   const { data: abstractClient } = useAbstractClient();
 
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
-  const [gigaTokenStatus, setGigaTokenStatus] = useState<string | null>(null);
+  const [_gigaTokenStatus, setGigaTokenStatus] = useState<string | null>(null);
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({
     openaiKey: false,
     openrouterKey: false,

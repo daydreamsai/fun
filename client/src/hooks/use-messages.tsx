@@ -262,12 +262,9 @@ export function useMessages() {
             const enemyData = players[1];
 
             // Determine battle result
-            let battleResult = "draw";
             if (playerData.thisPlayerWin === true) {
-              battleResult = "win";
               readableResult = "Victory! You won this round.";
             } else if (enemyData.thisPlayerWin === true) {
-              battleResult = "lose";
               readableResult = "Defeat! You lost this round.";
             } else {
               readableResult = "Draw! Neither player won.";
