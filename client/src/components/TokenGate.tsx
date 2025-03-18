@@ -160,9 +160,9 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
 
   if (!accessState.hasAccess) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center w-full justify-start align-bottom p-4 font-mono">
+      <div className="flex min-h-[calc(100vh)] items-center w-full justify-start align-bottom p-4 font-mono">
         <AsciiBackgroundEffect />
-        <Card className="w-full max-w-md  border-transparent self-end shadow-2xl bg-background/80 backdrop-blur-sm">
+        <Card className="w-full max-w-md  border border-primary/20 self-end shadow-2xl bg-background/80 backdrop-blur-sm">
           <CardHeader className="space-y-3 pb-6">
             <img
               src="/Daydreams.svg"
