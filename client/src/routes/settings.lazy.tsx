@@ -1,5 +1,5 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -30,7 +30,6 @@ import { useAccount } from "wagmi";
 import { useAbstractClient } from "@abstract-foundation/agw-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfile } from "@/components/UserProfile";
-import { useUserStore } from "@/store/userStore";
 
 export const Route = createLazyFileRoute("/settings")({
   component: RouteComponent,
@@ -43,9 +42,6 @@ function RouteComponent() {
   const { login, logout } = useLoginWithAbstract();
   const { address, status } = useAccount();
   const { data: abstractClient } = useAbstractClient();
-
-  // Keep user store for profile data
-  const { currentUser } = useUserStore();
 
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({

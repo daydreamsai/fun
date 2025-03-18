@@ -32,7 +32,7 @@ interface TokenGateProps {
 
 export const TokenGate: FC<TokenGateProps> = ({ children }) => {
   const wallet = useWalletContext();
-  const { publicKey, connected, disconnect } = wallet;
+  const { publicKey, connected } = wallet;
   const { isLoading: isUserLoading, user, login } = useUser();
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);

@@ -1,6 +1,6 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useUser } from "@/hooks/useUser";
+import { useUser } from "@/hooks/use-user";
 import {
   Card,
   CardContent,
@@ -77,8 +77,8 @@ function PaymentSuccessPage() {
             {isVerifying
               ? "Verifying your payment..."
               : paymentDetails?.success
-              ? "Your payment was successful!"
-              : "Payment verification failed"}
+                ? "Your payment was successful!"
+                : "Payment verification failed"}
           </CardDescription>
         </CardHeader>
 

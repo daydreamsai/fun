@@ -54,8 +54,6 @@ interface UserState {
   syncCreditsWithApiKey: () => Promise<OpenRouterKeyData | null>;
 }
 
-const apiUrl = import.meta.env.VITE_FUN_API_URL;
-
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({

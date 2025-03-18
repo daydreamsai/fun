@@ -15,7 +15,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useUserStore } from "@/store/userStore";
 import { Alert, AlertDescription } from "./ui/alert";
-import { Progress } from "./ui/progress";
+
 import {
   Tooltip,
   TooltipContent,
@@ -57,7 +57,7 @@ export function BuyCredits() {
   const [error, setError] = useState<string | null>(null);
   const [isKeyLoading, setIsKeyLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [usagePercentage, setUsagePercentage] = useState<number>(0);
+
   const [remainingCredits, setRemainingCredits] = useState<number>(0);
   const [isLoadingCredits, setIsLoadingCredits] = useState(false);
 
@@ -107,8 +107,6 @@ export function BuyCredits() {
 
       const data: OpenRouterCreditsResponse = await response.json();
 
-      // Update state with the credit information
-      setUsagePercentage(data.display.usagePercentage);
       setRemainingCredits(data.display.remainingCredits);
     } catch (error) {
       console.error("Error fetching credit information:", error);
@@ -279,13 +277,6 @@ export function BuyCredits() {
   const handleCreditAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     setCreditAmount(isNaN(value) ? 0 : value);
-  };
-
-  // Get usage color based on percentage
-  const getUsageColor = (percentage: number) => {
-    if (percentage < 50) return "bg-green-500";
-    if (percentage < 80) return "bg-amber-500";
-    return "bg-red-500";
   };
 
   return (

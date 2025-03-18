@@ -3,7 +3,6 @@ import {
   Bot,
   MessageSquare,
   History,
-  Bookmark,
   Settings,
   Twitter,
   Github,
@@ -16,7 +15,6 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Link } from "@tanstack/react-router";
 
