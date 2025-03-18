@@ -1,0 +1,26 @@
+{
+  "name": "stripe-credits-server",
+  "version": "1.0.0",
+  "description": "Server for handling Stripe payments and user credits",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.98.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "body-parser": "^1.20.2",
+    "bs58": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "stripe": "^14.8.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
