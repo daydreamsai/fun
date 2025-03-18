@@ -1,7 +1,6 @@
 import {
   ChevronsUpDown,
   Loader2,
-  Sword,
   Flag,
   Shield,
   Play,
@@ -9,10 +8,12 @@ import {
   TrophyIcon,
   Swords,
   RefreshCw,
+  HandIcon,
+  ScissorsIcon,
   PackageIcon,
   Package2Icon,
   GiftIcon,
-  WandIcon,
+  CircleIcon,
 } from "lucide-react";
 import {
   Collapsible,
@@ -119,11 +120,11 @@ export function MessagesList({
 
     switch (move) {
       case "rock":
-        return <Sword className={`${iconClass} text-red-500`} />;
+        return <CircleIcon className={`${iconClass} text-stone-500`} />;
       case "paper":
-        return <Shield className={`${iconClass} text-blue-400`} />;
+        return <HandIcon className={`${iconClass} text-blue-400`} />;
       case "scissor":
-        return <WandIcon className={`${iconClass} text-purple-500`} />;
+        return <ScissorsIcon className={`${iconClass} text-violet-500`} />;
       case "loot_one":
         return <PackageIcon className={`${iconClass} text-amber-500`} />;
       case "loot_two":
@@ -132,20 +133,6 @@ export function MessagesList({
         return <GiftIcon className={`${iconClass} text-purple-500`} />;
       default:
         return null;
-    }
-  };
-
-  // Helper function to get move display name
-  const getMoveDisplayName = (move: string): string => {
-    switch (move) {
-      case "rock":
-        return "Sword";
-      case "paper":
-        return "Shield";
-      case "scissor":
-        return "Magic";
-      default:
-        return move.replace("_", " ");
     }
   };
 
@@ -240,7 +227,7 @@ export function MessagesList({
                       <div className="flex items-center gap-2">
                         {renderMoveIcon(msg.action.move)}
                         <span className="text-sm font-medium capitalize">
-                          {getMoveDisplayName(msg.action.move)}
+                          {msg.action.move.replace("_", " ")}
                         </span>
                       </div>
                       {msg.action.result && (

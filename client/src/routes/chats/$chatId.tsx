@@ -21,12 +21,6 @@ import {
   Command,
   Info,
   AlertCircle,
-  Sword,
-  Shield,
-  WandIcon,
-  TrophyIcon,
-  SkullIcon,
-  HeartIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -90,40 +84,6 @@ export const Route = createFileRoute("/chats/$chatId")({
     }
   },
 });
-
-// Helper function to get move display name
-const getMoveDisplayName = (move?: string): string => {
-  if (!move) return "Unknown";
-
-  switch (move.toLowerCase()) {
-    case "rock":
-      return "Sword";
-    case "paper":
-      return "Shield";
-    case "scissor":
-      return "Magic";
-    default:
-      return move.charAt(0).toUpperCase() + move.slice(1);
-  }
-};
-
-// Helper function to render move icon
-const renderMoveIcon = (move?: string) => {
-  if (!move) return null;
-
-  const iconClass = "h-4 w-4 mr-1 inline";
-
-  switch (move.toLowerCase()) {
-    case "rock":
-      return <Sword className={`${iconClass} text-red-500`} />;
-    case "paper":
-      return <Shield className={`${iconClass} text-blue-400`} />;
-    case "scissor":
-      return <WandIcon className={`${iconClass} text-purple-500`} />;
-    default:
-      return null;
-  }
-};
 
 // State Sidebar Component
 function StateSidebar({
@@ -390,35 +350,16 @@ function StateSidebar({
                   <div className="text-sm">
                     {goalContext?.memory?.lastBattleResult ? (
                       <>
-                        <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center justify-between">
                           <span>Result:</span>
-                          <span
-                            className={`font-medium flex items-center ${
-                              goalContext?.memory?.lastBattleResult === "win"
-                                ? "text-green-500"
-                                : goalContext?.memory?.lastBattleResult ===
-                                    "lose"
-                                  ? "text-red-500"
-                                  : "text-yellow-500"
-                            }`}
-                          >
-                            {goalContext?.memory?.lastBattleResult ===
-                              "win" && <TrophyIcon className="h-4 w-4 mr-1" />}
-                            {goalContext?.memory?.lastBattleResult ===
-                              "lose" && <SkullIcon className="h-4 w-4 mr-1" />}
-                            {goalContext?.memory?.lastBattleResult
-                              .charAt(0)
-                              .toUpperCase() +
-                              goalContext?.memory?.lastBattleResult.slice(1)}
+                          <span className="font-medium">
+                            {goalContext?.memory?.lastBattleResult}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span>Enemy Used:</span>
-                          <span className="font-medium flex items-center">
-                            {renderMoveIcon(goalContext?.memory?.lastEnemyMove)}
-                            {getMoveDisplayName(
-                              goalContext?.memory?.lastEnemyMove
-                            )}
+                          <span>Enemy Move:</span>
+                          <span className="font-medium">
+                            {goalContext?.memory?.lastEnemyMove}
                           </span>
                         </div>
                       </>
@@ -432,8 +373,7 @@ function StateSidebar({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-background/80 p-3 rounded-md">
-                    <h5 className="text-sm font-medium mb-2 text-primary/80 flex items-center">
-                      <HeartIcon className="h-4 w-4 mr-1 text-red-500" />
+                    <h5 className="text-sm font-medium mb-2 text-primary/80">
                       Player
                     </h5>
                     <div className="space-y-1">
@@ -485,8 +425,7 @@ function StateSidebar({
                   </div>
 
                   <div className="bg-background/80 p-3 rounded-md">
-                    <h5 className="text-sm font-medium mb-2 text-primary/80 flex items-center">
-                      <SkullIcon className="h-4 w-4 mr-1 text-red-500" />
+                    <h5 className="text-sm font-medium mb-2 text-primary/80">
                       Enemy
                     </h5>
                     <div className="space-y-1">
@@ -544,10 +483,7 @@ function StateSidebar({
                   </h5>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="border rounded-md p-2 text-center">
-                      <div className="font-medium flex items-center justify-center">
-                        <Sword className="h-4 w-4 mr-1 text-red-500" />
-                        Sword
-                      </div>
+                      <div className="font-medium">Rock</div>
                       <div className="text-xs mt-1">
                         <div>ATK: {goalContext?.memory?.rockAttack || 0}</div>
                         <div>DEF: {goalContext?.memory?.rockDefense || 0}</div>
@@ -557,10 +493,7 @@ function StateSidebar({
                       </div>
                     </div>
                     <div className="border rounded-md p-2 text-center">
-                      <div className="font-medium flex items-center justify-center">
-                        <Shield className="h-4 w-4 mr-1 text-blue-400" />
-                        Shield
-                      </div>
+                      <div className="font-medium">Paper</div>
                       <div className="text-xs mt-1">
                         <div>ATK: {goalContext?.memory?.paperAttack || 0}</div>
                         <div>DEF: {goalContext?.memory?.paperDefense || 0}</div>
@@ -570,10 +503,7 @@ function StateSidebar({
                       </div>
                     </div>
                     <div className="border rounded-md p-2 text-center">
-                      <div className="font-medium flex items-center justify-center">
-                        <WandIcon className="h-4 w-4 mr-1 text-purple-500" />
-                        Magic
-                      </div>
+                      <div className="font-medium">Scissor</div>
                       <div className="text-xs mt-1">
                         <div>
                           ATK: {goalContext?.memory?.scissorAttack || 0}
@@ -593,13 +523,7 @@ function StateSidebar({
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Loot Phase:</span>
                     <span className="text-sm">
-                      {goalContext?.memory?.lootPhase === "true" ? (
-                        <span className="text-emerald-500 font-medium">
-                          Active
-                        </span>
-                      ) : (
-                        "None"
-                      )}
+                      {goalContext?.memory?.lootPhase || "None"}
                     </span>
                   </div>
                 </div>
@@ -782,7 +706,9 @@ function HelpWindow({
                 <ul className="list-disc list-inside space-y-1 mt-1">
                   <li>Type naturally to interact with the game world</li>
                   <li>Try commands like "look around" or "examine room"</li>
-                  <li>Battle enemies using "attack with sword/shield/magic"</li>
+                  <li>
+                    Battle enemies using "attack with rock/paper/scissors"
+                  </li>
                   <li>
                     Check your status with "check my health" or "inventory"
                   </li>

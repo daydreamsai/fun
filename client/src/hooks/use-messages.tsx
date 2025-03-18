@@ -13,23 +13,6 @@ export function useMessages() {
   // Type definition for action info
   type ActionInfo = NonNullable<MessageType["action"]>;
 
-  // Helper to convert move names to game terminology
-  const getMoveDisplayName = (move: string): string => {
-    switch (move) {
-      case "rock":
-        return "sword";
-      case "paper":
-        return "shield";
-      case "scissor":
-        return "magic";
-      default:
-        if (move.startsWith("loot_")) {
-          return move.replace("loot_", "loot option ");
-        }
-        return move;
-    }
-  };
-
   // Memoized function to update messages
   const updateMessage = useCallback(
     (
@@ -226,9 +209,7 @@ export function useMessages() {
             const lootNumber = actionInfo.move.replace("loot_", "");
             readableMessage = `Selecting loot option ${lootNumber}`;
           } else {
-            // Use the game terminology (sword/shield/magic) instead of rock/paper/scissors
-            const moveDisplay = getMoveDisplayName(actionInfo.move);
-            readableMessage = `Using ${moveDisplay}`;
+            readableMessage = `Playing ${actionInfo.move} move`;
           }
         } else if (log.name === "startNewRun") {
           readableMessage = "Starting a new dungeon run";
@@ -261,7 +242,6 @@ export function useMessages() {
             const playerData = players[0];
             const enemyData = players[1];
 
-            // Determine battle result
             if (playerData.thisPlayerWin === true) {
               readableResult = "Victory! You won this round.";
             } else if (enemyData.thisPlayerWin === true) {
@@ -273,14 +253,6 @@ export function useMessages() {
             // Add HP information if available
             if (playerData.health && enemyData.health) {
               readableResult += `\nYour HP: ${playerData.health.current}/${playerData.health.currentMax} | Enemy HP: ${enemyData.health.current}/${enemyData.health.currentMax}`;
-            }
-
-            // Add enemy move information if available
-            if (enemyData.lastMove) {
-              const enemyMove = getMoveDisplayName(
-                enemyData.lastMove.toLowerCase()
-              );
-              readableResult += `\nEnemy used: ${enemyMove}`;
             }
           }
         } else if (lastActionType === "startNewRun") {
@@ -294,11 +266,6 @@ export function useMessages() {
           if (players.length > 0) {
             const playerData = players[0];
             readableResult = `Player status updated.\nHP: ${playerData.health.current}/${playerData.health.currentMax}\nShield: ${playerData.shield.current}/${playerData.shield.currentMax}`;
-
-            // Add weapon stats if available
-            readableResult += `\n\nSword: ATK ${playerData.rock.currentATK} | DEF ${playerData.rock.currentDEF} | Charges ${playerData.rock.currentCharges}`;
-            readableResult += `\nShield: ATK ${playerData.paper.currentATK} | DEF ${playerData.paper.currentDEF} | Charges ${playerData.paper.currentCharges}`;
-            readableResult += `\nMagic: ATK ${playerData.scissor.currentATK} | DEF ${playerData.scissor.currentDEF} | Charges ${playerData.scissor.currentCharges}`;
           } else {
             readableResult = "Player status updated.";
           }
@@ -329,7 +296,6 @@ export function useMessages() {
       currentActionId,
       lastActionType,
       processAttackMove,
-      getMoveDisplayName,
     ]
   );
 
