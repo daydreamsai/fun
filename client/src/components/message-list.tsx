@@ -78,6 +78,29 @@ export function MessagesList({
     return true;
   });
 
+  // Parse message content if it appears to be JSON
+  const parseMessageContent = (content: string | undefined) => {
+    if (!content) return null;
+
+    // Trim any excessive whitespace or newlines
+    const trimmedContent = content.trim();
+
+    // Check if content is potentially JSON
+    if (trimmedContent.startsWith("{") && trimmedContent.endsWith("}")) {
+      try {
+        const parsedContent = JSON.parse(trimmedContent);
+        // If it's a valid JSON with user and content fields, return formatted content
+        if (parsedContent.user && parsedContent.content) {
+          return parsedContent.content;
+        }
+      } catch (e) {
+        // If parsing fails, just return the original content
+      }
+    }
+
+    return trimmedContent;
+  };
+
   // Helper function to render action icon
   const renderActionIcon = (action: MessageType["action"]) => {
     if (!action) return null;
@@ -198,7 +221,9 @@ export function MessagesList({
                   </div>
                   <CollapsibleContent>
                     {msg.message && (
-                      <div className="text-base">{msg.message.trim()}</div>
+                      <div className="text-base">
+                        {parseMessageContent(msg.message)}
+                      </div>
                     )}
                   </CollapsibleContent>
                 </Collapsible>
@@ -209,7 +234,9 @@ export function MessagesList({
                     {msg.type}
                   </div>
                   {msg.message && (
-                    <div className="text-base">{msg.message.trim()}</div>
+                    <div className="text-base">
+                      {parseMessageContent(msg.message)}
+                    </div>
                   )}
                 </>
               )}
