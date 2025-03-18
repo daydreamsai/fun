@@ -17,6 +17,17 @@ import {
   Code,
   Settings,
   Loader2,
+  X,
+  HelpCircle,
+  Command,
+  Info,
+  AlertCircle,
+  Sword,
+  Shield,
+  WandIcon,
+  TrophyIcon,
+  SkullIcon,
+  HeartIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,6 +48,14 @@ import {
 import { useAgentStore } from "@/store/agentStore";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/chats/$chatId")({
   component: RouteComponent,
@@ -72,6 +91,40 @@ export const Route = createFileRoute("/chats/$chatId")({
     }
   },
 });
+
+// Helper function to get move display name
+const getMoveDisplayName = (move?: string): string => {
+  if (!move) return "Unknown";
+
+  switch (move.toLowerCase()) {
+    case "rock":
+      return "Sword";
+    case "paper":
+      return "Shield";
+    case "scissor":
+      return "Magic";
+    default:
+      return move.charAt(0).toUpperCase() + move.slice(1);
+  }
+};
+
+// Helper function to render move icon
+const renderMoveIcon = (move?: string) => {
+  if (!move) return null;
+
+  const iconClass = "h-4 w-4 mr-1 inline";
+
+  switch (move.toLowerCase()) {
+    case "rock":
+      return <Sword className={`${iconClass} text-red-500`} />;
+    case "paper":
+      return <Shield className={`${iconClass} text-blue-400`} />;
+    case "scissor":
+      return <WandIcon className={`${iconClass} text-purple-500`} />;
+    default:
+      return null;
+  }
+};
 
 // State Sidebar Component
 function StateSidebar({
@@ -338,16 +391,35 @@ function StateSidebar({
                   <div className="text-sm">
                     {goalContext?.memory?.lastBattleResult ? (
                       <>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-1">
                           <span>Result:</span>
-                          <span className="font-medium">
-                            {goalContext?.memory?.lastBattleResult}
+                          <span
+                            className={`font-medium flex items-center ${
+                              goalContext?.memory?.lastBattleResult === "win"
+                                ? "text-green-500"
+                                : goalContext?.memory?.lastBattleResult ===
+                                    "lose"
+                                  ? "text-red-500"
+                                  : "text-yellow-500"
+                            }`}
+                          >
+                            {goalContext?.memory?.lastBattleResult ===
+                              "win" && <TrophyIcon className="h-4 w-4 mr-1" />}
+                            {goalContext?.memory?.lastBattleResult ===
+                              "lose" && <SkullIcon className="h-4 w-4 mr-1" />}
+                            {goalContext?.memory?.lastBattleResult
+                              .charAt(0)
+                              .toUpperCase() +
+                              goalContext?.memory?.lastBattleResult.slice(1)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span>Enemy Move:</span>
-                          <span className="font-medium">
-                            {goalContext?.memory?.lastEnemyMove}
+                          <span>Enemy Used:</span>
+                          <span className="font-medium flex items-center">
+                            {renderMoveIcon(goalContext?.memory?.lastEnemyMove)}
+                            {getMoveDisplayName(
+                              goalContext?.memory?.lastEnemyMove
+                            )}
                           </span>
                         </div>
                       </>
@@ -361,7 +433,8 @@ function StateSidebar({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-background/80 p-3 rounded-md">
-                    <h5 className="text-sm font-medium mb-2 text-primary/80">
+                    <h5 className="text-sm font-medium mb-2 text-primary/80 flex items-center">
+                      <HeartIcon className="h-4 w-4 mr-1 text-red-500" />
                       Player
                     </h5>
                     <div className="space-y-1">
@@ -413,7 +486,8 @@ function StateSidebar({
                   </div>
 
                   <div className="bg-background/80 p-3 rounded-md">
-                    <h5 className="text-sm font-medium mb-2 text-primary/80">
+                    <h5 className="text-sm font-medium mb-2 text-primary/80 flex items-center">
+                      <SkullIcon className="h-4 w-4 mr-1 text-red-500" />
                       Enemy
                     </h5>
                     <div className="space-y-1">
@@ -471,7 +545,10 @@ function StateSidebar({
                   </h5>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="border rounded-md p-2 text-center">
-                      <div className="font-medium">Rock</div>
+                      <div className="font-medium flex items-center justify-center">
+                        <Sword className="h-4 w-4 mr-1 text-red-500" />
+                        Sword
+                      </div>
                       <div className="text-xs mt-1">
                         <div>ATK: {goalContext?.memory?.rockAttack || 0}</div>
                         <div>DEF: {goalContext?.memory?.rockDefense || 0}</div>
@@ -481,7 +558,10 @@ function StateSidebar({
                       </div>
                     </div>
                     <div className="border rounded-md p-2 text-center">
-                      <div className="font-medium">Paper</div>
+                      <div className="font-medium flex items-center justify-center">
+                        <Shield className="h-4 w-4 mr-1 text-blue-400" />
+                        Shield
+                      </div>
                       <div className="text-xs mt-1">
                         <div>ATK: {goalContext?.memory?.paperAttack || 0}</div>
                         <div>DEF: {goalContext?.memory?.paperDefense || 0}</div>
@@ -491,7 +571,10 @@ function StateSidebar({
                       </div>
                     </div>
                     <div className="border rounded-md p-2 text-center">
-                      <div className="font-medium">Scissor</div>
+                      <div className="font-medium flex items-center justify-center">
+                        <WandIcon className="h-4 w-4 mr-1 text-purple-500" />
+                        Magic
+                      </div>
                       <div className="text-xs mt-1">
                         <div>
                           ATK: {goalContext?.memory?.scissorAttack || 0}
@@ -511,7 +594,13 @@ function StateSidebar({
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Loot Phase:</span>
                     <span className="text-sm">
-                      {goalContext?.memory?.lootPhase || "None"}
+                      {goalContext?.memory?.lootPhase === "true" ? (
+                        <span className="text-emerald-500 font-medium">
+                          Active
+                        </span>
+                      ) : (
+                        "None"
+                      )}
                     </span>
                   </div>
                 </div>
@@ -656,12 +745,144 @@ function StateSidebar({
   );
 }
 
+// Help Window Component
+function HelpWindow({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-primary" />
+            Welcome to Dream Dungeons!
+          </DialogTitle>
+          <DialogDescription>
+            Here's how to get started and make the most of your adventure.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium flex items-center gap-2">
+              <Command className="h-5 w-5 text-primary" />
+              Getting Started
+            </h3>
+            <div className="text-sm space-y-2">
+              <p>
+                Dream Dungeons is a text-based RPG adventure powered by AI.
+                You'll explore dungeons, battle enemies, and collect loot in a
+                rock-paper-scissors style combat system.
+              </p>
+              <div className="bg-muted p-3 rounded-md">
+                <p className="font-medium">Quick Tips:</p>
+                <ul className="list-disc list-inside space-y-1 mt-1">
+                  <li>Type naturally to interact with the game world</li>
+                  <li>Try commands like "look around" or "examine room"</li>
+                  <li>Battle enemies using "attack with sword/shield/magic"</li>
+                  <li>
+                    Check your status with "check my health" or "inventory"
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Game Interface
+            </h3>
+            <div className="text-sm space-y-2">
+              <p>The right sidebar shows your game state, including:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Your current location</li>
+                <li>Health and shield stats for both you and enemies</li>
+                <li>Your weapon stats and charges</li>
+                <li>Battle status and results</li>
+              </ul>
+              <p className="mt-2">
+                You can customize the display settings to show or hide system
+                and thought messages.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              Troubleshooting
+            </h3>
+            <div className="text-sm space-y-2">
+              <p>If you encounter any issues:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>
+                  Check that your API keys are properly configured in Settings
+                </li>
+                <li>
+                  Try refreshing the page if the game becomes unresponsive
+                </li>
+                <li>Use simple, clear commands if the AI seems confused</li>
+                <li>
+                  Switch models in the sidebar if you're experiencing issues
+                  with responses
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="flex sm:justify-between items-center">
+          <label className="flex items-center space-x-2 text-sm">
+            <Switch
+              id="dont-show-again"
+              onCheckedChange={(checked) => {
+                if (!checked) return; // Only handle checking the box
+                onOpenChange(false);
+              }}
+            />
+            <span>Don't show this again</span>
+          </label>
+          <Button
+            onClick={() => onOpenChange(false)}
+            className="sm:w-auto w-full mt-2 sm:mt-0"
+          >
+            Got it!
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function RouteComponent() {
   const { chatId } = Route.useParams();
 
   const dreams = useAgentStore((state) => state.agent);
   const { messages, setMessages, handleLog, isLoading, setIsLoading } =
     useMessages();
+
+  // Settings for help window
+  const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
+  const setShowHelpWindow = useSettingsStore(
+    (state) => state.setShowHelpWindow
+  );
+  const [helpDialogOpen, setHelpDialogOpen] = useState(showHelpWindow);
+
+  // Handle help dialog state changes
+  const handleHelpDialogChange = useCallback(
+    (open: boolean) => {
+      setHelpDialogOpen(open);
+      if (!open) {
+        setShowHelpWindow(false);
+      }
+    },
+    [setShowHelpWindow]
+  );
 
   // Check API keys for notification
   const [missingKeys, setMissingKeys] = useState<string[]>([]);
@@ -760,6 +981,9 @@ function RouteComponent() {
 
   return (
     <>
+      {/* Help Window */}
+      <HelpWindow open={helpDialogOpen} onOpenChange={handleHelpDialogChange} />
+
       {/* API Key Notification */}
       {missingKeys.length > 0 && missingKeys.length < 2 && (
         <div className="bg-amber-100 dark:bg-amber-900 p-3 text-amber-800 dark:text-amber-200 text-sm flex justify-between items-center">
@@ -815,6 +1039,17 @@ function RouteComponent() {
           />
         </div>
       </div>
+
+      {/* Help button fixed to bottom right */}
+      <Button
+        size="icon"
+        variant="outline"
+        className="fixed bottom-20 right-8 z-50 rounded-full h-10 w-10"
+        onClick={() => setHelpDialogOpen(true)}
+      >
+        <HelpCircle className="h-5 w-5" />
+      </Button>
+
       <form
         className="bg-background flex items-center mt-auto sticky bottom-0 left-0 right-0 z-10"
         onSubmit={async (e) => {

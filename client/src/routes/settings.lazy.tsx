@@ -1,5 +1,5 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -44,12 +44,22 @@ function RouteComponent() {
   const { data: abstractClient } = useAbstractClient();
 
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [gigaTokenStatus, setGigaTokenStatus] = useState<string | null>(null);
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({
     openaiKey: false,
     openrouterKey: false,
     anthropicKey: false,
     gigaverseToken: false,
   });
+
+  // Check if token exists on mount and when token changes
+  useEffect(() => {
+    if (settings.gigaverseToken) {
+      setGigaTokenStatus("success");
+    } else {
+      setGigaTokenStatus(null);
+    }
+  }, [settings.gigaverseToken]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -92,17 +102,25 @@ function RouteComponent() {
   };
 
   async function fetchGigaToken() {
-    const payload = await signLogin(Date.now());
-    const response = await fetch(`${API_BASE}/user/auth`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const payload = await signLogin(Date.now());
+      const response = await fetch(`${API_BASE}/user/auth`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    const value = await handleResponse(response);
-    settings.setApiKey("gigaverseToken", value.jwt);
+      const value = await handleResponse(response);
+      settings.setApiKey("gigaverseToken", value.jwt);
+      setSaveStatus("Gigaverse token obtained successfully!");
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (error) {
+      console.error("Error fetching token:", error);
+      setSaveStatus("Failed to obtain Gigaverse token. Please try again.");
+      setTimeout(() => setSaveStatus(null), 3000);
+    }
   }
 
   async function handleResponse(response: Response) {
@@ -205,6 +223,42 @@ function RouteComponent() {
                           </span>
                         </div>
                       </div>
+
+                      {settings.gigaverseToken && (
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">
+                            Gigaverse Token:
+                          </p>
+                          <div className="flex items-center justify-between gap-2 p-2 bg-muted rounded-md">
+                            <span className="font-mono text-sm truncate">
+                              {visibleFields.gigaverseToken
+                                ? settings.gigaverseToken
+                                : settings.gigaverseToken.substring(0, 10) +
+                                  "..." +
+                                  settings.gigaverseToken.substring(
+                                    settings.gigaverseToken.length - 5
+                                  )}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => toggleVisibility("gigaverseToken")}
+                              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+                              aria-label={
+                                visibleFields.gigaverseToken
+                                  ? "Hide Gigaverse Token"
+                                  : "Show Gigaverse Token"
+                              }
+                            >
+                              {visibleFields.gigaverseToken ? (
+                                <EyeOff size={18} />
+                              ) : (
+                                <Eye size={18} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex justify-between">
                         <Button
                           variant="outline"
@@ -213,8 +267,18 @@ function RouteComponent() {
                         >
                           Disconnect
                         </Button>
-                        <Button size="sm" onClick={fetchGigaToken}>
-                          Get Token
+                        <Button
+                          size="sm"
+                          onClick={fetchGigaToken}
+                          className={
+                            settings.gigaverseToken
+                              ? "bg-green-600 hover:bg-green-700"
+                              : ""
+                          }
+                        >
+                          {settings.gigaverseToken
+                            ? "Refresh Token"
+                            : "Get Token"}
                         </Button>
                       </div>
                     </div>

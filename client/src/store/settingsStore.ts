@@ -17,6 +17,7 @@ export interface UserSettings {
   gigaverseToken: string;
   showThoughtMessages: boolean;
   showSystemMessages: boolean;
+  showHelpWindow: boolean;
 }
 
 interface SettingsState extends UserSettings {
@@ -27,6 +28,7 @@ interface SettingsState extends UserSettings {
   setGigaverseToken: (token: string) => void;
   setShowThoughtMessages: (show: boolean) => void;
   setShowSystemMessages: (show: boolean) => void;
+  setShowHelpWindow: (show: boolean) => void;
   setApiKey: (key: keyof UserSettings, value: string | boolean) => void;
   clearSettings: () => void;
 }
@@ -39,6 +41,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   gigaverseToken: "",
   showThoughtMessages: true,
   showSystemMessages: true,
+  showHelpWindow: true,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -55,6 +58,7 @@ export const useSettingsStore = create<SettingsState>()(
         set({ showThoughtMessages }),
       setShowSystemMessages: (showSystemMessages) =>
         set({ showSystemMessages }),
+      setShowHelpWindow: (showHelpWindow) => set({ showHelpWindow }),
 
       setApiKey: (key, value) => {
         if (key === "model" && typeof value === "string") {
@@ -71,6 +75,8 @@ export const useSettingsStore = create<SettingsState>()(
           set({ showThoughtMessages: value });
         } else if (key === "showSystemMessages" && typeof value === "boolean") {
           set({ showSystemMessages: value });
+        } else if (key === "showHelpWindow" && typeof value === "boolean") {
+          set({ showHelpWindow: value });
         } else if (typeof value === "string") {
           set({ [key]: value });
         }
@@ -105,6 +111,8 @@ export function saveUserSettings(settings: UserSettings): void {
     store.setShowThoughtMessages(settings.showThoughtMessages);
   if (settings.showSystemMessages !== undefined)
     store.setShowSystemMessages(settings.showSystemMessages);
+  if (settings.showHelpWindow !== undefined)
+    store.setShowHelpWindow(settings.showHelpWindow);
 }
 
 export function clearUserSettings(): void {
@@ -141,12 +149,16 @@ export function setApiKey(
   const store = useSettingsStore.getState();
   if (
     typeof value === "boolean" &&
-    (key === "showThoughtMessages" || key === "showSystemMessages")
+    (key === "showThoughtMessages" ||
+      key === "showSystemMessages" ||
+      key === "showHelpWindow")
   ) {
     if (key === "showThoughtMessages") {
       store.setShowThoughtMessages(value);
     } else if (key === "showSystemMessages") {
       store.setShowSystemMessages(value);
+    } else if (key === "showHelpWindow") {
+      store.setShowHelpWindow(value);
     }
   } else if (typeof value === "string") {
     store.setApiKey(key, value);

@@ -1,4 +1,19 @@
-import { ChevronsUpDown, Loader2 } from "lucide-react";
+import {
+  ChevronsUpDown,
+  Loader2,
+  Sword,
+  Flag,
+  Shield,
+  Play,
+  SkullIcon,
+  TrophyIcon,
+  Swords,
+  RefreshCw,
+  PackageIcon,
+  Package2Icon,
+  GiftIcon,
+  WandIcon,
+} from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -20,6 +35,22 @@ export interface MessageType {
     | "info";
   message?: string;
   error?: string;
+  action?: {
+    type:
+      | "attackInDungeon"
+      | "getUpcomingEnemies"
+      | "getPlayerState"
+      | "startNewRun"
+      | "manuallyUpdateState";
+    result?: "win" | "lose" | "draw";
+    move?:
+      | "rock"
+      | "paper"
+      | "scissor"
+      | "loot_one"
+      | "loot_two"
+      | "loot_three";
+  };
 }
 
 interface MessagesListProps {
@@ -45,6 +76,78 @@ export function MessagesList({
     if (msg.type === "system" && !showSystemMessages) return false;
     return true;
   });
+
+  // Helper function to render action icon
+  const renderActionIcon = (action: MessageType["action"]) => {
+    if (!action) return null;
+
+    // Base icon classes
+    const iconClass = "h-5 w-5 mr-2";
+
+    switch (action.type) {
+      case "attackInDungeon":
+        if (action.result === "win") {
+          return <TrophyIcon className={`${iconClass} text-green-500`} />;
+        } else if (action.result === "lose") {
+          return <SkullIcon className={`${iconClass} text-red-500`} />;
+        } else {
+          return <Swords className={`${iconClass} text-yellow-500`} />;
+        }
+
+      case "getPlayerState":
+        return <Shield className={`${iconClass} text-blue-500`} />;
+
+      case "getUpcomingEnemies":
+        return <Flag className={`${iconClass} text-purple-500`} />;
+
+      case "startNewRun":
+        return <Play className={`${iconClass} text-green-500`} />;
+
+      case "manuallyUpdateState":
+        return <RefreshCw className={`${iconClass} text-amber-500`} />;
+
+      default:
+        return null;
+    }
+  };
+
+  // Helper function to render move icon
+  const renderMoveIcon = (move?: string) => {
+    if (!move) return null;
+
+    const iconClass = "h-6 w-6";
+
+    switch (move) {
+      case "rock":
+        return <Sword className={`${iconClass} text-red-500`} />;
+      case "paper":
+        return <Shield className={`${iconClass} text-blue-400`} />;
+      case "scissor":
+        return <WandIcon className={`${iconClass} text-purple-500`} />;
+      case "loot_one":
+        return <PackageIcon className={`${iconClass} text-amber-500`} />;
+      case "loot_two":
+        return <Package2Icon className={`${iconClass} text-emerald-500`} />;
+      case "loot_three":
+        return <GiftIcon className={`${iconClass} text-purple-500`} />;
+      default:
+        return null;
+    }
+  };
+
+  // Helper function to get move display name
+  const getMoveDisplayName = (move: string): string => {
+    switch (move) {
+      case "rock":
+        return "Sword";
+      case "paper":
+        return "Shield";
+      case "scissor":
+        return "Magic";
+      default:
+        return move.replace("_", " ");
+    }
+  };
 
   return (
     <div className="flex flex-col space-y-4 mx-auto">
@@ -96,6 +199,7 @@ export function MessagesList({
               {msg.type === "thought" || msg.type === "system" ? (
                 <Collapsible>
                   <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between">
+                    {renderActionIcon(msg.action)}
                     {msg.type}
 
                     <CollapsibleTrigger>
@@ -113,7 +217,8 @@ export function MessagesList({
                 </Collapsible>
               ) : (
                 <>
-                  <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80">
+                  <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center">
+                    {renderActionIcon(msg.action)}
                     {msg.type}
                   </div>
                   {msg.message && (
@@ -125,6 +230,66 @@ export function MessagesList({
               {msg.error && (
                 <div className="text-sm font-medium text-destructive mt-1">
                   {msg.error}
+                </div>
+              )}
+
+              {msg.action && msg.action.type === "attackInDungeon" && (
+                <div className="mt-3 p-3 bg-muted rounded-md border border-border/50">
+                  {msg.action.move && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {renderMoveIcon(msg.action.move)}
+                        <span className="text-sm font-medium capitalize">
+                          {getMoveDisplayName(msg.action.move)}
+                        </span>
+                      </div>
+                      {msg.action.result && (
+                        <div
+                          className={`px-2 py-1 rounded text-xs uppercase font-bold ${
+                            msg.action.result === "win"
+                              ? "bg-green-500/10 text-green-500"
+                              : msg.action.result === "lose"
+                                ? "bg-red-500/10 text-red-500"
+                                : "bg-yellow-500/10 text-yellow-500"
+                          }`}
+                        >
+                          {msg.action.result}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {msg.action && msg.action.type === "startNewRun" && (
+                <div className="mt-3 p-3 bg-green-500/5 rounded-md border border-green-500/30 flex items-center gap-2">
+                  <Play className="h-5 w-5 text-green-500" />
+                  <span className="text-sm font-medium">New Run Started</span>
+                </div>
+              )}
+
+              {msg.action && msg.action.type === "getPlayerState" && (
+                <div className="mt-3 p-3 bg-blue-500/5 rounded-md border border-blue-500/30 flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-blue-500" />
+                  <span className="text-sm font-medium">
+                    Player Status Updated
+                  </span>
+                </div>
+              )}
+
+              {msg.action && msg.action.type === "getUpcomingEnemies" && (
+                <div className="mt-3 p-3 bg-purple-500/5 rounded-md border border-purple-500/30 flex items-center gap-2">
+                  <Flag className="h-5 w-5 text-purple-500" />
+                  <span className="text-sm font-medium">Enemies Scouted</span>
+                </div>
+              )}
+
+              {msg.action && msg.action.type === "manuallyUpdateState" && (
+                <div className="mt-3 p-3 bg-amber-500/5 rounded-md border border-amber-500/30 flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 text-amber-500" />
+                  <span className="text-sm font-medium">
+                    Game State Updated
+                  </span>
                 </div>
               )}
             </div>
