@@ -227,7 +227,7 @@ export const AsciiBackgroundEffect = ({
       asciiEffect.setSize(window.innerWidth, window.innerHeight);
     };
 
-    const animate = (currentTime: number) => {
+    const animate = (_currentTime: number) => {
       requestAnimationFrame(animate);
       const timer = Date.now() - start;
 
