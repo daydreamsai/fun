@@ -11,7 +11,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 import { giga, goalContexts } from "./giga";
 import { useSettingsStore } from "@/store/settingsStore";
-import { useUserStore } from "@/store/userStore";
+// import { useUserStore } from "@/store/userStore";
 
 // Get settings directly from the store
 
@@ -47,12 +47,12 @@ const browserStorage = (): MemoryStore => {
 export function createAgent() {
   // Always get fresh settings when creating the agent
   const settings = useSettingsStore.getState();
-  const user = useUserStore.getState();
+  // const user = useUserStore.getState();
 
   const memoryStorage = browserStorage();
 
   const openrouter = createOpenRouter({
-    apiKey: user.currentUser?.openrouter_key!,
+    apiKey: settings.openrouterKey,
   });
 
   console.log("Creating agent with settings:", settings);
