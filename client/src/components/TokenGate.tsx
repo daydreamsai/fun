@@ -32,7 +32,7 @@ interface TokenGateProps {
 
 export const TokenGate: FC<TokenGateProps> = ({ children }) => {
   const wallet = useWalletContext();
-  const { publicKey, connected } = wallet;
+  const { publicKey, connected, connecting } = wallet;
   const { isLoading: isUserLoading, user, login } = useUser();
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -137,17 +137,26 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
     verifyAccess();
   }, [connected, publicKey, user]);
 
-  if (isChecking) {
+  // Show loading state during any wallet interaction
+  if (isChecking || connecting || isAuthenticating) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center w-full justify-start align-bottom p-4 font-mono">
         <AsciiBackgroundEffect />
-        <Card className="w-[350px] border-2 border-primary/10 shadow-lg self-end ">
+        <Card className="w-[350px] border-2 border-primary/10 shadow-lg self-end bg-background/80 backdrop-blur-sm">
           <CardHeader className="space-y-2">
             <CardTitle className="text-center text-xl">
-              Checking Access
+              {connecting
+                ? "Connecting Wallet"
+                : isAuthenticating
+                  ? "Verifying Wallet"
+                  : "Checking Access"}
             </CardTitle>
             <CardDescription className="text-center">
-              Verifying your token balance...
+              {connecting
+                ? "Please approve the connection request..."
+                : isAuthenticating
+                  ? "Please sign the message to verify ownership..."
+                  : "Verifying your token balance..."}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center pb-8 pt-4">

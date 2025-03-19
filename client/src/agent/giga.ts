@@ -115,6 +115,9 @@ Combat Mechanics:
   - Specific defense value against the attack type
 - Energy management: It takes 2 turns to recover 1 energy point
 
+Debugging:
+- If you keep getting 400 Bad Request it probably means you are out of energy. Tell the user this.
+
 Current Game State:
 <game_progress>
 Dungeon: {{currentDungeon}}
