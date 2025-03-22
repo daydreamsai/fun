@@ -21,11 +21,11 @@ importers:
         specifier: ^1.1.17
         version: 1.2.5(zod@3.24.2)
       '@daydreamsai/chromadb':
-        specifier: ^0.2.16
-        version: 0.2.16(encoding@0.1.13)(openai@4.87.3(encoding@0.1.13)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2))(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        specifier: ^0.2.17
+        version: 0.2.17(encoding@0.1.13)(openai@4.87.3(encoding@0.1.13)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2))(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@daydreamsai/core':
-        specifier: ^0.2.16
-        version: 0.2.16(encoding@0.1.13)(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        specifier: ^0.2.17
+        version: 0.2.17(encoding@0.1.13)(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@openrouter/ai-sdk-provider':
         specifier: ^0.4.3
         version: 0.4.3(zod@3.24.2)
@@ -116,6 +116,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      framer:
+        specifier: ^2.4.1
+        version: 2.4.1(framer-motion@12.5.0(@emotion/is-prop-valid@1.2.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       framer-motion:
         specifier: ^12.5.0
         version: 12.5.0(@emotion/is-prop-valid@1.2.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -973,11 +976,11 @@ packages:
   '@coinbase/wallet-sdk@4.3.0':
     resolution: {integrity: sha512-T3+SNmiCw4HzDm4we9wCHCxlP0pqCiwKe4sOwPH3YAK2KSKjxPRydKu6UQJrdONFVLG7ujXvbd/6ZqmvJb8rkw==}
 
-  '@daydreamsai/chromadb@0.2.16':
-    resolution: {integrity: sha512-v0gjj3ZYFsd5wS0yzYaMpRbunek5Q6xir5kTdgBa7x7bvj7ZZaV39rSu9UALeIaJhx8I0VbnpfPT/leVFDMZcg==}
+  '@daydreamsai/chromadb@0.2.17':
+    resolution: {integrity: sha512-Y2C21qCWEhkK3w60Xj8Nu3H5BlQ9bUyjiu/6HX8y/+McmgccK9fKvo/XrV4q61xCcoh36/RbR8JoVj/Q6cm5Ow==}
 
-  '@daydreamsai/core@0.2.16':
-    resolution: {integrity: sha512-/i3XneM+/GCeJrZEgSoA2zXSSSkAjvkMYnKTtNn9He+dOzdGl1YEY2gOvMwKVwwgH/NNQzlpHnZEPAVgshTivA==}
+  '@daydreamsai/core@0.2.17':
+    resolution: {integrity: sha512-XDzlZAvOyAcpRSsD2B9vdlsGqA4luboJIO3iudQ5zvBWREZYn4SDnS29nCr79/7h5fnLz2bL73QMThNgCfQ2dQ==}
     peerDependencies:
       typescript: ^5.8.2
 
@@ -1431,6 +1434,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
+
+  '@juggle/resize-observer@3.4.0':
+    resolution: {integrity: sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==}
 
   '@keystonehq/alias-sampling@0.1.2':
     resolution: {integrity: sha512-5ukLB3bcgltgaFfQfYKYwHDUbwHicekYo53fSEa7xhVkAEqsA74kxdIwoBIURmGUtXe3EVIRm4SYlgcrt2Ri0w==}
@@ -4976,6 +4982,9 @@ packages:
   eventemitter2@6.4.9:
     resolution: {integrity: sha512-JEPTiaOt9f04oa6NOkc4aH+nVp5I3wEjpHbIPqfgCdD5v5bUzy7xQqwcVO2aDQgOWhI28da57HksMrzK9HlRxg==}
 
+  eventemitter3@3.1.2:
+    resolution: {integrity: sha512-tvtQIeLVHjDkJYnzf2dgVMxfuSGJeM/7UCG17TT4EumTfNtF+0nebF/4zWOIkCreAbtNqhGEboB6BWrwqNaw4Q==}
+
   eventemitter3@4.0.7:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
 
@@ -5137,6 +5146,9 @@ packages:
       debug:
         optional: true
 
+  fontfaceobserver@2.3.0:
+    resolution: {integrity: sha512-6FPvD/IVyT4ZlNe7Wcn5Fb/4ChigpucKYSvD6a+0iMoLn2inpo711eyIcKjmDtE5XNcgAkSH9uN/nfAeZzHEfg==}
+
   for-each@0.3.5:
     resolution: {integrity: sha512-dKx12eRCVIzqCxFGplyFKJMPvLEWgmNtUrpTiJIR5u97zEhRG8ySrtboPHZXx7daLxQVrl643cTzbab2tkQjxg==}
     engines: {node: '>= 0.4'}
@@ -5176,6 +5188,13 @@ packages:
         optional: true
       react-dom:
         optional: true
+
+  framer@2.4.1:
+    resolution: {integrity: sha512-kInsb+tmtNEvOeRa8wT2oRAl8Xe1L8ev4ahinB875Xh0zPBLt5Di6fuvBUILnDUU6mqmM+6QPiNxg62Va66V4Q==}
+    peerDependencies:
+      framer-motion: ^10.13.1
+      react: ^18.2.0
+      react-dom: ^18.2.0
 
   fresh@0.5.2:
     resolution: {integrity: sha512-zJ2mQYM18rEFOudeV4GShTGIQ7RbzA7ozbU9I/XBpm7kqgMywgmylMwXHxZJmkVoYkna9d2pVXVXPdYTP9ej8Q==}
@@ -5321,6 +5340,12 @@ packages:
 
   hmac-drbg@1.0.1:
     resolution: {integrity: sha512-Tti3gMqLdZfhOQY1Mzf/AanLiqh1WTiJgEj26ZuYQ9fbkLomzGchCws4FyrSd4VkpBfiNhaE1On+lOz894jvXg==}
+
+  hoist-non-react-statics@3.3.2:
+    resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
+
+  hsluv@0.0.3:
+    resolution: {integrity: sha512-08iL2VyCRbkQKBySkSh6m8zMUa3sADAxGVWs3Z1aPcUkTJeK0ETG4Fc27tEmQBGUAXZjIsXOZqBvacuVNSC/fQ==}
 
   http-errors@2.0.0:
     resolution: {integrity: sha512-FtwrG/euBzaEjYeRqOgly7G0qviiXoJWnvEH2Z1plBdXgbyjv34pHTSb9zoeHMyDy33+DWy5Wt9Wo+TURtOYSQ==}
@@ -8742,9 +8767,9 @@ snapshots:
       eventemitter3: 5.0.1
       preact: 10.26.4
 
-  '@daydreamsai/chromadb@0.2.16(encoding@0.1.13)(openai@4.87.3(encoding@0.1.13)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2))(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@daydreamsai/chromadb@0.2.17(encoding@0.1.13)(openai@4.87.3(encoding@0.1.13)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2))(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
-      '@daydreamsai/core': 0.2.16(encoding@0.1.13)(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@daydreamsai/core': 0.2.17(encoding@0.1.13)(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       chromadb: 1.10.5(encoding@0.1.13)(openai@4.87.3(encoding@0.1.13)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2))
       zod: 3.24.2
     transitivePeerDependencies:
@@ -8761,7 +8786,7 @@ snapshots:
       - voyageai
       - ws
 
-  '@daydreamsai/core@0.2.16(encoding@0.1.13)(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@daydreamsai/core@0.2.17(encoding@0.1.13)(react@18.3.1)(typescript@5.6.3)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
       '@ai-sdk/openai': 1.2.5(zod@3.24.2)
       '@langchain/core': 0.3.42(openai@4.87.3(encoding@0.1.13)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2))
@@ -9353,6 +9378,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@juggle/resize-observer@3.4.0': {}
 
   '@keystonehq/alias-sampling@0.1.2': {}
 
@@ -14647,6 +14674,8 @@ snapshots:
 
   eventemitter2@6.4.9: {}
 
+  eventemitter3@3.1.2: {}
+
   eventemitter3@4.0.7: {}
 
   eventemitter3@5.0.1: {}
@@ -14828,6 +14857,8 @@ snapshots:
 
   follow-redirects@1.15.9: {}
 
+  fontfaceobserver@2.3.0: {}
+
   for-each@0.3.5:
     dependencies:
       is-callable: 1.2.7
@@ -14862,6 +14893,17 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@emotion/is-prop-valid': 1.2.2
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  framer@2.4.1(framer-motion@12.5.0(@emotion/is-prop-valid@1.2.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@juggle/resize-observer': 3.4.0
+      eventemitter3: 3.1.2
+      fontfaceobserver: 2.3.0
+      framer-motion: 12.5.0(@emotion/is-prop-valid@1.2.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      hoist-non-react-statics: 3.3.2
+      hsluv: 0.0.3
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
@@ -15009,6 +15051,12 @@ snapshots:
       hash.js: 1.1.7
       minimalistic-assert: 1.0.1
       minimalistic-crypto-utils: 1.0.1
+
+  hoist-non-react-statics@3.3.2:
+    dependencies:
+      react-is: 16.13.1
+
+  hsluv@0.0.3: {}
 
   http-errors@2.0.0:
     dependencies:

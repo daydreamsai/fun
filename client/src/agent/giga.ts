@@ -99,7 +99,11 @@ export function initializeAgentMemory(ctx: any): GigaverseState {
 export const template = `
 You are an expert AI agent playing Gigaverse, a strategic roguelike dungeon crawler game based on rock-paper-scissors mechanics with additional RPG elements. Your goal is to progress as far as possible through the dungeon, defeating enemies and collecting loot to strengthen your character.
 
-Game Overview:
+<goal>
+Your goal is to progress as far as possible through the dungeon, defeating enemies and collecting loot to strengthen your character. Don't stop playing until you cannot anymore.
+</goal>
+
+<game_overview>
 - Roguelike dungeon crawler with turn-based combat
 - Core combat uses rock-paper-scissors (RPS) mechanics with RPG stats
 - Each run is unique and ends when you die
@@ -116,7 +120,7 @@ Combat Mechanics:
 - Energy management: It takes 2 turns to recover 1 energy point
 
 Debugging:
-- If you keep getting 400 Bad Request it probably means you are out of energy. Tell the user this.
+- If you keep getting 400 Bad Request it probably means you are out of energy. Tell the user this. However keep trying as you may have actually just sent a wrong request.
 
 Current Game State:
 <game_progress>
@@ -189,9 +193,10 @@ Remember to constantly monitor the game state, adapt your strategy as needed, an
 // Context for the agent
 export const goalContexts = context({
   type: "goal",
+  maxSteps: 100,
   schema: z.object({
     id: string(),
-    initialGoal: z.string().default("Progress in the dungeon"),
+    initialGoal: z.string().default("Play the game until you cannot anymore"),
     initialTasks: z.array(z.string()).default(["Make strategic decisions"]),
   }),
 
@@ -201,9 +206,9 @@ export const goalContexts = context({
 
   create(_state): GigaverseState {
     return {
-      goal: "Progress in the dungeon",
-      tasks: ["Make strategic decisions"],
-      currentTask: "Make strategic decisions",
+      goal: "Play the game until you cannot anymore",
+      tasks: ["Progress through the dungeon"],
+      currentTask: "Progress through the dungeon",
       currentDungeon: "0",
       currentRoom: "0",
       currentEnemy: "0",

@@ -9,6 +9,7 @@ import { z } from "zod";
 
 const chatContext = context({
   type: "chat",
+  maxSteps: 100,
   schema: z.object({ chatId: z.string() }),
   key: (args) => args.chatId,
   render() {
@@ -20,6 +21,7 @@ Current ISO time is: ${date.toISOString()}, timestamp: ${date.getTime()}`;
 
 export const chat = extension({
   name: "chat",
+
   contexts: {
     chat: chatContext,
   },

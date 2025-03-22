@@ -15,6 +15,7 @@ import {
   GiftIcon,
   CircleIcon,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Collapsible,
   CollapsibleContent,
@@ -161,165 +162,187 @@ export function MessagesList({
 
   return (
     <div className="flex flex-col space-y-4 mx-auto">
-      {filteredMessages.map((msg, i) => {
-        const baseBubble = `relative p-4 text-sm shadow-md transition-all duration-200 max-w-[90%] min-w-[40%] whitespace-pre-wrap break-words border-opacity-50`;
+      <AnimatePresence mode="popLayout">
+        {filteredMessages.map((msg, i) => {
+          const baseBubble = `relative p-4 text-sm shadow-md transition-all duration-200 max-w-[90%] min-w-[40%] whitespace-pre-wrap break-words border-opacity-50`;
 
-        let containerClass = "flex items-start";
-        let bubbleClass = baseBubble;
+          let containerClass = "flex items-start";
+          let bubbleClass = baseBubble;
 
-        switch (msg.type) {
-          case "user":
-            containerClass += " justify-start";
-            bubbleClass += ` bg-card text-foreground mr-2 self-end hover:brightness-110 border`;
-            break;
+          switch (msg.type) {
+            case "user":
+              containerClass += " justify-start";
+              bubbleClass += ` bg-card text-foreground mr-2 self-end hover:brightness-110 border`;
+              break;
 
-          case "assistant":
-            containerClass += " justify-start";
-            bubbleClass += ` bg-card text-foreground border hover:brightness-105 border-primary/50`;
-            break;
+            case "assistant":
+              containerClass += " justify-start";
+              bubbleClass += ` bg-card text-foreground border hover:brightness-105 border-primary/50`;
+              break;
 
-          case "thought":
-            containerClass += " justify-start";
-            bubbleClass += ` bg-card text-muted-foreground border hover:brightness-105`;
-            break;
+            case "thought":
+              containerClass += " justify-start";
+              bubbleClass += ` bg-card text-muted-foreground border hover:brightness-105`;
+              break;
 
-          case "error":
-            containerClass += " justify-center";
-            bubbleClass += ` bg-card text-destructive font-semibold border hover:brightness-105`;
-            break;
+            case "error":
+              containerClass += " justify-center";
+              bubbleClass += ` bg-card text-destructive font-semibold border hover:brightness-105`;
+              break;
 
-          case "welcome":
-            containerClass += " justify-center";
-            bubbleClass += ` bg-card text-accent-foreground border hover:brightness-105`;
-            break;
+            case "welcome":
+              containerClass += " justify-center";
+              bubbleClass += ` bg-card text-accent-foreground border hover:brightness-105`;
+              break;
 
-          case "info":
-            containerClass += " justify-center";
-            bubbleClass += ` bg-card text-secondary-foreground border hover:brightness-105`;
-            break;
+            case "info":
+              containerClass += " justify-center";
+              bubbleClass += ` bg-card text-secondary-foreground border hover:brightness-105`;
+              break;
 
-          default:
-            containerClass += " justify-start";
-            bubbleClass += ` bg-card text-card-foreground border hover:brightness-105`;
-        }
+            default:
+              containerClass += " justify-start";
+              bubbleClass += ` bg-card text-card-foreground border hover:brightness-105`;
+          }
 
-        return (
-          <div key={i} className={containerClass}>
-            <div className={bubbleClass}>
-              {msg.type === "thought" || msg.type === "system" ? (
-                <Collapsible>
-                  <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between">
-                    {renderActionIcon(msg.action)}
-                    {msg.type}
+          return (
+            <motion.div
+              key={msg.id || i}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
+              transition={{
+                duration: 0.3,
+                ease: "easeOut",
+              }}
+              className={containerClass}
+            >
+              <motion.div
+                layout
+                className={bubbleClass}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                {msg.type === "thought" || msg.type === "system" ? (
+                  <Collapsible>
+                    <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between">
+                      {renderActionIcon(msg.action)}
+                      {msg.type}
 
-                    <CollapsibleTrigger>
-                      <Button variant="ghost" size="sm">
-                        <ChevronsUpDown className="h-4 w-4" />
-                        <span className="sr-only">Toggle</span>
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
-                  <CollapsibleContent>
+                      <CollapsibleTrigger>
+                        <Button variant="ghost" size="sm">
+                          <ChevronsUpDown className="h-4 w-4" />
+                          <span className="sr-only">Toggle</span>
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent>
+                      {msg.message && (
+                        <div className="text-base">
+                          {parseMessageContent(msg.message)}
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                ) : (
+                  <>
+                    <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center">
+                      {renderActionIcon(msg.action)}
+                      {msg.type}
+                    </div>
                     {msg.message && (
                       <div className="text-base">
                         {parseMessageContent(msg.message)}
                       </div>
                     )}
-                  </CollapsibleContent>
-                </Collapsible>
-              ) : (
-                <>
-                  <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center">
-                    {renderActionIcon(msg.action)}
-                    {msg.type}
+                  </>
+                )}
+
+                {msg.error && (
+                  <div className="text-sm font-medium text-destructive mt-1">
+                    {msg.error}
                   </div>
-                  {msg.message && (
-                    <div className="text-base">
-                      {parseMessageContent(msg.message)}
-                    </div>
-                  )}
-                </>
-              )}
+                )}
 
-              {msg.error && (
-                <div className="text-sm font-medium text-destructive mt-1">
-                  {msg.error}
-                </div>
-              )}
-
-              {msg.action && msg.action.type === "attackInDungeon" && (
-                <div className="mt-3 p-3 bg-muted rounded-md border border-border/50">
-                  {msg.action.move && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {renderMoveIcon(msg.action.move)}
-                        <span className="text-sm font-medium capitalize">
-                          {msg.action.move.replace("_", " ")}
-                        </span>
-                      </div>
-                      {msg.action.result && (
-                        <div
-                          className={`px-2 py-1 rounded text-xs uppercase font-bold ${
-                            msg.action.result === "win"
-                              ? "bg-green-500/10 text-green-500"
-                              : msg.action.result === "lose"
-                                ? "bg-red-500/10 text-red-500"
-                                : "bg-yellow-500/10 text-yellow-500"
-                          }`}
-                        >
-                          {msg.action.result}
+                {msg.action && msg.action.type === "attackInDungeon" && (
+                  <div className="mt-3 p-3 bg-muted rounded-md border border-border/50">
+                    {msg.action.move && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {renderMoveIcon(msg.action.move)}
+                          <span className="text-sm font-medium capitalize">
+                            {msg.action.move.replace("_", " ")}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+                        {msg.action.result && (
+                          <div
+                            className={`px-2 py-1 rounded text-xs uppercase font-bold ${
+                              msg.action.result === "win"
+                                ? "bg-green-500/10 text-green-500"
+                                : msg.action.result === "lose"
+                                  ? "bg-red-500/10 text-red-500"
+                                  : "bg-yellow-500/10 text-yellow-500"
+                            }`}
+                          >
+                            {msg.action.result}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {msg.action && msg.action.type === "startNewRun" && (
-                <div className="mt-3 p-3 bg-green-500/5 rounded-md border border-green-500/30 flex items-center gap-2">
-                  <Play className="h-5 w-5 text-green-500" />
-                  <span className="text-sm font-medium">New Run Started</span>
-                </div>
-              )}
+                {msg.action && msg.action.type === "startNewRun" && (
+                  <div className="mt-3 p-3 bg-green-500/5 rounded-md border border-green-500/30 flex items-center gap-2">
+                    <Play className="h-5 w-5 text-green-500" />
+                    <span className="text-sm font-medium">New Run Started</span>
+                  </div>
+                )}
 
-              {msg.action && msg.action.type === "getPlayerState" && (
-                <div className="mt-3 p-3 bg-blue-500/5 rounded-md border border-blue-500/30 flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-blue-500" />
-                  <span className="text-sm font-medium">
-                    Player Status Updated
-                  </span>
-                </div>
-              )}
+                {msg.action && msg.action.type === "getPlayerState" && (
+                  <div className="mt-3 p-3 bg-blue-500/5 rounded-md border border-blue-500/30 flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-blue-500" />
+                    <span className="text-sm font-medium">
+                      Player Status Updated
+                    </span>
+                  </div>
+                )}
 
-              {msg.action && msg.action.type === "getUpcomingEnemies" && (
-                <div className="mt-3 p-3 bg-purple-500/5 rounded-md border border-purple-500/30 flex items-center gap-2">
-                  <Flag className="h-5 w-5 text-purple-500" />
-                  <span className="text-sm font-medium">Enemies Scouted</span>
-                </div>
-              )}
+                {msg.action && msg.action.type === "getUpcomingEnemies" && (
+                  <div className="mt-3 p-3 bg-purple-500/5 rounded-md border border-purple-500/30 flex items-center gap-2">
+                    <Flag className="h-5 w-5 text-purple-500" />
+                    <span className="text-sm font-medium">Enemies Scouted</span>
+                  </div>
+                )}
 
-              {msg.action && msg.action.type === "manuallyUpdateState" && (
-                <div className="mt-3 p-3 bg-amber-500/5 rounded-md border border-amber-500/30 flex items-center gap-2">
-                  <RefreshCw className="h-5 w-5 text-amber-500" />
-                  <span className="text-sm font-medium">
-                    Game State Updated
-                  </span>
-                </div>
-              )}
+                {msg.action && msg.action.type === "manuallyUpdateState" && (
+                  <div className="mt-3 p-3 bg-amber-500/5 rounded-md border border-amber-500/30 flex items-center gap-2">
+                    <RefreshCw className="h-5 w-5 text-amber-500" />
+                    <span className="text-sm font-medium">
+                      Game State Updated
+                    </span>
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          );
+        })}
+
+        {/* Loading indicator with animation */}
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center justify-center py-6"
+          >
+            <div className="flex items-center gap-2 bg-card p-3 rounded-md border animate-pulse">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
             </div>
-          </div>
-        );
-      })}
-
-      {/* Loading indicator */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-6">
-          <div className="flex items-center gap-2 bg-card p-3 rounded-md border animate-pulse">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-sm font-medium">Thinking...</span>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
