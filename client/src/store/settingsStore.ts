@@ -34,7 +34,7 @@ interface SettingsState extends UserSettings {
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
-  model: "qwen/qwq-32b",
+  model: "deepseek/deepseek-r1-distill-llama-70b",
   openaiKey: "",
   openrouterKey: "",
   anthropicKey: "",

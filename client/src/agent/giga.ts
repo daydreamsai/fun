@@ -97,7 +97,12 @@ export function initializeAgentMemory(ctx: any): GigaverseState {
 
 // Template for the agent's context
 export const template = `
-You are an expert AI agent playing Gigaverse, a strategic roguelike dungeon crawler game based on rock-paper-scissors mechanics with additional RPG elements. Your goal is to progress as far as possible through the dungeon, defeating enemies and collecting loot to strengthen your character.
+You are an daydreams agent playing the Gigaverse game, a strategic roguelike dungeon crawler game based on rock-paper-scissors mechanics with additional RPG elements. Your goal is to progress as far as possible through the dungeon, defeating enemies and collecting loot to strengthen your character.
+
+<info>
+- You are interacting with a game that is running on a server, sometimes you might make a mistake if your formatting, think then try again 
+- If you keep getting 400 Bad Request it probably means you are out of energy. Tell the user this. However keep trying as you may have actually just sent a wrong request.
+</info>
 
 <goal>
 Your goal is to progress as far as possible through the dungeon, defeating enemies and collecting loot to strengthen your character. Don't stop playing until you cannot anymore.
@@ -108,7 +113,11 @@ Your goal is to progress as far as possible through the dungeon, defeating enemi
 - Core combat uses rock-paper-scissors (RPS) mechanics with RPG stats
 - Each run is unique and ends when you die
 - Progress through rooms by defeating enemies
-- Collect loot to strengthen your character
+- Collect the loot items to strengthen your character
+- You submit attacks until you die or win the battle.
+- When the battle is won you will go into the loot phase.
+- Always select the best option that you think will give you the best chance of winning the next battle.
+</game_overview>
 
 Combat Mechanics:
 - Each battle is 1v1 turn-based combat
@@ -118,6 +127,7 @@ Combat Mechanics:
   - Defender's defense stat
   - Specific defense value against the attack type
 - Energy management: It takes 2 turns to recover 1 energy point
+
 
 Debugging:
 - If you keep getting 400 Bad Request it probably means you are out of energy. Tell the user this. However keep trying as you may have actually just sent a wrong request.
@@ -286,7 +296,7 @@ export const giga = extension({
     action({
       name: "attackInDungeon",
       description:
-        "Attack in the dungeon using rock-paper-scissors game mechanics",
+        "Attack in the dungeon. Use this when you are in the dungeon and you want to attack an enemy.",
       schema: z
         .object({
           action: z
@@ -513,7 +523,8 @@ export const giga = extension({
      */
     action({
       name: "getPlayerState",
-      description: "Fetch the current state of the player in the dungeon",
+      description:
+        "Fetch the current state of the player in the dungeon, you should do this when you start a new run or when you die",
       schema: z.object({}), // No parameters needed for this GET request
       async handler(_call: ActionCall<{}>, ctx: any, _agent: Agent) {
         try {
@@ -745,137 +756,6 @@ export const giga = extension({
             success: false,
             error: errorMessage,
             message: "Failed to start a new dungeon run",
-          };
-        }
-      },
-    }),
-
-    /**
-     * Action to manually update the state with provided data
-     * This is useful for debugging or when there's a conflict in state
-     */
-    action({
-      name: "manuallyUpdateState",
-      description: "Manually update the state with provided data",
-      schema: z.object({
-        stateData: z.any().optional().describe("The state data to update with"),
-      }),
-      async handler(
-        call: ActionCall<{
-          stateData?: any;
-        }>,
-        ctx: any,
-        _agent: Agent
-      ) {
-        try {
-          const { stateData } = call.data;
-
-          if (!stateData) {
-            return {
-              success: false,
-              error: "No state data provided",
-              message: "Failed to manually update state: No data provided",
-            };
-          }
-
-          const state = initializeAgentMemory(ctx);
-
-          if (
-            stateData.data &&
-            stateData.data.run &&
-            stateData.data.run.players &&
-            stateData.data.run.players.length > 0
-          ) {
-            const playerData = stateData.data.run.players[0]; // First player is the user
-
-            // Update player stats
-            state.currentHP = playerData.health.current.toString();
-            state.playerHealth = playerData.health.current.toString();
-            state.playerMaxHealth = playerData.health.currentMax.toString();
-            state.playerShield = playerData.shield.current.toString();
-            state.playerMaxShield = playerData.shield.currentMax.toString();
-
-            // Update rock/paper/scissor stats
-            state.rockAttack = playerData.rock.currentATK.toString();
-            state.rockDefense = playerData.rock.currentDEF.toString();
-            state.rockCharges = playerData.rock.currentCharges.toString();
-
-            state.paperAttack = playerData.paper.currentATK.toString();
-            state.paperDefense = playerData.paper.currentDEF.toString();
-            state.paperCharges = playerData.paper.currentCharges.toString();
-
-            state.scissorAttack = playerData.scissor.currentATK.toString();
-            state.scissorDefense = playerData.scissor.currentDEF.toString();
-            state.scissorCharges = playerData.scissor.currentCharges.toString();
-
-            // Update loot phase status
-            state.lootPhase = (
-              stateData.data.run.lootPhase || false
-            ).toString();
-
-            // Update loot options if available
-            if (
-              stateData.data.run.lootOptions &&
-              stateData.data.run.lootOptions.length > 0
-            ) {
-              state.lootOptions = stateData.data.run.lootOptions;
-              state.currentLoot =
-                stateData.data.run.lootOptions.length.toString();
-            }
-
-            // Update room information if available
-            if (stateData.data.entity) {
-              state.currentRoom = stateData.data.entity.ROOM_NUM_CID.toString();
-              state.currentDungeon =
-                stateData.data.entity.DUNGEON_ID_CID.toString();
-              state.currentEnemy = stateData.data.entity.ENEMY_CID.toString();
-            }
-
-            // Update enemy stats if available
-            if (stateData.data.run.players.length > 1) {
-              const enemyData = stateData.data.run.players[1]; // Second player is the enemy
-              state.enemyHealth = enemyData.health.current.toString();
-              state.enemyMaxHealth = enemyData.health.currentMax.toString();
-              state.enemyShield = enemyData.shield.current.toString();
-              state.enemyMaxShield = enemyData.shield.currentMax.toString();
-
-              // Update battle result and enemy move if available
-              if (enemyData.lastMove) {
-                state.lastEnemyMove = enemyData.lastMove;
-
-                // Determine battle result based on thisPlayerWin and otherPlayerWin properties
-                if (playerData.thisPlayerWin === true) {
-                  state.lastBattleResult = "win";
-                } else if (enemyData.thisPlayerWin === true) {
-                  state.lastBattleResult = "lose";
-                } else {
-                  state.lastBattleResult = "draw";
-                }
-              }
-            }
-
-            return {
-              success: true,
-              message: "Successfully updated state with provided data",
-              updatedState: state,
-            };
-          }
-
-          return {
-            success: false,
-            error: "No valid state data provided",
-            message:
-              "Failed to manually update state: No valid state data provided",
-          };
-        } catch (error: unknown) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          console.error("Error manually updating state:", error);
-
-          return {
-            success: false,
-            error: errorMessage,
-            message: "Failed to manually update state",
           };
         }
       },

@@ -58,7 +58,7 @@ export function createAgent() {
   console.log("Creating agent with settings:", settings);
 
   return createDreams({
-    model: openrouter(settings.model || "anthropic/claude-3.7-sonnet:beta"),
+    model: openrouter(settings.model || "deepseek/deepseek-r1"),
     context: goalContexts,
     memory: createMemory(
       memoryStorage,
@@ -66,5 +66,11 @@ export function createAgent() {
       openrouter("openai/gpt-4-turbo")
     ),
     extensions: [chat, giga],
+    trimWorkingMemoryOptions: {
+      thoughts: 2,
+      inputs: 3,
+      outputs: 3,
+      actions: 3,
+    },
   });
 }
