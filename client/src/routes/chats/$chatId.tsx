@@ -17,6 +17,7 @@ import { useAgentStore } from "@/store/agentStore";
 
 // Import our components
 import { StateSidebar, HelpWindow, MessageInput } from "@/components/chat";
+import { goalContexts } from "@/agent/giga";
 
 export const Route = createFileRoute("/chats/$chatId")({
   component: RouteComponent,
@@ -176,9 +177,12 @@ function RouteComponent() {
 
     try {
       await dreams.send({
-        context: chat.contexts!.chat,
+        context: goalContexts,
         args: {
-          chatId,
+          id: chatId,
+          initialGoal:
+            "You are a dungeon crawler. You are currently in the dungeon. You need to find the exit.",
+          initialTasks: ["You need to find the exit."],
         },
         input: {
           type: "message",

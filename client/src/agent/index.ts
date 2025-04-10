@@ -61,12 +61,12 @@ export function createAgent() {
 
   return createDreams({
     model: openrouter(settings.model || "deepseek/deepseek-r1"),
-    context: goalContexts,
+
     memory: createMemory(
       memoryStorage,
       createVectorStore(),
       openrouter("openai/gpt-4-turbo")
     ),
-    extensions: [chat, giga],
+    extensions: [chat],
   });
 }
