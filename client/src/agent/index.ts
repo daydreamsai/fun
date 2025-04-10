@@ -9,7 +9,6 @@ import { chat } from "./chat";
 
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
-import { giga, goalContexts } from "./giga";
 import { useSettingsStore } from "@/store/settingsStore";
 // import { useUserStore } from "@/store/userStore";
 

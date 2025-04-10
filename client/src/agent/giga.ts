@@ -2,7 +2,6 @@ import {
   context,
   render,
   action,
-  type ActionCall,
   type Agent,
   extension,
 } from "@daydreamsai/core";
@@ -101,11 +100,12 @@ You are an daydreams agent playing the Gigaverse game, a strategic roguelike dun
 
 <info>
 - You are interacting with a game that is running on a server, sometimes you might make a mistake if your formatting, think then try again 
-- If you keep getting 400 Bad Request it probably means you are out of energy. Tell the user this. However keep trying as you may have actually just sent a wrong request.
 </info>
 
 <goal>
 Your goal is to progress as far as possible through the dungeon, defeating enemies and collecting loot to strengthen your character. Don't stop playing until you cannot anymore.
+
+IMPORTANT: Always keep playing until you cannot anymore.
 </goal>
 
 <game_overview>
@@ -127,10 +127,6 @@ Combat Mechanics:
   - Defender's defense stat
   - Specific defense value against the attack type
 - Energy management: It takes 2 turns to recover 1 energy point
-
-
-Debugging:
-- If you keep getting 400 Bad Request it probably means you are out of energy. Tell the user this. However keep trying as you may have actually just sent a wrong request.
 
 Current Game State:
 <game_progress>
@@ -309,13 +305,18 @@ export const goalContexts = context({
       .describe(
         "You use this to make an action in a dungeon. If the lootPhase == true then you can select the Loot option, which will then take you to the next phase. If the lootPhase == false then you can select the Rock, Paper, Scissors option."
       ),
-    async handler(args, { memory }, agent) {
+    async handler(args, { memory }, _agent) {
       try {
         const { action, dungeonId } = args;
 
         const payload = {
           action: action,
           actionToken: parseInt(new Date().getTime().toString()),
+          data: {
+            consumables: [],
+            itemId: 0,
+            index: 0,
+          },
           dungeonId: dungeonId,
         };
 

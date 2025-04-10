@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { MessagesList } from "@/components/message-list";
 import { getWorkingMemoryLogs } from "@daydreamsai/core";
 import { SidebarRight } from "@/components/sidebar-right";
-import { chat } from "@/agent/chat";
 import { v7 as randomUUIDv7 } from "uuid";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMessages } from "@/hooks/use-messages";
@@ -96,9 +95,12 @@ function RouteComponent() {
   const contextId = useMemo(
     () =>
       dreams.getContextId({
-        context: chat.contexts!.chat,
+        context: goalContexts,
         args: {
-          chatId,
+          id: chatId,
+          initialGoal:
+            "You are a dungeon crawler. You are currently in the dungeon. You need to find the exit.",
+          initialTasks: ["You need to find the exit."],
         },
       }),
     [dreams, chatId]

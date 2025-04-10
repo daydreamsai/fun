@@ -160,7 +160,7 @@ export function MessagesList({
   return (
     <div className="flex flex-col space-y-4 mx-auto">
       <AnimatePresence mode="popLayout">
-        {filteredMessages.map((msg, i) => {
+        {filteredMessages.slice(-6).map((msg, i) => {
           const baseBubble = `relative p-4 text-sm shadow-md transition-all duration-200 max-w-[90%] min-w-[40%] whitespace-pre-wrap break-words border-opacity-50`;
 
           let containerClass = "flex items-start";
@@ -214,13 +214,7 @@ export function MessagesList({
               }}
               className={containerClass}
             >
-              <motion.div
-                layout
-                className={bubbleClass}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.div layout className={bubbleClass}>
                 {msg.type === "thought" || msg.type === "system" ? (
                   <Collapsible>
                     <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between">
