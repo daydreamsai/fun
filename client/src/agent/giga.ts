@@ -58,9 +58,9 @@ interface GigaverseState {
 }
 
 // Helper function to initialize agent memory if it doesn't exist
-export function initializeAgentMemory(ctx: any): GigaverseState {
-  if (!ctx.agentMemory) {
-    ctx.agentMemory = {
+export function initializeAgentMemory(memory: any): GigaverseState {
+  if (!memory) {
+    memory = {
       goal: "Progress in the dungeon",
       tasks: ["Make strategic decisions"],
       currentTask: "Make strategic decisions",
@@ -92,7 +92,7 @@ export function initializeAgentMemory(ctx: any): GigaverseState {
       lastEnemyMove: "",
     };
   }
-  return ctx.agentMemory as GigaverseState;
+  return memory as GigaverseState;
 }
 
 // Template for the agent's context
@@ -317,26 +317,13 @@ export const giga = extension({
         .describe(
           "You use this to make an action in a dungeon. If the lootPhase == true then you can select the Loot option, which will then take you to the next phase. If the lootPhase == false then you can select the Rock, Paper, Scissors option."
         ),
-      async handler(
-        call: ActionCall<{
-          action:
-            | "rock"
-            | "paper"
-            | "scissor"
-            | "loot_one"
-            | "loot_two"
-            | "loot_three";
-          dungeonId: number;
-        }>,
-        ctx: any,
-        _agent: Agent
-      ) {
+      async handler(args, { memory }) {
         try {
-          const { action, dungeonId } = call.data;
+          const { action, dungeonId } = args;
 
           const payload = {
             action: action,
-            actionToken: new Date().getTime().toString(),
+            actionToken: parseInt(new Date().getTime().toString()),
             dungeonId: dungeonId,
           };
 
@@ -360,12 +347,19 @@ export const giga = extension({
 
           const result = await response.json();
 
+          console.log("result", result);
+
+          // Add a 4 second delay to allow for animation and user experience
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
           // If this was a combat action, visualize the RPS result
           let enemyMove = "unknown";
           let battleResult = "draw";
 
+          console.log(memory);
+
           // Update the state with player and enemy data
-          const state = initializeAgentMemory(ctx);
+          const state = initializeAgentMemory(memory);
 
           // Extract data from the response structure
           if (
@@ -442,6 +436,8 @@ export const giga = extension({
             console.log("state", state);
           }
 
+          console.log("updated state", state);
+
           return {
             success: true,
             result,
@@ -455,6 +451,8 @@ export const giga = extension({
             Player Max Health: ${state.playerMaxHealth}
             Player Shield: ${state.playerShield}
             Player Max Shield: ${state.playerMaxShield}
+            
+            ${JSON.stringify(state)}
             
 
             `,
@@ -481,7 +479,7 @@ export const giga = extension({
       description:
         "Fetch information about all upcoming enemies in the dungeon",
       schema: z.object({}), // No parameters needed for this GET request
-      async handler(_call: ActionCall<{}>, _ctx: any, _agent: Agent) {
+      async handler(_data, _ctx: any, _agent: Agent) {
         try {
           const response = await fetch(`${getApiBaseUrl()}/indexer/enemies`, {
             method: "GET",
@@ -526,7 +524,7 @@ export const giga = extension({
       description:
         "Fetch the current state of the player in the dungeon, you should do this when you start a new run or when you die",
       schema: z.object({}), // No parameters needed for this GET request
-      async handler(_call: ActionCall<{}>, ctx: any, _agent: Agent) {
+      async handler(_data, ctx: any, _agent: Agent) {
         try {
           const response = await fetch(
             `${getApiBaseUrl()}/game/dungeon/state`,
@@ -546,6 +544,8 @@ export const giga = extension({
           }
 
           const result = await response.json();
+
+          console.log("result", result);
 
           // Update the state with player data
           if (
@@ -656,19 +656,13 @@ export const giga = extension({
           .default(1)
           .describe("The ID of the dungeon to start. It should always be 1"),
       }),
-      async handler(
-        call: ActionCall<{
-          dungeonId: number;
-        }>,
-        ctx: any,
-        _agent: Agent
-      ) {
+      async handler(data, ctx: any, _agent: Agent) {
         try {
-          const { dungeonId } = call.data;
+          const { dungeonId } = data;
 
           const payload = {
             action: "start_run",
-            actionToken: "",
+            actionToken: parseInt(new Date().getTime().toString()),
             dungeonId: 1, // hardcode for now
             data: {
               consumables: [],

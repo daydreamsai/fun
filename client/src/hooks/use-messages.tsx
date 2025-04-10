@@ -1,5 +1,5 @@
 import { MessageType } from "@/components/message-list";
-import { Log } from "@daydreamsai/core";
+import { AnyRef, Log } from "@daydreamsai/core";
 import { useState, useCallback, useMemo } from "react";
 
 export function useMessages() {
@@ -171,7 +171,7 @@ export function useMessages() {
   }, []);
 
   const handleLog = useCallback(
-    (log: Log, done: boolean) => {
+    (log: AnyRef, done: boolean) => {
       if (log.ref === "input") {
         updateMessage(log, "user", log.data.content);
         setIsLoading(true);
@@ -274,7 +274,7 @@ export function useMessages() {
         } else if (lastActionType === "manuallyUpdateState") {
           readableResult = "Game state updated successfully.";
         } else {
-          readableResult = `Action Result\nAction: ${log.name}\nData: ${JSON.stringify(log.data).substring(0, 100)}...`;
+          readableResult = `Action Result\nAction: ${log.name}\nData: ${JSON.stringify(log.data)}...`;
         }
 
         updateMessage(log, "system", readableResult);

@@ -19,6 +19,7 @@ const browserStorage = (): MemoryStore => {
   const memoryStore = createMemoryStore();
   return {
     async get<T>(key: string) {
+      console.log("get", key);
       let data = await memoryStore.get<T>(key);
       if (data === null) {
         const local = localStorage.getItem(key);
@@ -31,6 +32,7 @@ const browserStorage = (): MemoryStore => {
       return data;
     },
     async set(key, value) {
+      console.log("set", key, value);
       localStorage.setItem(key, JSON.stringify(value));
       return memoryStore.set(key, value);
     },
@@ -66,11 +68,5 @@ export function createAgent() {
       openrouter("openai/gpt-4-turbo")
     ),
     extensions: [chat, giga],
-    trimWorkingMemoryOptions: {
-      thoughts: 2,
-      inputs: 3,
-      outputs: 3,
-      actions: 3,
-    },
   });
 }

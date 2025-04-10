@@ -83,13 +83,10 @@ export function MessagesList({
   const parseMessageContent = (content: string | undefined) => {
     if (!content) return null;
 
-    // Trim any excessive whitespace or newlines
-    const trimmedContent = content.trim();
-
     // Check if content is potentially JSON
-    if (trimmedContent.startsWith("{") && trimmedContent.endsWith("}")) {
+    if (content.startsWith("{") && content.endsWith("}")) {
       try {
-        const parsedContent = JSON.parse(trimmedContent);
+        const parsedContent = JSON.parse(content);
         // If it's a valid JSON with user and content fields, return formatted content
         if (parsedContent.user && parsedContent.content) {
           return parsedContent.content;
@@ -99,7 +96,7 @@ export function MessagesList({
       }
     }
 
-    return trimmedContent;
+    return content;
   };
 
   // Helper function to render action icon
@@ -163,7 +160,7 @@ export function MessagesList({
   return (
     <div className="flex flex-col space-y-4 mx-auto">
       <AnimatePresence mode="popLayout">
-        {filteredMessages.map((msg, i) => {
+        {filteredMessages.slice(-3).map((msg, i) => {
           const baseBubble = `relative p-4 text-sm shadow-md transition-all duration-200 max-w-[90%] min-w-[40%] whitespace-pre-wrap break-words border-opacity-50`;
 
           let containerClass = "flex items-start";

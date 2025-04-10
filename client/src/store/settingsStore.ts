@@ -7,6 +7,7 @@ export const VALID_MODELS = [
   "deepseek/deepseek-r1",
   "google/gemma-3-27b-it",
   "qwen/qwq-32b",
+  "google/gemini-2.0-flash-001",
 ] as const;
 
 export interface UserSettings {
@@ -34,7 +35,7 @@ interface SettingsState extends UserSettings {
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
-  model: "deepseek/deepseek-r1-distill-llama-70b",
+  model: "google/gemini-2.0-flash-001",
   openaiKey: "",
   openrouterKey: "",
   anthropicKey: "",

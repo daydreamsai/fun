@@ -107,11 +107,13 @@ export function StateSidebar({
         const result = await dreams.getContext({
           context: goalContexts,
           args: {
-            id: "goal:1",
+            id: "chat:gigaverse-1",
             initialGoal: "You are a helpful assistant",
             initialTasks: ["You are a helpful assistant"],
           },
         });
+
+        console.log("chat:gigaverse-1", result);
 
         if (isMounted) {
           setGoalContext(result);
