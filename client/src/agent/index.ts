@@ -18,7 +18,6 @@ const browserStorage = (): MemoryStore => {
   const memoryStore = createMemoryStore();
   return {
     async get<T>(key: string) {
-      console.log("get", key);
       let data = await memoryStore.get<T>(key);
       if (data === null) {
         const local = localStorage.getItem(key);
@@ -31,7 +30,6 @@ const browserStorage = (): MemoryStore => {
       return data;
     },
     async set(key, value) {
-      console.log("set", key, value);
       localStorage.setItem(key, JSON.stringify(value));
       return memoryStore.set(key, value);
     },

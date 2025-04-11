@@ -138,7 +138,8 @@ function ChatHistoryList() {
     queryFn: async () => {
       try {
         const contexts = await agent.getContexts();
-        return contexts.filter((ctx) => ctx.type === "chat");
+        console.log("contexts", contexts);
+        return contexts.filter((ctx) => ctx.type === "goal");
       } catch (error) {
         console.error("Error fetching contexts:", error);
         return [];
@@ -185,8 +186,8 @@ function ChatHistoryList() {
       {chats.data.map((chat) => (
         <SidebarMenuSubItem key={chat.id}>
           <SidebarMenuSubButton asChild>
-            <Link to={"/chats/$chatId"} params={{ chatId: chat.args.chatId }}>
-              <div className="font-medium truncate">{chat.args.chatId}</div>
+            <Link to={"/chats/$chatId"} params={{ chatId: chat.args.id }}>
+              <div className="font-medium truncate">{chat.args.id}</div>
             </Link>
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>
