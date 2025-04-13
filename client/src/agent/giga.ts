@@ -25,6 +25,7 @@ export const getApiBaseUrl = () => {
 
 // Define an interface for the state
 interface GigaverseState {
+  actionToken: string;
   goal: string;
   tasks: string[];
   currentTask: string | null;
@@ -60,6 +61,7 @@ interface GigaverseState {
 export function initializeAgentMemory(memory: any): GigaverseState {
   if (!memory) {
     memory = {
+      actionToken: "",
       goal: "Progress in the dungeon",
       tasks: ["Make strategic decisions"],
       currentTask: "Make strategic decisions",
@@ -212,6 +214,7 @@ export const goalContexts = context({
 
   create(_state): GigaverseState {
     return {
+      actionToken: "0",
       goal: "Play the game until you cannot anymore",
       tasks: ["Progress through the dungeon"],
       currentTask: "Progress through the dungeon",
@@ -311,7 +314,7 @@ export const goalContexts = context({
 
         const payload = {
           action: action,
-          actionToken: parseInt(new Date().getTime().toString()),
+          actionToken: memory.actionToken ?? "",
           data: {
             consumables: [],
             itemId: 0,
@@ -336,8 +339,6 @@ export const goalContexts = context({
         }
 
         const result = await response.json();
-
-        console.log("result", result);
 
         // Add a 4 second delay to allow for animation and user experience
         await new Promise((resolve) => setTimeout(resolve, 4000));
@@ -417,11 +418,9 @@ export const goalContexts = context({
               result.data.entity.DUNGEON_ID_CID.toString();
             memory.currentEnemy = result.data.entity.ENEMY_CID.toString();
           }
-
-          console.log("memory", memory);
         }
 
-        console.log("updated memory", memory);
+        memory.actionToken = result.actionToken;
 
         return {
           success: true,
@@ -634,7 +633,7 @@ export const goalContexts = context({
 
         const payload = {
           action: "start_run",
-          actionToken: parseInt(new Date().getTime().toString()),
+          actionToken: ctx.memory.actionToken ?? "",
           dungeonId: 1, // hardcode for now
           data: {
             consumables: [],
@@ -704,6 +703,8 @@ export const goalContexts = context({
           state.enemyMaxShield = "0";
           state.currentEnemy = "0";
         }
+
+        ctx.memory.actionToken = result.actionToken;
 
         return {
           success: true,

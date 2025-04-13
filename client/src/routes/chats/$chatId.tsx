@@ -17,6 +17,7 @@ import { useAgentStore } from "@/store/agentStore";
 // Import our components
 import { StateSidebar, HelpWindow, MessageInput } from "@/components/chat";
 import { goalContexts } from "@/agent/giga";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/chats/$chatId")({
   component: RouteComponent,
@@ -57,8 +58,14 @@ function RouteComponent() {
   const { chatId } = Route.useParams();
 
   const dreams = useAgentStore((state) => state.agent);
-  const { messages, setMessages, handleLog, isLoading, setIsLoading } =
-    useMessages();
+  const {
+    messages,
+    setMessages,
+    handleLog,
+    isLoading,
+    setIsLoading,
+    thoughts,
+  } = useMessages();
 
   // Settings for help window
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
@@ -160,16 +167,6 @@ function RouteComponent() {
   const handleSubmitMessage = async (message: string) => {
     setIsLoading(true);
 
-    // Add user message
-    setMessages((msgs) => [
-      ...msgs,
-      {
-        id: Date.now().toString(),
-        type: "user",
-        message,
-      },
-    ]);
-
     // Force immediate scroll after adding user message
     if ((messagesContainerRef as any).scrollToBottom) {
       setTimeout(() => {
@@ -230,17 +227,31 @@ function RouteComponent() {
         </div>
       )}
 
-      <div className="flex flex-1 relative h-[calc(100vh-64px)]">
-        {/* Use ref for the messages container */}
+      <div className="flex flex-1 relative">
+        {/* Use ref for the messages container, add padding-right to account for sidebar */}
         <div
           className="flex flex-col flex-1 z-0 overflow-y-auto"
           ref={messagesContainerRef}
           style={{
             scrollBehavior: "smooth",
-            scrollPaddingBottom: "250px", // Add padding to avoid messages being hidden behind the input
+            scrollPaddingBottom: "250px",
           }}
         >
-          <div className="flex-1 p-4 pb-36 mx-auto w-full pr-96">
+          <div className="flex-1 p-4 mx-auto w-full">
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle>Agent Thoughts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {thoughts.length > 0 ? (
+                  <div key={thoughts[thoughts.length - 1].id}>
+                    {thoughts[thoughts.length - 1].message}
+                  </div>
+                ) : (
+                  <p>This agent is currently thinking...</p>
+                )}
+              </CardContent>
+            </Card>
             {missingKeys.length === 2 ? (
               <div className="flex flex-col items-center justify-center h-full">
                 <div className="bg-red-100 dark:bg-red-900 p-6 rounded-lg max-w-md text-center">
@@ -264,20 +275,15 @@ function RouteComponent() {
             ) : (
               <MessagesList messages={messages} isLoading={isLoading} />
             )}
-            {/* Add a spacer div to ensure content isn't hidden behind the input */}
-            <div className="h-24" />
           </div>
         </div>
 
-        {/* State Sidebar */}
-        <div className="fixed right-0 top-18 h-screen">
-          <StateSidebar
-            contextId={contextId}
-            messages={messages}
-            dreams={dreams}
-            isLoading={isLoading}
-          />
-        </div>
+        <StateSidebar
+          contextId={contextId}
+          messages={messages}
+          dreams={dreams}
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Help button fixed to bottom right */}
@@ -291,7 +297,6 @@ function RouteComponent() {
         <HelpCircle className="h-5 w-5" />
       </Button>
 
-      {/* Message Input */}
       <MessageInput
         isLoading={isLoading}
         disabled={missingKeys.length === 2}

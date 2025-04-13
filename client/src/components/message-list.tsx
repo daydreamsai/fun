@@ -16,6 +16,7 @@ import {
   CircleIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AnyRef } from "@daydreamsai/core";
 import {
   Collapsible,
   CollapsibleContent,
@@ -53,6 +54,7 @@ export interface MessageType {
       | "loot_two"
       | "loot_three";
   };
+  log: AnyRef;
 }
 
 interface MessagesListProps {
@@ -157,10 +159,12 @@ export function MessagesList({
     }
   };
 
+  console.log(filteredMessages);
+
   return (
     <div className="flex flex-col space-y-4 mx-auto">
       <AnimatePresence mode="popLayout">
-        {filteredMessages.slice(-6).map((msg, i) => {
+        {filteredMessages.slice(-5).map((msg, i) => {
           const baseBubble = `relative p-4 text-sm shadow-md transition-all duration-200 max-w-[90%] min-w-[40%] whitespace-pre-wrap break-words border-opacity-50`;
 
           let containerClass = "flex items-start";
@@ -204,7 +208,7 @@ export function MessagesList({
 
           return (
             <motion.div
-              key={msg.id || i}
+              key={`${msg.id || "msg"}-${i}`}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}

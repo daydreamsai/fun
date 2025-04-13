@@ -8,10 +8,11 @@ import {
   EyeOff,
   Code,
   Settings,
+  Trash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Card } from "@/components/ui/card";
 import { VALID_MODELS, useSettingsStore } from "@/store/settingsStore";
 import {
@@ -25,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { goalContexts } from "@/agent/giga";
 import { GameStatus } from "@/components/chat/GameStatus";
+import { browserStorage } from "@/agent";
 
 export function StateSidebar({
   contextId,
@@ -146,7 +148,147 @@ export function StateSidebar({
   }
 
   return (
-    <div className="w-96 border-l bg-background/95 backdrop-blur flex flex-col">
+    <div className="w-96 border-l bg-background/95 backdrop-blur flex flex-col ">
+      <img src="/giga.jpeg" />
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex-1 flex flex-col h-full mt-4"
+      >
+        <TabsList className="grid grid-cols-2 mx-4 ">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="memory">Memory</TabsTrigger>
+        </TabsList>
+
+        <TabsContent
+          value="overview"
+          className="flex-1 px-4  border-primary/20"
+        >
+          {/* Game status component */}
+          <GameStatus goalContext={goalContext} />
+
+          <Card className="p-3 mb-3">
+            <h4 className="text-sm font-medium mb-1">Message Count</h4>
+            <p className="text-xs">{messages.length}</p>
+          </Card>
+
+          <Card className="p-3 mb-3">
+            <h4 className="text-sm font-medium mb-1">Agent Status</h4>
+            <div className="text-xs flex items-center">
+              {isLoading ? (
+                <>
+                  <div className="h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
+                  <span className="text-green-600 dark:text-green-400 font-medium">
+                    Active - Processing
+                  </span>
+                </>
+              ) : (
+                <>
+                  <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
+                  <span>Idle - Ready</span>
+                </>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-3 mb-3">
+            <h4 className="text-sm font-medium mb-1">Message Types</h4>
+            <div className="text-xs">
+              <p>User: {messages.filter((m) => m.type === "user").length}</p>
+              <p>Agent: {messages.filter((m) => m.type === "agent").length}</p>
+              <p>
+                System: {messages.filter((m) => m.type === "system").length}
+              </p>
+            </div>
+          </Card>
+
+          <Card className="p-3 mb-3">
+            <h4 className="text-sm font-medium mb-1">Working Memory</h4>
+            <div className="text-xs">
+              <p>Size: {(memoryStats.size / 1024).toFixed(2)} KB</p>
+              <p>Last Updated: {memoryStats.lastUpdated}</p>
+            </div>
+          </Card>
+
+          <Card className="p-3">
+            <h4 className="text-sm font-medium mb-1">Chat Info</h4>
+            <div className="text-xs">
+              <p>Chat ID: {contextId.split(":").pop()}</p>
+              <p>Started: {new Date().toLocaleDateString()}</p>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent
+          value="memory"
+          className="flex-1 flex flex-col pt-2 overflow-hidden border h-full"
+        >
+          <div className="flex justify-between items-center mb-2 px-4">
+            <h4 className="text-sm font-medium">Working Memory</h4>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowFullMemory(!showFullMemory)}
+            >
+              {showFullMemory ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                browserStorage().delete("working-memory:goal:1");
+                browserStorage().delete("memory:goal:1");
+                browserStorage().delete("context:goal:1");
+              }}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <Card className="p-3 flex-1 overflow-hidden">
+            {workingMemory ? (
+              <pre className="text-xs whitespace-pre-wrap">
+                {showFullMemory
+                  ? JSON.stringify(workingMemory, null, 2)
+                  : JSON.stringify(
+                      {
+                        // Show only key memory elements
+                        messages: workingMemory.messages?.length || 0,
+                        context: workingMemory.context,
+                        // Add a summary of other keys
+                        keys: Object.keys(workingMemory),
+                      },
+                      null,
+                      2
+                    )}
+              </pre>
+            ) : (
+              <p className="text-xs text-muted-foreground">Loading memory...</p>
+            )}
+          </Card>
+
+          <div className="mt-3 flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => {
+                // Copy memory to clipboard
+                navigator.clipboard.writeText(
+                  JSON.stringify(workingMemory, null, 2)
+                );
+              }}
+            >
+              <Code className="h-3 w-3 mr-1" />
+              Copy JSON
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
       <div className="flex justify-between items-center p-4">
         <h3 className="font-medium">Chat State</h3>
         <div className="flex gap-1">
@@ -252,159 +394,6 @@ export function StateSidebar({
 
       {/* Divider */}
       <div className="h-px bg-border mx-4 my-2"></div>
-
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="flex-1 flex flex-col"
-      >
-        <TabsList className="grid grid-cols-2 mx-4 ">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="memory">Memory</TabsTrigger>
-        </TabsList>
-
-        <TabsContent
-          value="overview"
-          className="flex-1 px-4 overflow-hidden border-primary/20"
-        >
-          <ScrollArea className="h-[calc(100vh-180px)] pb-36">
-            {/* Game status component */}
-            <GameStatus goalContext={goalContext} />
-
-            <Card className="p-3 mb-3">
-              <h4 className="text-sm font-medium mb-1">Context ID</h4>
-              <p className="text-xs text-muted-foreground break-all">
-                {contextId}
-              </p>
-            </Card>
-
-            <Card className="p-3 mb-3">
-              <h4 className="text-sm font-medium mb-1">Message Count</h4>
-              <p className="text-xs">{messages.length}</p>
-            </Card>
-
-            <Card className="p-3 mb-3">
-              <h4 className="text-sm font-medium mb-1">Last Message</h4>
-              <p className="text-xs text-muted-foreground">
-                {messages.length > 0
-                  ? `${messages[messages.length - 1].type}: ${messages[messages.length - 1]?.message?.substring(0, 50)}${messages[messages.length - 1]?.message?.length > 50 ? "..." : ""}`
-                  : "No messages yet"}
-              </p>
-            </Card>
-
-            <Card className="p-3 mb-3">
-              <h4 className="text-sm font-medium mb-1">Agent Status</h4>
-              <div className="text-xs flex items-center">
-                {isLoading ? (
-                  <>
-                    <div className="h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
-                    <span className="text-green-600 dark:text-green-400 font-medium">
-                      Active - Processing
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
-                    <span>Idle - Ready</span>
-                  </>
-                )}
-              </div>
-            </Card>
-
-            <Card className="p-3 mb-3">
-              <h4 className="text-sm font-medium mb-1">Message Types</h4>
-              <div className="text-xs">
-                <p>User: {messages.filter((m) => m.type === "user").length}</p>
-                <p>
-                  Agent: {messages.filter((m) => m.type === "agent").length}
-                </p>
-                <p>
-                  System: {messages.filter((m) => m.type === "system").length}
-                </p>
-              </div>
-            </Card>
-
-            <Card className="p-3 mb-3">
-              <h4 className="text-sm font-medium mb-1">Working Memory</h4>
-              <div className="text-xs">
-                <p>Size: {(memoryStats.size / 1024).toFixed(2)} KB</p>
-                <p>Last Updated: {memoryStats.lastUpdated}</p>
-              </div>
-            </Card>
-
-            <Card className="p-3">
-              <h4 className="text-sm font-medium mb-1">Chat Info</h4>
-              <div className="text-xs">
-                <p>Chat ID: {contextId.split(":").pop()}</p>
-                <p>Started: {new Date().toLocaleDateString()}</p>
-              </div>
-            </Card>
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent
-          value="memory"
-          className="flex-1 flex flex-col pt-2 overflow-hidden border"
-        >
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="text-sm font-medium">Working Memory</h4>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowFullMemory(!showFullMemory)}
-            >
-              {showFullMemory ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-
-          <Card className="p-3 flex-1 overflow-hidden">
-            <ScrollArea className="h-[calc(100vh-220px)]">
-              {workingMemory ? (
-                <pre className="text-xs whitespace-pre-wrap">
-                  {showFullMemory
-                    ? JSON.stringify(workingMemory, null, 2)
-                    : JSON.stringify(
-                        {
-                          // Show only key memory elements
-                          messages: workingMemory.messages?.length || 0,
-                          context: workingMemory.context,
-                          // Add a summary of other keys
-                          keys: Object.keys(workingMemory),
-                        },
-                        null,
-                        2
-                      )}
-                </pre>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Loading memory...
-                </p>
-              )}
-            </ScrollArea>
-          </Card>
-
-          <div className="mt-3 flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => {
-                // Copy memory to clipboard
-                navigator.clipboard.writeText(
-                  JSON.stringify(workingMemory, null, 2)
-                );
-              }}
-            >
-              <Code className="h-3 w-3 mr-1" />
-              Copy JSON
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

@@ -12,33 +12,117 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { useSettingsStore } from "@/store/settingsStore";
 // import { useUserStore } from "@/store/userStore";
 
+import { openDB, type IDBPDatabase } from "idb";
+
 // Get settings directly from the store
 
-const browserStorage = (): MemoryStore => {
-  const memoryStore = createMemoryStore();
-  return {
-    async get<T>(key: string) {
-      let data = await memoryStore.get<T>(key);
-      if (data === null) {
-        const local = localStorage.getItem(key);
-        if (local) {
-          data = JSON.parse(local);
-          await memoryStore.set(key, data);
+// --- IndexedDB Setup ---
+const DB_NAME = "agent-memory-store";
+const STORE_NAME = "keyval";
+const DB_VERSION = 1;
+
+let dbPromise: Promise<IDBPDatabase> | null = null;
+
+function getDb(): Promise<IDBPDatabase> {
+  if (!dbPromise) {
+    dbPromise = openDB(DB_NAME, DB_VERSION, {
+      upgrade(db: IDBPDatabase) {
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
         }
+      },
+    });
+  }
+  return dbPromise!;
+}
+
+async function idbGet<T>(key: string): Promise<T | null> {
+  const db = await getDb();
+  const value = await db.get(STORE_NAME, key);
+  return value ? (JSON.parse(value as string) as T) : null;
+}
+
+async function idbSet(key: string, value: unknown): Promise<void> {
+  const db = await getDb();
+  await db.put(STORE_NAME, JSON.stringify(value), key);
+}
+
+async function idbDelete(key: string): Promise<void> {
+  const db = await getDb();
+  await db.delete(STORE_NAME, key);
+}
+
+async function idbClear(): Promise<void> {
+  const db = await getDb();
+  await db.clear(STORE_NAME);
+}
+// --- End IndexedDB Setup ---
+
+export const browserStorage = (): MemoryStore => {
+  const memoryStore = createMemoryStore();
+
+  return {
+    async get<T>(key: string): Promise<T | null> {
+      // 1. Try in-memory cache first
+      let data = await memoryStore.get<T>(key);
+      if (data !== null) {
+        return data;
       }
 
-      return data;
+      // 2. Try IndexedDB
+      try {
+        data = await idbGet<T>(key);
+        if (data !== null) {
+          // Cache in memory if found in IDB
+          await memoryStore.set(key, data);
+          return data;
+        }
+      } catch (error) {
+        console.error(`IndexedDB get failed for key "${key}":`, error);
+        // Fallback or error handling strategy if needed
+      }
+
+      // 3. Not found anywhere
+      return null;
     },
-    async set(key, value) {
-      localStorage.setItem(key, JSON.stringify(value));
-      return memoryStore.set(key, value);
+    async set(key: string, value: unknown): Promise<void> {
+      try {
+        // 1. Set in IndexedDB
+        await idbSet(key, value);
+        // 2. Set in in-memory cache
+        await memoryStore.set(key, value);
+      } catch (error) {
+        console.error(`IndexedDB set failed for key "${key}":`, error);
+        // Consider if fallback to memoryStore only is acceptable
+        // If IDB fails, maybe just update memoryStore?
+        // await memoryStore.set(key, value); // Or re-throw depending on desired behavior
+        throw error; // Re-throw for now to indicate persistence failure
+      }
     },
-    async clear() {
-      // localStorage.
-      return memoryStore.clear();
+    async clear(): Promise<void> {
+      try {
+        // 1. Clear IndexedDB
+        await idbClear();
+        // 2. Clear in-memory cache
+        await memoryStore.clear();
+      } catch (error) {
+        console.error("IndexedDB clear failed:", error);
+        // Decide how to handle partial failure (e.g., only memory cleared)
+        await memoryStore.clear(); // Ensure memory is cleared even if IDB fails
+        throw error; // Re-throw to indicate persistence layer failure
+      }
     },
-    async delete(key) {
-      return memoryStore.delete(key);
+    async delete(key: string): Promise<void> {
+      try {
+        // 1. Delete from IndexedDB
+        await idbDelete(key);
+        // 2. Delete from in-memory cache
+        await memoryStore.delete(key);
+      } catch (error) {
+        console.error(`IndexedDB delete failed for key "${key}":`, error);
+        await memoryStore.delete(key); // Ensure memory is updated even if IDB fails
+        throw error; // Re-throw to indicate persistence layer failure
+      }
     },
   };
 };

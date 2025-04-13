@@ -13,7 +13,6 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as WorkbenchIndexImport } from './routes/workbench/index'
 import { Route as ChatsChatIdImport } from './routes/chats/$chatId'
 
 // Create Virtual Routes
@@ -50,12 +49,6 @@ const IndexLazyRoute = IndexLazyImport.update({
   path: '/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
-
-const WorkbenchIndexRoute = WorkbenchIndexImport.update({
-  id: '/workbench/',
-  path: '/workbench/',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const ChatsChatIdRoute = ChatsChatIdImport.update({
   id: '/chats/$chatId',
@@ -102,13 +95,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatsChatIdImport
       parentRoute: typeof rootRoute
     }
-    '/workbench/': {
-      id: '/workbench/'
-      path: '/workbench'
-      fullPath: '/workbench'
-      preLoaderRoute: typeof WorkbenchIndexImport
-      parentRoute: typeof rootRoute
-    }
   }
 }
 
@@ -120,7 +106,6 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileLazyRoute
   '/settings': typeof SettingsLazyRoute
   '/chats/$chatId': typeof ChatsChatIdRoute
-  '/workbench': typeof WorkbenchIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -129,7 +114,6 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileLazyRoute
   '/settings': typeof SettingsLazyRoute
   '/chats/$chatId': typeof ChatsChatIdRoute
-  '/workbench': typeof WorkbenchIndexRoute
 }
 
 export interface FileRoutesById {
@@ -139,7 +123,6 @@ export interface FileRoutesById {
   '/profile': typeof ProfileLazyRoute
   '/settings': typeof SettingsLazyRoute
   '/chats/$chatId': typeof ChatsChatIdRoute
-  '/workbench/': typeof WorkbenchIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -150,15 +133,8 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/chats/$chatId'
-    | '/workbench'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/payment-success'
-    | '/profile'
-    | '/settings'
-    | '/chats/$chatId'
-    | '/workbench'
+  to: '/' | '/payment-success' | '/profile' | '/settings' | '/chats/$chatId'
   id:
     | '__root__'
     | '/'
@@ -166,7 +142,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/chats/$chatId'
-    | '/workbench/'
   fileRoutesById: FileRoutesById
 }
 
@@ -176,7 +151,6 @@ export interface RootRouteChildren {
   ProfileLazyRoute: typeof ProfileLazyRoute
   SettingsLazyRoute: typeof SettingsLazyRoute
   ChatsChatIdRoute: typeof ChatsChatIdRoute
-  WorkbenchIndexRoute: typeof WorkbenchIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -185,7 +159,6 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileLazyRoute: ProfileLazyRoute,
   SettingsLazyRoute: SettingsLazyRoute,
   ChatsChatIdRoute: ChatsChatIdRoute,
-  WorkbenchIndexRoute: WorkbenchIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -202,8 +175,7 @@ export const routeTree = rootRoute
         "/payment-success",
         "/profile",
         "/settings",
-        "/chats/$chatId",
-        "/workbench/"
+        "/chats/$chatId"
       ]
     },
     "/": {
@@ -220,9 +192,6 @@ export const routeTree = rootRoute
     },
     "/chats/$chatId": {
       "filePath": "chats/$chatId.tsx"
-    },
-    "/workbench/": {
-      "filePath": "workbench/index.tsx"
     }
   }
 }
