@@ -230,14 +230,14 @@ function RouteComponent() {
       <div className="flex flex-1 relative">
         {/* Use ref for the messages container, add padding-right to account for sidebar */}
         <div
-          className="flex flex-col flex-1 z-0 overflow-y-auto"
+          className="flex flex-col flex-1 z-0 overflow-y-auto "
           ref={messagesContainerRef}
           style={{
             scrollBehavior: "smooth",
             scrollPaddingBottom: "250px",
           }}
         >
-          <div className="flex-1 p-4 mx-auto w-full">
+          <div className="flex-1 p-4 w-full max-w-4xl mx-auto">
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>Agent Thoughts</CardTitle>

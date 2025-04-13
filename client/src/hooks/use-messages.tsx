@@ -120,20 +120,19 @@ export function useMessages() {
         updateMessage(log, "assistant", log.data.content);
         setIsLoading(true);
       } else if (log.ref === LogRefType.ActionCall) {
-        const actionInfo: ActionInfo = {
-          type: log.name as `${ActionName}`,
-        };
-
-        const readableMessage = `Action: ${log.name}
-Data: ${JSON.stringify(log.data)} Status:`;
-
-        updateMessage(log, "system", readableMessage, actionInfo);
         setIsLoading(true);
       } else if (log.ref === LogRefType.ActionResult) {
+        const actionInfo: ActionInfo = {
+          type: log.name as `${ActionName}`,
+          result: log.data.result?.data.run.players[0].otherPlayerWin
+            ? "win"
+            : "lose",
+          move: log.data.result?.data.run.players[0].lastMove,
+        };
         const readableResult = `Result for ${log.name}
 Data: ${JSON.stringify(log.data)}`;
 
-        updateMessage(log, "system", readableResult);
+        updateMessage(log, "system", readableResult, actionInfo);
         setIsLoading(true);
       }
 

@@ -207,7 +207,7 @@ export const goalContexts = context({
     initialGoal: z.string().default("Play the game until you cannot anymore"),
     initialTasks: z.array(z.string()).default(["Make strategic decisions"]),
   }),
-
+  maxWorkingMemorySize: 20,
   key() {
     return "1";
   },
@@ -312,9 +312,16 @@ export const goalContexts = context({
       try {
         const { action, dungeonId } = args;
 
+        const actionToken = memory.actionToken ?? "";
+        const currentTime = Date.now();
+        const threeMinutesInMs = 3 * 60 * 1000;
+
         const payload = {
           action: action,
-          actionToken: memory.actionToken ?? "",
+          actionToken:
+            currentTime - parseInt(actionToken) > threeMinutesInMs
+              ? ""
+              : actionToken,
           data: {
             consumables: [],
             itemId: 0,
@@ -444,6 +451,8 @@ export const goalContexts = context({
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         console.error("Error performing attack action:", error);
+
+        memory.actionToken = "";
 
         return {
           success: false,
@@ -732,9 +741,4 @@ export const giga = extension({
   contexts: {
     goal: goalContexts,
   },
-  actions: [
-    /**
-     * Action to fetch upcoming enemies data
-     */
-  ],
 });
