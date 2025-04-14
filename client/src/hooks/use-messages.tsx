@@ -122,6 +122,16 @@ export function useMessages() {
       } else if (log.ref === LogRefType.ActionCall) {
         setIsLoading(true);
       } else if (log.ref === LogRefType.ActionResult) {
+        if (log.data.error) {
+          updateMessage(
+            log,
+            "error",
+            log.data.error + "\n" + log.data.message + "\n" + "trying again..."
+          );
+          setIsLoading(false);
+          return;
+        }
+
         const actionInfo: ActionInfo = {
           type: log.name as `${ActionName}`,
           result: log.data.result?.data.run.players[0].otherPlayerWin

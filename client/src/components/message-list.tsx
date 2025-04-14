@@ -164,7 +164,7 @@ export function MessagesList({
   return (
     <div className="flex flex-col space-y-4 mx-auto">
       <AnimatePresence mode="popLayout">
-        {filteredMessages.slice(-25).map((msg, i) => {
+        {filteredMessages.slice(-3).map((msg, i) => {
           const baseBubble = `relative p-4 text-sm shadow-md transition-all duration-200 max-w-[90%] min-w-[40%] whitespace-pre-wrap break-words border-opacity-50`;
 
           let containerClass = "flex items-start";
@@ -188,7 +188,7 @@ export function MessagesList({
 
             case "error":
               containerClass += " justify-center";
-              bubbleClass += ` bg-card text-destructive font-semibold border hover:brightness-105`;
+              bubbleClass += ` bg-card text-destructive border hover:brightness-105 border-destructive/10 bg-destructive/10`;
               break;
 
             case "welcome":

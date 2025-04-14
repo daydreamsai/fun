@@ -238,7 +238,7 @@ function RouteComponent() {
           }}
         >
           <div className="flex-1 p-4 w-full max-w-4xl mx-auto">
-            <Card className="mb-4">
+            <Card className="mb-4 max-h-[250px] min-h-[250px] overflow-y-auto">
               <CardHeader>
                 <CardTitle>Agent Thoughts</CardTitle>
               </CardHeader>
