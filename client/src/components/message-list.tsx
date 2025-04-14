@@ -14,6 +14,9 @@ import {
   Package2Icon,
   GiftIcon,
   CircleIcon,
+  Sword,
+  ShieldAlert,
+  Stars,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Log } from "@daydreamsai/core";
@@ -143,11 +146,11 @@ export function MessagesList({
 
     switch (move) {
       case "rock":
-        return <CircleIcon className={`${iconClass} text-stone-500`} />;
+        return <Sword className={`${iconClass} text-stone-500`} />;
       case "paper":
-        return <HandIcon className={`${iconClass} text-blue-400`} />;
+        return <ShieldAlert className={`${iconClass} text-blue-400`} />;
       case "scissor":
-        return <ScissorsIcon className={`${iconClass} text-violet-500`} />;
+        return <Stars className={`${iconClass} text-violet-500`} />;
       case "loot_one":
         return <PackageIcon className={`${iconClass} text-amber-500`} />;
       case "loot_two":

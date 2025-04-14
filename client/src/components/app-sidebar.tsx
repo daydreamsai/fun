@@ -181,13 +181,15 @@ function ChatHistoryList() {
     );
   }
 
+  console.log(chats);
+
   return (
     <div>
-      {chats.data.map((chat) => (
+      {chats?.data.map((chat) => (
         <SidebarMenuSubItem key={chat.id}>
           <SidebarMenuSubButton asChild>
-            <Link to={"/chats/$chatId"} params={{ chatId: chat.args.id }}>
-              <div className="font-medium truncate">{chat.args.id}</div>
+            <Link to={"/chats/$chatId"} params={{ chatId: chat.args?.id }}>
+              <div className="font-medium truncate">{chat.args?.id}</div>
             </Link>
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>

@@ -73,7 +73,7 @@ function Index() {
         const contexts = await agent.getContexts();
 
         console.log(contexts);
-        setChats(contexts.filter((ctx) => ctx.type === "chat") as any);
+        setChats(contexts.filter((ctx) => ctx.type === "goal") as any);
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching chats:", error);
