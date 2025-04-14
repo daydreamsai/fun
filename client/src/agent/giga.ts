@@ -371,10 +371,8 @@ export const goalContexts = context({
           // Determine the battle result
           if (playerData.thisPlayerWin === true) {
             battleResult = "win";
-          } else if (enemyData.thisPlayerWin === true) {
-            battleResult = "lose";
           } else {
-            battleResult = "draw";
+            battleResult = "lose";
           }
 
           // Update player stats

@@ -135,8 +135,8 @@ export function useMessages() {
         const actionInfo: ActionInfo = {
           type: log.name as `${ActionName}`,
           result: log.data.result?.data.run.players[0].otherPlayerWin
-            ? "win"
-            : "lose",
+            ? "lose"
+            : "win",
           move: log.data.result?.data.run.players[0].lastMove,
         };
         const readableResult = `Result for ${log.name}
