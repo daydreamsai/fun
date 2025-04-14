@@ -102,6 +102,7 @@ You are an daydreams agent playing the Gigaverse game, a strategic roguelike dun
 
 <info>
 - You are interacting with a game that is running on a server, sometimes you might make a mistake if your formatting, think then try again 
+- You can only use an Attack that has a charge, if you don't have a charge you can't use it and it will cause an error. So if you don't have a charge, don't use it.
 </info>
 
 <goal>
