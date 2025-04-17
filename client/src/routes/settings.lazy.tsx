@@ -114,6 +114,7 @@ function RouteComponent() {
 
       const value = await handleResponse(response);
       settings.setApiKey("gigaverseToken", value.jwt);
+      settings.setAbstractAddress(payload.address ?? "");
       setSaveStatus("Gigaverse token obtained successfully!");
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {

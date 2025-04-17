@@ -2,31 +2,28 @@ import { useState, useCallback, useEffect } from "react";
 import { AnyAgent } from "@daydreamsai/core";
 import {
   ChevronLeft,
-  ChevronRight,
-  RefreshCw,
   Eye,
   EyeOff,
   Code,
   Settings,
   Trash,
+  Cpu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Card } from "@/components/ui/card";
-import { VALID_MODELS, useSettingsStore } from "@/store/settingsStore";
+
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { goalContexts } from "@/agent/giga";
+  getAbstractAddress,
+  getApiBaseUrl,
+  getGigaToken,
+  goalContexts,
+} from "@/agent/giga";
 import { GameStatus } from "@/components/chat/GameStatus";
 import { browserStorage } from "@/agent";
+import { GameClient } from "@/agent/client/GameClient";
+import { RomEntity } from "@/agent/client/types/responses";
 
 export function StateSidebar({
   contextId,
@@ -40,7 +37,7 @@ export function StateSidebar({
   isLoading?: boolean;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [_isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [memoryStats, setMemoryStats] = useState<{
     size: number;
@@ -52,28 +49,15 @@ export function StateSidebar({
   const [workingMemory, setWorkingMemory] = useState<any>(null);
   const [showFullMemory, setShowFullMemory] = useState(false);
 
-  // Model selection state
-  const settings = useSettingsStore();
-  const [selectedModel, setSelectedModel] = useState<
-    (typeof VALID_MODELS)[number]
-  >(settings.model);
-  const [modelChangeNotification, setModelChangeNotification] = useState(false);
   const [goalContext, setGoalContext] = useState<any>(null);
 
-  // Handle model change
-  const handleModelChange = useCallback(
-    (value: string) => {
-      setSelectedModel(value as (typeof VALID_MODELS)[number]);
-      settings.setModel(value as (typeof VALID_MODELS)[number]);
+  // ROMS Tab State
+  const [userRoms, setUserRoms] = useState<RomEntity[]>([]);
+  const [isFetchingRoms, setIsFetchingRoms] = useState(false);
+  const [_isClaimingEnergy, setIsClaimingEnergy] = useState(false);
 
-      // Show notification
-      setModelChangeNotification(true);
-      setTimeout(() => {
-        setModelChangeNotification(false);
-      }, 3000);
-    },
-    [settings]
-  );
+  // Placeholder for user address
+  const userAddress = "0xYourUserAddress";
 
   const refreshMemoryStats = useCallback(async () => {
     setIsRefreshing(true);
@@ -132,6 +116,49 @@ export function StateSidebar({
     };
   }, [dreams]);
 
+  const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
+
+  // Fetch User ROMs when ROMS tab is active
+  useEffect(() => {
+    if (activeTab === "roms" && userAddress) {
+      const fetchRoms = async () => {
+        setIsFetchingRoms(true);
+
+        try {
+          const roms = await gameClient.getUserRoms(getAbstractAddress());
+          console.log("roms", roms);
+          setUserRoms(roms.entities);
+        } catch (error) {
+          console.error("Failed to fetch user ROMs:", error);
+          setUserRoms([]);
+        } finally {
+          setIsFetchingRoms(false);
+        }
+      };
+      fetchRoms();
+    }
+  }, [activeTab, userAddress]);
+
+  // Placeholder function for claiming energy
+  const handleClaimEnergy = async ({ romId }: { romId: string }) => {
+    setIsClaimingEnergy(true);
+    try {
+      console.log("Claiming energy...");
+
+      const response = await gameClient.claimEnergy({
+        romId: romId,
+        claimId: "1",
+      });
+
+      console.log("response", response);
+    } catch (error) {
+      console.error("Failed to claim energy:", error);
+      alert("Failed to claim energy. (Placeholder)");
+    } finally {
+      setIsClaimingEnergy(false);
+    }
+  };
+
   if (isCollapsed) {
     return (
       <div className="border-l bg-background/95 backdrop-blur flex flex-col items-center py-4 h-full">
@@ -143,28 +170,31 @@ export function StateSidebar({
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
+        <Cpu className="h-5 w-5 my-2 text-muted-foreground" />
+        <Eye className="h-5 w-5 my-2 text-muted-foreground" />
+        <Settings className="h-5 w-5 my-2 text-muted-foreground" />
       </div>
     );
   }
 
   return (
     <div className="w-96 border-l bg-background/95 backdrop-blur flex flex-col ">
-      <img src="/giga.jpeg" />
+      <img src="/giga.jpeg" alt="Giga Banner" />
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="flex-1 flex flex-col h-full mt-4"
+        // className="flex-1 flex flex-col h-full mt-4"
       >
-        <TabsList className="grid grid-cols-2 mx-4 ">
+        <TabsList className="grid grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="memory">Memory</TabsTrigger>
+          <TabsTrigger value="roms">ROMS</TabsTrigger>
         </TabsList>
 
         <TabsContent
           value="overview"
-          className="flex-1 px-4  border-primary/20"
+          className="flex-1 overflow-y-auto px-2 border-primary/20"
         >
-          {/* Game status component */}
           <GameStatus goalContext={goalContext} />
 
           <Card className="p-3 mb-3">
@@ -219,47 +249,47 @@ export function StateSidebar({
           </Card>
         </TabsContent>
 
-        <TabsContent
-          value="memory"
-          className="flex-1 flex flex-col pt-2 overflow-hidden border h-full"
-        >
-          <div className="flex justify-between items-center mb-2 px-4">
+        <TabsContent value="memory">
+          <div className="flex justify-between items-center mb-2 px-2">
             <h4 className="text-sm font-medium">Working Memory</h4>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowFullMemory(!showFullMemory)}
-            >
-              {showFullMemory ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                browserStorage().delete("working-memory:goal:1");
-                browserStorage().delete("memory:goal:1");
-                browserStorage().delete("context:goal:1");
-              }}
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowFullMemory(!showFullMemory)}
+                title={showFullMemory ? "Hide Details" : "Show Details"}
+              >
+                {showFullMemory ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  browserStorage().delete("working-memory:goal:1");
+                  browserStorage().delete("memory:goal:1");
+                  browserStorage().delete("context:goal:1");
+                }}
+              >
+                <Trash className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
           </div>
 
-          <Card className="p-3 flex-1 overflow-hidden">
+          <Card className="p-3 flex-1 overflow-auto mx-4 mb-2">
             {workingMemory ? (
-              <pre className="text-xs whitespace-pre-wrap">
+              <pre className="text-xs whitespace-pre-wrap break-all">
                 {showFullMemory
                   ? JSON.stringify(workingMemory, null, 2)
                   : JSON.stringify(
                       {
-                        // Show only key memory elements
                         messages: workingMemory.messages?.length || 0,
-                        context: workingMemory.context,
-                        // Add a summary of other keys
+                        context: workingMemory.context
+                          ? Object.keys(workingMemory.context)
+                          : "N/A",
                         keys: Object.keys(workingMemory),
                       },
                       null,
@@ -271,25 +301,168 @@ export function StateSidebar({
             )}
           </Card>
 
-          <div className="mt-3 flex justify-end">
+          <div className="px-4 pb-2 flex justify-end">
             <Button
               variant="outline"
               size="sm"
-              className="text-xs"
               onClick={() => {
-                // Copy memory to clipboard
                 navigator.clipboard.writeText(
                   JSON.stringify(workingMemory, null, 2)
                 );
               }}
+              title="Copy Memory JSON"
             >
               <Code className="h-3 w-3 mr-1" />
               Copy JSON
             </Button>
           </div>
         </TabsContent>
+
+        <TabsContent value="roms">
+          <div className="flex justify-between items-center mb-2 px-4">
+            <h4 className="text-sm font-medium">ROMs</h4>
+            {/* <Button
+              size="sm"
+              onClick={() => handleClaimEnergy({ romId: "1" })}
+              disabled={isClaimingEnergy}
+            >
+              {isClaimingEnergy ? "Claiming..." : "Claim Energy"}
+            </Button> */}
+          </div>
+
+          {isFetchingRoms ? (
+            <p className="text-xs text-muted-foreground text-center py-4">
+              Loading ROMs...
+            </p>
+          ) : userRoms.length > 0 ? (
+            <div className="space-y-3 p-2">
+              {userRoms.map((rom) => {
+                // Calculate available resources based on production rates and time
+                const calculatedEnergy = Math.min(
+                  rom.factoryStats.percentageOfAWeekSinceLastEnergyClaim *
+                    rom.factoryStats.maxEnergy,
+                  rom.factoryStats.maxEnergy
+                );
+                const calculatedShard = Math.min(
+                  rom.factoryStats.percentageOfAWeekSinceLastShardClaim *
+                    rom.factoryStats.shardProductionPerWeek,
+                  rom.factoryStats.maxShard
+                );
+                const calculatedDust = Math.min(
+                  rom.factoryStats.percentageOfAWeekSinceLastDustClaim *
+                    rom.factoryStats.dustProductionPerWeek,
+                  rom.factoryStats.maxDust
+                );
+
+                return (
+                  <Card
+                    key={rom._id}
+                    className="bg-card/80 border border-blue-900/50 p-3"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <h3 className="text-base font-semibold uppercase">
+                              GIGA-ROM #{rom.docId}
+                            </h3>
+                            <div className="w-5 h-5 bg-yellow-600 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                              {rom.factoryStats.faction.charAt(0)}
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {rom.factoryStats.tier}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {rom.factoryStats.memory}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {rom.factoryStats.serialNumber}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-medium">
+                          Production Bonus: 0% {/* Placeholder */}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      {/* Energy Production */}
+                      <div className="text-center">
+                        <div className="flex items-center justify-center space-x-1 bg-blue-900/30 p-1 rounded border border-blue-800/50 mb-1">
+                          <div className="w-4 h-4 bg-cyan-500 rounded-full"></div>
+                          <span className="text-xs font-medium">
+                            {calculatedEnergy.toFixed(0)} /{" "}
+                            {rom.factoryStats.maxEnergy}
+                          </span>
+                        </div>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="w-full text-xs h-6"
+                          disabled={calculatedEnergy < 1} // Disable if less than 1 energy
+                          onClick={() =>
+                            handleClaimEnergy({ romId: rom.docId })
+                          } // Add claim handler
+                        >
+                          {calculatedEnergy >= 1 ? "Claim" : "Producing"}
+                        </Button>
+                      </div>
+
+                      {/* Shard Production */}
+                      <div className="text-center">
+                        <div className="flex items-center justify-center space-x-1 bg-blue-900/30 p-1 rounded border border-blue-800/50 mb-1">
+                          <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
+                          <span className="text-xs font-medium">
+                            {Math.floor(calculatedShard)} /{" "}
+                            {rom.factoryStats.maxShard}
+                          </span>
+                        </div>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="w-full text-xs h-6"
+                          disabled={calculatedShard < 1} // Disable if less than 1 shard
+                          // onClick={() => handleClaimShard({ romId: rom.docId })} // Placeholder for claim handler
+                        >
+                          {calculatedShard >= 1 ? "Claim" : "Producing"}
+                        </Button>
+                      </div>
+
+                      {/* Dust Production */}
+                      <div className="text-center">
+                        <div className="flex items-center justify-center space-x-1 bg-blue-900/30 p-1 rounded border border-blue-800/50 mb-1">
+                          <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+                          <span className="text-xs font-medium">
+                            {Math.floor(calculatedDust)} /{" "}
+                            {rom.factoryStats.maxDust}
+                          </span>
+                        </div>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="w-full text-xs h-6"
+                          disabled={calculatedDust < 1} // Disable if less than 1 dust
+                          // onClick={() => handleClaimDust({ romId: rom.docId })} // Placeholder for claim handler
+                        >
+                          {calculatedDust >= 1 ? "Claim" : "Producing"}
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-4">
+              No ROMs found for this address or failed to load.
+            </p>
+          )}
+        </TabsContent>
       </Tabs>
-      <div className="flex justify-between items-center p-4">
+      {/* <div className="flex justify-between items-center p-4">
         <h3 className="font-medium">Chat State</h3>
         <div className="flex gap-1">
           <Button
@@ -312,7 +485,6 @@ export function StateSidebar({
         </div>
       </div>
 
-      {/* Model Selection Dropdown */}
       <div className="px-4 pb-2">
         <div className="flex items-center gap-2 mb-2">
           <Settings className="h-4 w-4 text-muted-foreground" />
@@ -324,7 +496,6 @@ export function StateSidebar({
           </SelectTrigger>
           <SelectContent>
             {VALID_MODELS.map((model) => {
-              // Create a more user-friendly display name
               const displayName = model
                 .split("/")
                 .pop()
@@ -340,9 +511,8 @@ export function StateSidebar({
           </SelectContent>
         </Select>
 
-        {/* Model change notification */}
         {modelChangeNotification && (
-          <div className="mt-4 text-xs p-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-md transition-opacity duration-300">
+          <div className="mt-2 text-xs p-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-md transition-opacity duration-300">
             Model changed to{" "}
             <span className="font-medium">
               {selectedModel
@@ -356,7 +526,6 @@ export function StateSidebar({
         )}
       </div>
 
-      {/* Message Display Settings */}
       <div className="px-4 pb-2 mt-4">
         <div className="flex items-center gap-2 mb-2">
           <Code className="h-4 w-4 text-muted-foreground" />
@@ -371,9 +540,7 @@ export function StateSidebar({
             <Switch
               id="showThoughts"
               checked={settings.showThoughtMessages}
-              onCheckedChange={(checked) => {
-                settings.setShowThoughtMessages(checked);
-              }}
+              onCheckedChange={settings.setShowThoughtMessages}
             />
           </div>
 
@@ -384,16 +551,13 @@ export function StateSidebar({
             <Switch
               id="showSystem"
               checked={settings.showSystemMessages}
-              onCheckedChange={(checked) => {
-                settings.setShowSystemMessages(checked);
-              }}
+              onCheckedChange={settings.setShowSystemMessages}
             />
           </div>
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="h-px bg-border mx-4 my-2"></div>
+      <div className="h-px bg-border mx-4 my-2"></div> */}
     </div>
   );
 }

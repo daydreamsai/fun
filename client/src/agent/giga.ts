@@ -13,6 +13,8 @@ import { GameClient } from "./client/GameClient";
 
 // Get the token directly from the store for better reactivity
 export const getGigaToken = () => useSettingsStore.getState().gigaverseToken;
+export const getAbstractAddress = () =>
+  useSettingsStore.getState().abstractAddress;
 
 // Add a helper function to get the API base URL
 export const getApiBaseUrl = () => {
@@ -29,6 +31,7 @@ interface GigaverseState {
   actionToken: string;
   goal: string;
   tasks: string[];
+  energy: number;
   currentTask: string | null;
   currentDungeon: string;
   currentRoom: string;
@@ -65,6 +68,7 @@ export function initializeAgentMemory(memory: any): GigaverseState {
       actionToken: "",
       goal: "Progress in the dungeon",
       tasks: ["Make strategic decisions"],
+      energy: 0,
       currentTask: "Make strategic decisions",
       currentDungeon: "0",
       currentRoom: "0",
@@ -109,6 +113,7 @@ You are an daydreams agent playing the Gigaverse game, a strategic roguelike dun
 - Don't stop after the dungeon is completed, you need to keep playing until you cannot anymore.
 - Don't stop after the game is over, start a new run
 
+- IF you have less than 40 energy [ current energy: {{energy}} ] you cannot play, so prompt the user.
 - ONLY stop if you get 3 errors in a row
 </info>
 
@@ -148,6 +153,7 @@ Last Enemy Move: {{lastEnemyMove}}
 </game_progress>
 
 <player_stats>
+Energy: {{energy}}
 HP: {{playerHealth}}/{{playerMaxHealth}}
 Shield: {{playerShield}}/{{playerMaxShield}}
 Rock: ATK {{rockAttack}} | DEF {{rockDefense}} | Charges {{rockCharges}}
@@ -221,31 +227,28 @@ export const goalContexts = context({
   },
   async loader(state, agent) {
     console.log("loader", state, agent);
+
+    const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
+
+    const energy = await gameClient.getEnergy(getAbstractAddress());
+
+    state.memory.energy = energy;
+
     try {
-      const response = await fetch(`${getApiBaseUrl()}/game/dungeon/state`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getGigaToken()}`,
-        },
-      });
+      const response = await gameClient.fetchDungeonState();
 
-      if (!response.ok) {
-        throw new Error(
-          `Fetch player state failed with status ${response.status}`
-        );
+      if (!response.success) {
+        throw new Error(`Fetch player state failed with status ${response}`);
       }
-
-      const result = await response.json();
 
       // Update the state with player data
       if (
-        result.data &&
-        result.data.run &&
-        result.data.run.players &&
-        result.data.run.players.length > 0
+        response.data &&
+        response.data.run &&
+        response.data.run.players &&
+        response.data.run.players.length > 0
       ) {
-        const playerData = result.data.run.players[0]; // First player is the user
+        const playerData = response.data.run.players[0]; // First player is the user
 
         // Update player stats
         state.memory.currentHP = playerData.health.current.toString();
@@ -270,30 +273,31 @@ export const goalContexts = context({
 
         // Update loot phase status
         state.memory.lootPhase = (
-          result.data.run.lootPhase || false
+          response.data.run.lootPhase || false
         ).toString();
 
         // Update loot options if available
         if (
-          result.data.run.lootOptions &&
-          result.data.run.lootOptions.length > 0
+          response.data.run.lootOptions &&
+          response.data.run.lootOptions.length > 0
         ) {
-          state.memory.lootOptions = result.data.run.lootOptions;
+          state.memory.lootOptions = response.data.run.lootOptions;
           state.memory.currentLoot =
-            result.data.run.lootOptions.length.toString();
+            response.data.run.lootOptions.length.toString();
         }
 
         // Update room information if available
-        if (result.data.entity) {
-          state.memory.currentRoom = result.data.entity.ROOM_NUM_CID.toString();
+        if (response.data.entity) {
+          state.memory.currentRoom =
+            response.data.entity.ROOM_NUM_CID.toString();
           state.memory.currentDungeon =
-            result.data.entity.DUNGEON_ID_CID.toString();
-          state.memory.currentEnemy = result.data.entity.ENEMY_CID.toString();
+            response.data.entity.DUNGEON_ID_CID.toString();
+          state.memory.currentEnemy = response.data.entity.ENEMY_CID.toString();
         }
 
         // Update enemy stats if available
-        if (result.data.run.players.length > 1) {
-          const enemyData = result.data.run.players[1]; // Second player is the enemy
+        if (response.data.run.players.length > 1) {
+          const enemyData = response.data.run.players[1]; // Second player is the enemy
           state.memory.enemyHealth = enemyData.health.current.toString();
           state.memory.enemyMaxHealth = enemyData.health.currentMax.toString();
           state.memory.enemyShield = enemyData.shield.current.toString();
@@ -327,6 +331,7 @@ export const goalContexts = context({
       goal: "Play the game until you cannot anymore",
       tasks: ["Progress through the dungeon"],
       currentTask: "Progress through the dungeon",
+      energy: 0,
       currentDungeon: "0",
       currentRoom: "0",
       currentEnemy: "0",

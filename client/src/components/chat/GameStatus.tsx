@@ -1,3 +1,4 @@
+import { MAX_ENERGY } from "@/agent/client/GameClient";
 import { Card } from "@/components/ui/card";
 
 interface GameStatusProps {
@@ -7,6 +8,22 @@ interface GameStatusProps {
 export function GameStatus({ goalContext }: GameStatusProps) {
   return (
     <Card className="p-1 mb-4 border-2 border-primary/20 bg-primary/5 ">
+      <div className="flex flex-col w-full bg-background/80 p-3">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm font-medium uppercase">Energy</span>
+          <span className="text-sm">
+            {goalContext?.memory?.energy.toFixed(1) || 0} / {MAX_ENERGY}
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 h-2.5 dark:bg-gray-700">
+          <div
+            className="bg-primary h-2.5 animate-pulse"
+            style={{
+              width: `${Math.min(100, ((goalContext?.memory?.energy || 0) / 240) * 100)}%`,
+            }}
+          ></div>
+        </div>
+      </div>
       <div className="bg-background/80 p-3 rounded-md">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium uppercase">Loot Available</span>

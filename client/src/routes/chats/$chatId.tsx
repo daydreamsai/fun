@@ -8,7 +8,7 @@ import { v7 as randomUUIDv7 } from "uuid";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMessages } from "@/hooks/use-messages";
 import { useAutoScroll } from "@/hooks/use-auto-scroll";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { hasApiKey, useSettingsStore } from "@/store/settingsStore";
@@ -18,6 +18,7 @@ import { useAgentStore } from "@/store/agentStore";
 import { StateSidebar, HelpWindow, MessageInput } from "@/components/chat";
 import { goalContexts } from "@/agent/giga";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import clsx from "clsx";
 
 export const Route = createFileRoute("/chats/$chatId")({
   component: RouteComponent,
@@ -105,9 +106,8 @@ function RouteComponent() {
         context: goalContexts,
         args: {
           id: chatId,
-          initialGoal:
-            "You are a dungeon crawler. You are currently in the dungeon. You need to find the exit.",
-          initialTasks: ["You need to find the exit."],
+          initialGoal: "",
+          initialTasks: [""],
         },
       }),
     [dreams, chatId]
@@ -208,6 +208,9 @@ function RouteComponent() {
     }
   };
 
+  // State for mobile sidebar
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   return (
     <>
       {/* Help Window */}
@@ -227,16 +230,18 @@ function RouteComponent() {
         </div>
       )}
 
-      <div className="flex flex-1 relative">
-        {/* Use ref for the messages container, add padding-right to account for sidebar */}
+      {/* Main container: flex-col by default, lg:flex-row for larger screens */}
+      <div className="flex flex-col lg:flex-row flex-1 relative h-full">
+        {/* Messages container: takes full width on small screens, allows space for sidebar on large screens */}
         <div
           className="flex flex-col flex-1 z-0 overflow-y-auto "
           ref={messagesContainerRef}
           style={{
             scrollBehavior: "smooth",
-            scrollPaddingBottom: "250px",
+            scrollPaddingBottom: "250px", // Adjust as needed based on MessageInput height
           }}
         >
+          {/* Content within messages container: centered with max-width */}
           <div className="flex-1 p-4 w-full max-w-4xl mx-auto">
             <Card className="mb-4 max-h-[250px] min-h-[250px] overflow-y-auto">
               <CardHeader>
@@ -278,21 +283,53 @@ function RouteComponent() {
           </div>
         </div>
 
-        <StateSidebar
-          contextId={contextId}
-          messages={messages}
-          dreams={dreams}
-          isLoading={isLoading}
-        />
+        {/* Sidebar Toggle Button (Mobile) */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed top-4 right-4 z-50 lg:hidden" // Show only on small screens
+          onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        >
+          <Menu className="h-6 w-6" />
+        </Button>
+
+        {/* Mobile Sidebar Backdrop */}
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+
+        {/* Wrapper div for State Sidebar: Handles responsive visibility and layout */}
+        {/* Default: Hidden on small screens, flex on large */}
+        {/* Mobile: Fixed position, slide-in animation */}
+        <div
+          className={clsx(
+            "flex-col flex-shrink-0 border-l bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-y-auto transition-transform duration-300 ease-in-out",
+            "lg:flex lg:static lg:translate-x-0 lg:z-auto lg:border-l", // Large screen styles (static positioning)
+            {
+              "fixed inset-y-0 right-0 z-40 translate-x-0": isMobileSidebarOpen, // Mobile open styles
+              "fixed inset-y-0 right-0 z-40 translate-x-full":
+                !isMobileSidebarOpen, // Mobile closed styles
+            }
+          )}
+        >
+          <StateSidebar
+            contextId={contextId}
+            messages={messages}
+            dreams={dreams}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
 
-      {/* Help button fixed to bottom right */}
-
+      {/* Help button: Adjusted right margin for smaller screens */}
       <Button
         size="icon"
         variant="outline"
-        className="fixed bottom-20 right-8 z-50 rounded-full h-10 w-10"
-        onClick={() => setHelpDialogOpen(true)}
+        className="fixed bottom-20 right-4 lg:right-8 z-50 rounded-full h-10 w-10"
+        onClick={() => setHelpDialogOpen(!helpDialogOpen)}
       >
         <HelpCircle className="h-5 w-5" />
       </Button>

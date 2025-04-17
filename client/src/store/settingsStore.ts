@@ -16,6 +16,7 @@ export interface UserSettings {
   openrouterKey: string;
   anthropicKey: string;
   gigaverseToken: string;
+  abstractAddress: string;
   showThoughtMessages: boolean;
   showSystemMessages: boolean;
   showHelpWindow: boolean;
@@ -27,6 +28,7 @@ interface SettingsState extends UserSettings {
   setOpenRouterKey: (key: string) => void;
   setAnthropicKey: (key: string) => void;
   setGigaverseToken: (token: string) => void;
+  setAbstractAddress: (address: string) => void;
   setShowThoughtMessages: (show: boolean) => void;
   setShowSystemMessages: (show: boolean) => void;
   setShowHelpWindow: (show: boolean) => void;
@@ -40,6 +42,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   openrouterKey: "",
   anthropicKey: "",
   gigaverseToken: "",
+  abstractAddress: "",
   showThoughtMessages: true,
   showSystemMessages: true,
   showHelpWindow: true,
@@ -55,6 +58,7 @@ export const useSettingsStore = create<SettingsState>()(
       setOpenRouterKey: (openrouterKey) => set({ openrouterKey }),
       setAnthropicKey: (anthropicKey) => set({ anthropicKey }),
       setGigaverseToken: (gigaverseToken) => set({ gigaverseToken }),
+      setAbstractAddress: (abstractAddress) => set({ abstractAddress }),
       setShowThoughtMessages: (showThoughtMessages) =>
         set({ showThoughtMessages }),
       setShowSystemMessages: (showSystemMessages) =>

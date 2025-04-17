@@ -26,6 +26,8 @@ import {
   GetEnergyResponse,
 } from "./types/responses";
 
+export const MAX_ENERGY = 240;
+
 /**
  * Main SDK class exposing methods for dungeon runs, user data, items, etc.
  */
@@ -65,10 +67,30 @@ export class GameClient {
     return response;
   }
 
-  public async getEnergy(address: string): Promise<GetEnergyResponse> {
+  public async getEnergy(address: string): Promise<number> {
     logger.info("Getting energy...");
-    const endpoint = `/offchain/energy/${address}`;
-    return this.httpClient.get<GetEnergyResponse>(endpoint);
+    const regenRate = 2777777;
+
+    const now = Date.now() / 1000;
+
+    const energy = await this.httpClient.get<GetEnergyResponse>(
+      `/offchain/player/energy/${address}`
+    );
+
+    const lastClaim = energy.entities[0].TIMESTAMP_CID;
+
+    const timeSinceLastClaim = now - lastClaim;
+
+    const energyToAdd = regenRate * timeSinceLastClaim;
+
+    const newEnergy =
+      (energyToAdd + energy.entities[0].ENERGY_CID) / 1000000000;
+
+    if (newEnergy > MAX_ENERGY) {
+      return MAX_ENERGY;
+    }
+
+    return newEnergy;
   }
 
   /**
