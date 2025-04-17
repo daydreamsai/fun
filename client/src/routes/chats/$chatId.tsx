@@ -106,8 +106,6 @@ function RouteComponent() {
         context: goalContexts,
         args: {
           id: chatId,
-          initialGoal: "",
-          initialTasks: [""],
         },
       }),
     [dreams, chatId]
@@ -179,9 +177,6 @@ function RouteComponent() {
         context: goalContexts,
         args: {
           id: chatId,
-          initialGoal:
-            "You are a dungeon crawler. You are currently in the dungeon. You need to find the exit.",
-          initialTasks: ["You need to find the exit."],
         },
         input: {
           type: "message",

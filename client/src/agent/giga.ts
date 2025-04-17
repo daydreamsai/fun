@@ -29,8 +29,6 @@ export const getApiBaseUrl = () => {
 // Define an interface for the state
 interface GigaverseState {
   actionToken: string;
-  goal: string;
-  tasks: string[];
   energy: number;
   currentTask: string | null;
   currentDungeon: string;
@@ -66,8 +64,6 @@ export function initializeAgentMemory(memory: any): GigaverseState {
   if (!memory) {
     memory = {
       actionToken: "",
-      goal: "Progress in the dungeon",
-      tasks: ["Make strategic decisions"],
       energy: 0,
       currentTask: "Make strategic decisions",
       currentDungeon: "0",
@@ -218,8 +214,6 @@ export const goalContexts = context({
   maxSteps: 100,
   schema: z.object({
     id: string(),
-    initialGoal: z.string().default("Play the game until you cannot anymore"),
-    initialTasks: z.array(z.string()).default(["Make strategic decisions"]),
   }),
   maxWorkingMemorySize: 20,
   key() {
@@ -328,8 +322,6 @@ export const goalContexts = context({
   create(_state): GigaverseState {
     return {
       actionToken: "0",
-      goal: "Play the game until you cannot anymore",
-      tasks: ["Progress through the dungeon"],
       currentTask: "Progress through the dungeon",
       energy: 0,
       currentDungeon: "0",

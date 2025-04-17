@@ -91,8 +91,6 @@ export function StateSidebar({
           context: goalContexts,
           args: {
             id: "chat:gigaverse-1",
-            initialGoal: "You are a helpful assistant",
-            initialTasks: ["You are a helpful assistant"],
           },
         });
 
