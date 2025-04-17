@@ -414,6 +414,7 @@ export const goalContexts = context({
       .describe(
         "You use this to make an action in a dungeon. If the lootPhase == true then you can select the Loot option, which will then take you to the next phase. If the lootPhase == false then you can select the Rock, Paper, Scissors option."
       ),
+
     async handler(args, { memory }, _agent) {
       try {
         const { action, dungeonId } = args;

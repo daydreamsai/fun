@@ -138,8 +138,6 @@ export function createAgent() {
     apiKey: settings.openrouterKey,
   });
 
-  console.log("Creating agent with settings:", settings);
-
   return createDreams({
     model: openrouter(settings.model || "deepseek/deepseek-r1"),
 
