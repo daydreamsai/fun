@@ -109,8 +109,8 @@ export function useMessages() {
   // Handle incoming logs from the agent
   const handleLog = useCallback(
     (log: AnyRef, done: boolean) => {
+      console.log("handleLog", log);
       if (log.ref === LogRefType.Input) {
-        console.log("handleLog", log);
         updateMessage(log, "user", log.data.content);
         setIsLoading(true);
       } else if (log.ref === LogRefType.Thought) {
@@ -134,11 +134,12 @@ export function useMessages() {
 
         const actionInfo: ActionInfo = {
           type: log.name as `${ActionName}`,
-          result: log.data.result?.data.run.players[0].otherPlayerWin
+          result: log.data.result?.run?.players[0].otherPlayerWin
             ? "lose"
             : "win",
-          move: log.data.result?.data.run.players[0].lastMove,
+          move: log.data.result?.run?.players[0].lastMove,
         };
+
         const readableResult = `Result for ${log.name}
 Data: ${JSON.stringify(log.data)}`;
 

@@ -169,7 +169,7 @@ function Index() {
               >
                 <Link
                   to="/chats/$chatId"
-                  params={{ chatId: chat.args?.chatId }}
+                  params={{ chatId: chat.args?.id }}
                   className="block rounded-xl border hover:border-primary transition-colors overflow-hidden shadow-sm"
                 >
                   {/* Image space */}

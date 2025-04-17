@@ -9,6 +9,7 @@ import {
 import { string, z } from "zod";
 
 import { useSettingsStore } from "@/store/settingsStore";
+import { GameClient } from "./client/GameClient";
 
 // Get the token directly from the store for better reactivity
 export const getGigaToken = () => useSettingsStore.getState().gigaverseToken;
@@ -103,6 +104,12 @@ You are an daydreams agent playing the Gigaverse game, a strategic roguelike dun
 <info>
 - You are interacting with a game that is running on a server, sometimes you might make a mistake if your formatting, think then try again 
 - You can only use an Attack that has a charge, if you don't have a charge you can't use it and it will cause an error. So if you don't have a charge, don't use it.
+- Don't stop after killing an enemy, you need to keep playing until you cannot anymore.
+- Don't stop after the loot phase, you need to keep playing until you cannot anymore.
+- Don't stop after the dungeon is completed, you need to keep playing until you cannot anymore.
+- Don't stop after the game is over, start a new run
+
+- ONLY stop if you get 3 errors in a row
 </info>
 
 <goal>
@@ -211,6 +218,107 @@ export const goalContexts = context({
   maxWorkingMemorySize: 20,
   key() {
     return "1";
+  },
+  async loader(state, agent) {
+    console.log("loader", state, agent);
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/game/dungeon/state`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getGigaToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Fetch player state failed with status ${response.status}`
+        );
+      }
+
+      const result = await response.json();
+
+      // Update the state with player data
+      if (
+        result.data &&
+        result.data.run &&
+        result.data.run.players &&
+        result.data.run.players.length > 0
+      ) {
+        const playerData = result.data.run.players[0]; // First player is the user
+
+        // Update player stats
+        state.memory.currentHP = playerData.health.current.toString();
+        state.memory.playerHealth = playerData.health.current.toString();
+        state.memory.playerMaxHealth = playerData.health.currentMax.toString();
+        state.memory.playerShield = playerData.shield.current.toString();
+        state.memory.playerMaxShield = playerData.shield.currentMax.toString();
+
+        // Update rock/paper/scissor stats
+        state.memory.rockAttack = playerData.rock.currentATK.toString();
+        state.memory.rockDefense = playerData.rock.currentDEF.toString();
+        state.memory.rockCharges = playerData.rock.currentCharges.toString();
+
+        state.memory.paperAttack = playerData.paper.currentATK.toString();
+        state.memory.paperDefense = playerData.paper.currentDEF.toString();
+        state.memory.paperCharges = playerData.paper.currentCharges.toString();
+
+        state.memory.scissorAttack = playerData.scissor.currentATK.toString();
+        state.memory.scissorDefense = playerData.scissor.currentDEF.toString();
+        state.memory.scissorCharges =
+          playerData.scissor.currentCharges.toString();
+
+        // Update loot phase status
+        state.memory.lootPhase = (
+          result.data.run.lootPhase || false
+        ).toString();
+
+        // Update loot options if available
+        if (
+          result.data.run.lootOptions &&
+          result.data.run.lootOptions.length > 0
+        ) {
+          state.memory.lootOptions = result.data.run.lootOptions;
+          state.memory.currentLoot =
+            result.data.run.lootOptions.length.toString();
+        }
+
+        // Update room information if available
+        if (result.data.entity) {
+          state.memory.currentRoom = result.data.entity.ROOM_NUM_CID.toString();
+          state.memory.currentDungeon =
+            result.data.entity.DUNGEON_ID_CID.toString();
+          state.memory.currentEnemy = result.data.entity.ENEMY_CID.toString();
+        }
+
+        // Update enemy stats if available
+        if (result.data.run.players.length > 1) {
+          const enemyData = result.data.run.players[1]; // Second player is the enemy
+          state.memory.enemyHealth = enemyData.health.current.toString();
+          state.memory.enemyMaxHealth = enemyData.health.currentMax.toString();
+          state.memory.enemyShield = enemyData.shield.current.toString();
+          state.memory.enemyMaxShield = enemyData.shield.currentMax.toString();
+
+          // Update battle result and enemy move if available
+          if (enemyData.lastMove) {
+            state.memory.lastEnemyMove = enemyData.lastMove;
+
+            // Determine battle result based on thisPlayerWin and otherPlayerWin properties
+            if (playerData.thisPlayerWin === true) {
+              state.memory.lastBattleResult = "win";
+            } else if (enemyData.thisPlayerWin === true) {
+              state.memory.lastBattleResult = "lose";
+            } else {
+              state.memory.lastBattleResult = "draw";
+            }
+          }
+        }
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error("Error fetching player state:", errorMessage);
+    }
   },
 
   create(_state): GigaverseState {
@@ -331,22 +439,14 @@ export const goalContexts = context({
           dungeonId: dungeonId,
         };
 
-        const response = await fetch(`${getApiBaseUrl()}/game/dungeon/action`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getGigaToken()}`,
-          },
-          body: JSON.stringify(payload),
-        });
+        const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
+        const response = await gameClient.playMove(payload);
 
-        if (!response.ok) {
+        if (!response.success) {
           throw new Error(
-            `Attack action failed with status ${response.status}`
+            `Attack action failed with status ${response.success}`
           );
         }
-
-        const result = await response.json();
 
         // Add a 4 second delay to allow for animation and user experience
         await new Promise((resolve) => setTimeout(resolve, 4000));
@@ -357,13 +457,13 @@ export const goalContexts = context({
 
         // Extract data from the response structure
         if (
-          result.data &&
-          result.data.run &&
-          result.data.run.players &&
-          result.data.run.players.length >= 2
+          response.data &&
+          response.data.run &&
+          response.data.run.players &&
+          response.data.run.players.length >= 2
         ) {
-          const playerData = result.data.run.players[0]; // First player is the user
-          const enemyData = result.data.run.players[1]; // Second player is the enemy
+          const playerData = response.data.run.players[0]; // First player is the user
+          const enemyData = response.data.run.players[1]; // Second player is the enemy
 
           // Get the enemy's last move
           enemyMove = enemyData.lastMove || "unknown";
@@ -406,31 +506,32 @@ export const goalContexts = context({
           memory.lastEnemyMove = enemyMove;
 
           // Update loot phase status
-          memory.lootPhase = (result.data.run.lootPhase || false).toString();
+          memory.lootPhase = (response.data.run.lootPhase || false).toString();
 
           // Update loot options if available
           if (
-            result.data.run.lootOptions &&
-            result.data.run.lootOptions.length > 0
+            response.data.run.lootOptions &&
+            response.data.run.lootOptions.length > 0
           ) {
-            memory.lootOptions = result.data.run.lootOptions;
-            memory.currentLoot = result.data.run.lootOptions.length.toString();
+            memory.lootOptions = response.data.run.lootOptions;
+            memory.currentLoot =
+              response.data.run.lootOptions.length.toString();
           }
 
           // Update room information
-          if (result.data.entity) {
-            memory.currentRoom = result.data.entity.ROOM_NUM_CID.toString();
+          if (response.data.entity) {
+            memory.currentRoom = response.data.entity.ROOM_NUM_CID.toString();
             memory.currentDungeon =
-              result.data.entity.DUNGEON_ID_CID.toString();
-            memory.currentEnemy = result.data.entity.ENEMY_CID.toString();
+              response.data.entity.DUNGEON_ID_CID.toString();
+            memory.currentEnemy = response.data.entity.ENEMY_CID.toString();
           }
         }
 
-        memory.actionToken = result.actionToken;
+        memory.actionToken = response.actionToken;
 
         return {
           success: true,
-          result,
+          result: response.data,
           message: `
          Successfully performed ${action} attack in dungeon ${dungeonId}
 
@@ -466,26 +567,20 @@ export const goalContexts = context({
     description: "Fetch information about all upcoming enemies in the dungeon",
     schema: z.object({}), // No parameters needed for this GET request
     async handler(_data, _ctx: any, _agent: Agent) {
-      try {
-        const response = await fetch(`${getApiBaseUrl()}/indexer/enemies`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getGigaToken()}`,
-          },
-        });
+      const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
 
-        if (!response.ok) {
+      try {
+        const response = await gameClient.getAllEnemies();
+
+        if (!response.entities) {
           throw new Error(
-            `Fetch enemies failed with status ${response.status}`
+            `Fetch enemies failed with status ${response.entities}`
           );
         }
 
-        const result = await response.json();
-
         return {
           success: true,
-          enemies: result,
+          enemies: response.entities,
           message: "Successfully fetched upcoming enemies data",
         };
       } catch (error: unknown) {
@@ -505,122 +600,114 @@ export const goalContexts = context({
   /**
    * Action to fetch the player's current state in the dungeon
    */
-  action({
-    name: "getPlayerState",
-    description:
-      "Fetch the current state of the player in the dungeon, you should do this when you start a new run or when you die",
-    schema: z.object({}), // No parameters needed for this GET request
-    async handler(_data, { memory }, _agent: Agent) {
-      try {
-        const response = await fetch(`${getApiBaseUrl()}/game/dungeon/state`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getGigaToken()}`,
-          },
-        });
+  // action({
+  //   name: "getPlayerState",
+  //   description:
+  //     "Fetch the current state of the player in the dungeon, you should do this when you start a new run or when you die",
+  //   schema: z.object({}),
+  //   async handler(_data, { memory }, _agent: Agent) {
+  //     const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
+  //     try {
+  //       const response = await gameClient.fetchDungeonState();
 
-        if (!response.ok) {
-          throw new Error(
-            `Fetch player state failed with status ${response.status}`
-          );
-        }
+  //       if (!response.data) {
+  //         throw new Error(
+  //           `Fetch player state failed with status ${response.success}`
+  //         );
+  //       }
 
-        const result = await response.json();
+  //       // Update the state with player data
+  //       if (
+  //         response.data &&
+  //         response.data.run &&
+  //         response.data.run.players &&
+  //         response.data.run.players.length > 0
+  //       ) {
+  //         const playerData = response.data.run.players[0]; // First player is the user
 
-        console.log("result", result);
+  //         // Update player stats
+  //         memory.currentHP = playerData.health.current.toString();
+  //         memory.playerHealth = playerData.health.current.toString();
+  //         memory.playerMaxHealth = playerData.health.currentMax.toString();
+  //         memory.playerShield = playerData.shield.current.toString();
+  //         memory.playerMaxShield = playerData.shield.currentMax.toString();
 
-        // Update the state with player data
-        if (
-          result.data &&
-          result.data.run &&
-          result.data.run.players &&
-          result.data.run.players.length > 0
-        ) {
-          const playerData = result.data.run.players[0]; // First player is the user
+  //         // Update rock/paper/scissor stats
+  //         memory.rockAttack = playerData.rock.currentATK.toString();
+  //         memory.rockDefense = playerData.rock.currentDEF.toString();
+  //         memory.rockCharges = playerData.rock.currentCharges.toString();
 
-          // Update player stats
-          memory.currentHP = playerData.health.current.toString();
-          memory.playerHealth = playerData.health.current.toString();
-          memory.playerMaxHealth = playerData.health.currentMax.toString();
-          memory.playerShield = playerData.shield.current.toString();
-          memory.playerMaxShield = playerData.shield.currentMax.toString();
+  //         memory.paperAttack = playerData.paper.currentATK.toString();
+  //         memory.paperDefense = playerData.paper.currentDEF.toString();
+  //         memory.paperCharges = playerData.paper.currentCharges.toString();
 
-          // Update rock/paper/scissor stats
-          memory.rockAttack = playerData.rock.currentATK.toString();
-          memory.rockDefense = playerData.rock.currentDEF.toString();
-          memory.rockCharges = playerData.rock.currentCharges.toString();
+  //         memory.scissorAttack = playerData.scissor.currentATK.toString();
+  //         memory.scissorDefense = playerData.scissor.currentDEF.toString();
+  //         memory.scissorCharges = playerData.scissor.currentCharges.toString();
 
-          memory.paperAttack = playerData.paper.currentATK.toString();
-          memory.paperDefense = playerData.paper.currentDEF.toString();
-          memory.paperCharges = playerData.paper.currentCharges.toString();
+  //         // Update loot phase status
+  //         memory.lootPhase = (response.data.run.lootPhase || false).toString();
 
-          memory.scissorAttack = playerData.scissor.currentATK.toString();
-          memory.scissorDefense = playerData.scissor.currentDEF.toString();
-          memory.scissorCharges = playerData.scissor.currentCharges.toString();
+  //         // Update loot options if available
+  //         if (
+  //           response.data.run.lootOptions &&
+  //           response.data.run.lootOptions.length > 0
+  //         ) {
+  //           memory.lootOptions = response.data.run.lootOptions;
+  //           memory.currentLoot =
+  //             response.data.run.lootOptions.length.toString();
+  //         }
 
-          // Update loot phase status
-          memory.lootPhase = (result.data.run.lootPhase || false).toString();
+  //         // Update room information if available
+  //         if (response.data.entity) {
+  //           memory.currentRoom = response.data.entity.ROOM_NUM_CID.toString();
+  //           memory.currentDungeon =
+  //             response.data.entity.DUNGEON_ID_CID.toString();
+  //           memory.currentEnemy = response.data.entity.ENEMY_CID.toString();
+  //         }
 
-          // Update loot options if available
-          if (
-            result.data.run.lootOptions &&
-            result.data.run.lootOptions.length > 0
-          ) {
-            memory.lootOptions = result.data.run.lootOptions;
-            memory.currentLoot = result.data.run.lootOptions.length.toString();
-          }
+  //         // Update enemy stats if available
+  //         if (response.data.run.players.length > 1) {
+  //           const enemyData = response.data.run.players[1]; // Second player is the enemy
+  //           memory.enemyHealth = enemyData.health.current.toString();
+  //           memory.enemyMaxHealth = enemyData.health.currentMax.toString();
+  //           memory.enemyShield = enemyData.shield.current.toString();
+  //           memory.enemyMaxShield = enemyData.shield.currentMax.toString();
 
-          // Update room information if available
-          if (result.data.entity) {
-            memory.currentRoom = result.data.entity.ROOM_NUM_CID.toString();
-            memory.currentDungeon =
-              result.data.entity.DUNGEON_ID_CID.toString();
-            memory.currentEnemy = result.data.entity.ENEMY_CID.toString();
-          }
+  //           // Update battle result and enemy move if available
+  //           if (enemyData.lastMove) {
+  //             memory.lastEnemyMove = enemyData.lastMove;
 
-          // Update enemy stats if available
-          if (result.data.run.players.length > 1) {
-            const enemyData = result.data.run.players[1]; // Second player is the enemy
-            memory.enemyHealth = enemyData.health.current.toString();
-            memory.enemyMaxHealth = enemyData.health.currentMax.toString();
-            memory.enemyShield = enemyData.shield.current.toString();
-            memory.enemyMaxShield = enemyData.shield.currentMax.toString();
+  //             // Determine battle result based on thisPlayerWin and otherPlayerWin properties
+  //             if (playerData.thisPlayerWin === true) {
+  //               memory.lastBattleResult = "win";
+  //             } else if (enemyData.thisPlayerWin === true) {
+  //               memory.lastBattleResult = "lose";
+  //             } else {
+  //               memory.lastBattleResult = "draw";
+  //             }
+  //           }
+  //         }
+  //       }
 
-            // Update battle result and enemy move if available
-            if (enemyData.lastMove) {
-              memory.lastEnemyMove = enemyData.lastMove;
+  //       return {
+  //         success: true,
+  //         playerState: response.data,
+  //         message: "Successfully fetched player's dungeon state",
+  //       };
+  //     } catch (error: unknown) {
+  //       const errorMessage =
+  //         error instanceof Error ? error.message : String(error);
+  //       console.error("Error fetching player state:", error);
 
-              // Determine battle result based on thisPlayerWin and otherPlayerWin properties
-              if (playerData.thisPlayerWin === true) {
-                memory.lastBattleResult = "win";
-              } else if (enemyData.thisPlayerWin === true) {
-                memory.lastBattleResult = "lose";
-              } else {
-                memory.lastBattleResult = "draw";
-              }
-            }
-          }
-        }
-
-        return {
-          success: true,
-          playerState: result,
-          message: "Successfully fetched player's dungeon state",
-        };
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        console.error("Error fetching player state:", error);
-
-        return {
-          success: false,
-          error: errorMessage,
-          message: "Failed to fetch player's dungeon state",
-        };
-      }
-    },
-  }),
+  //       return {
+  //         success: false,
+  //         error: errorMessage,
+  //         message: "Failed to fetch player's dungeon state",
+  //       };
+  //     }
+  //   },
+  // }),
 
   /**
    * Action to start a new dungeon run
@@ -650,31 +737,24 @@ export const goalContexts = context({
           },
         };
 
-        const response = await fetch(`${getApiBaseUrl()}/game/dungeon/action`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getGigaToken()}`,
-          },
-          body: JSON.stringify(payload),
-        });
+        const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
 
-        if (!response.ok) {
+        const response = await gameClient.startRun(payload);
+
+        if (!response.success) {
           throw new Error(
-            `Start new run failed with status ${response.status}`
+            `Start new run failed with status ${response.success}`
           );
         }
 
-        const result = await response.json();
-
         if (
-          result.data &&
-          result.data.run &&
-          result.data.run.players &&
-          result.data.run.players.length > 0
+          response.data &&
+          response.data.run &&
+          response.data.run.players &&
+          response.data.run.players.length > 0
         ) {
           const state = initializeAgentMemory(ctx);
-          const playerData = result.data.run.players[0]; // First player is the user
+          const playerData = response.data.run.players[0]; // First player is the user
 
           // Update player stats
           state.currentHP = playerData.health.current.toString();
@@ -712,11 +792,11 @@ export const goalContexts = context({
           state.currentEnemy = "0";
         }
 
-        ctx.memory.actionToken = result.actionToken;
+        ctx.memory.actionToken = response.actionToken;
 
         return {
           success: true,
-          result,
+          result: response.data,
           message: `Successfully started a new run in dungeon ${dungeonId}`,
         };
       } catch (error: unknown) {
