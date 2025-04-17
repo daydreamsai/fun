@@ -30,7 +30,6 @@ export const getApiBaseUrl = () => {
 interface GigaverseState {
   actionToken: string;
   energy: number;
-  currentTask: string | null;
   currentDungeon: string;
   currentRoom: string;
   currentEnemy: string;
@@ -65,7 +64,6 @@ export function initializeAgentMemory(memory: any): GigaverseState {
     memory = {
       actionToken: "",
       energy: 0,
-      currentTask: "Make strategic decisions",
       currentDungeon: "0",
       currentRoom: "0",
       currentEnemy: "0",
@@ -163,12 +161,6 @@ HP: {{enemyHealth}}/{{enemyMaxHealth}}
 Shield: {{enemyShield}}/{{enemyMaxShield}}
 </enemy_stats>
 
-<goals_and_tasks>
-Goal: {{goal}}
-Tasks: {{tasks}}
-Current Task: {{currentTask}}
-</goals_and_tasks>
-
 Strategic Guidelines:
 1. Always use your strongest abilities first
 2. Use sword on 3 energy first
@@ -219,9 +211,7 @@ export const goalContexts = context({
   key() {
     return "1";
   },
-  async loader(state, agent) {
-    console.log("loader", state, agent);
-
+  async loader(state, _agent) {
     const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
 
     const energy = await gameClient.getEnergy(getAbstractAddress());
@@ -322,7 +312,6 @@ export const goalContexts = context({
   create(_state): GigaverseState {
     return {
       actionToken: "0",
-      currentTask: "Progress through the dungeon",
       energy: 0,
       currentDungeon: "0",
       currentRoom: "0",
@@ -355,9 +344,6 @@ export const goalContexts = context({
 
   render({ memory }) {
     return render(template, {
-      goal: memory.goal,
-      tasks: memory.tasks.join("\n"),
-      currentTask: memory.currentTask ?? "NONE",
       currentDungeon: memory.currentDungeon ?? "0",
       currentRoom: memory.currentRoom ?? "0",
       currentEnemy: memory.currentEnemy ?? "0",
