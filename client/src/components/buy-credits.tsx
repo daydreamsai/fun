@@ -396,7 +396,7 @@ export function BuyCredits() {
 
           <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
             <span className="font-medium">Price per credit:</span>
-            <span>${CREDIT_PRICE_PER_UNIT.toFixed(2)}</span>
+            <span>${CREDIT_PRICE_PER_UNIT?.toFixed(2)}</span>
           </div>
 
           <div className="flex justify-between items-center p-4 bg-primary/10 rounded-lg">

@@ -12,7 +12,7 @@ export function GameStatus({ goalContext }: GameStatusProps) {
         <div className="flex items-center justify-between mb-1">
           <span className="text-sm font-medium uppercase">Energy</span>
           <span className="text-sm">
-            {goalContext?.memory?.energy.toFixed(1) || 0} / {MAX_ENERGY}
+            {goalContext?.memory?.energy?.toFixed(1) || 0} / {MAX_ENERGY}
           </span>
         </div>
         <div className="w-full bg-gray-200 h-2.5 dark:bg-gray-700">

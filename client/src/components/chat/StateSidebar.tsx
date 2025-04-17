@@ -394,7 +394,7 @@ export function StateSidebar({
                         <div className="flex items-center justify-center space-x-1 bg-blue-900/30 p-1 rounded border border-blue-800/50 mb-1">
                           <div className="w-4 h-4 bg-cyan-500 rounded-full"></div>
                           <span className="text-xs font-medium">
-                            {calculatedEnergy.toFixed(0)} /{" "}
+                            {calculatedEnergy?.toFixed(0)} /{" "}
                             {rom.factoryStats.maxEnergy}
                           </span>
                         </div>
