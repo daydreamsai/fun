@@ -56,9 +56,6 @@ export function StateSidebar({
   const [isFetchingRoms, setIsFetchingRoms] = useState(false);
   const [_isClaimingEnergy, setIsClaimingEnergy] = useState(false);
 
-  // Placeholder for user address
-  const userAddress = "0xYourUserAddress";
-
   const refreshMemoryStats = useCallback(async () => {
     setIsRefreshing(true);
     try {
@@ -99,8 +96,6 @@ export function StateSidebar({
           },
         });
 
-        console.log("chat:gigaverse-1", result);
-
         if (isMounted) {
           setGoalContext(result);
         }
@@ -120,7 +115,7 @@ export function StateSidebar({
 
   // Fetch User ROMs when ROMS tab is active
   useEffect(() => {
-    if (activeTab === "roms" && userAddress) {
+    if (activeTab === "roms" && getAbstractAddress()) {
       const fetchRoms = async () => {
         setIsFetchingRoms(true);
 
@@ -137,7 +132,7 @@ export function StateSidebar({
       };
       fetchRoms();
     }
-  }, [activeTab, userAddress]);
+  }, [activeTab]);
 
   // Placeholder function for claiming energy
   const handleClaimEnergy = async ({ romId }: { romId: string }) => {

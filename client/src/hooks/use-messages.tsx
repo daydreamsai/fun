@@ -109,7 +109,6 @@ export function useMessages() {
   // Handle incoming logs from the agent
   const handleLog = useCallback(
     (log: AnyRef, done: boolean) => {
-      console.log("handleLog", log);
       if (log.ref === LogRefType.Input) {
         updateMessage(log, "user", log.data.content);
         setIsLoading(true);

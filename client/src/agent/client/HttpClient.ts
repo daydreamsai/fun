@@ -32,6 +32,7 @@ export class HttpClient {
       headers: {
         Authorization: `Bearer ${this.authToken}`,
         Accept: "*/*",
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });

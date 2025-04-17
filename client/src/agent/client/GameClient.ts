@@ -77,6 +77,8 @@ export class GameClient {
       `/offchain/player/energy/${address}`
     );
 
+    console.log("energy", energy);
+
     const lastClaim = energy.entities[0].TIMESTAMP_CID;
 
     const timeSinceLastClaim = now - lastClaim;

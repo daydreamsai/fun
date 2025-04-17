@@ -159,8 +159,6 @@ export function MessagesList({
     }
   };
 
-  console.log(filteredMessages);
-
   return (
     <div className="flex flex-col space-y-4 mx-auto">
       <AnimatePresence mode="popLayout">
