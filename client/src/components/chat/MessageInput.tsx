@@ -22,8 +22,8 @@ export function MessageInput({
 
     if (!msg.trim()) return;
 
-    await onSubmit(msg);
     form.reset();
+    await onSubmit(msg);
   };
 
   return (
@@ -31,7 +31,7 @@ export function MessageInput({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-background flex items-center mt-auto sticky bottom-0 left-0 right-0 z-10"
+      className="bg-background flex items-center mt-auto sticky bottom-0 left-0 right-0"
       onSubmit={handleSubmit}
     >
       <motion.input

@@ -16,7 +16,7 @@ import { useAgentStore } from "@/store/agentStore";
 
 // Import our components
 import { StateSidebar, HelpWindow, MessageInput } from "@/components/chat";
-import { goalContexts } from "@/agent/giga";
+import { gigaverseContext } from "@/agent/giga";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import clsx from "clsx";
 
@@ -103,7 +103,7 @@ function RouteComponent() {
   const contextId = useMemo(
     () =>
       dreams.getContextId({
-        context: goalContexts,
+        context: gigaverseContext,
         args: {
           id: chatId,
         },
@@ -174,7 +174,7 @@ function RouteComponent() {
 
     try {
       await dreams.send({
-        context: goalContexts,
+        context: gigaverseContext,
         args: {
           id: chatId,
         },

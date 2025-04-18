@@ -1,10 +1,4 @@
-import {
-  context,
-  extension,
-  formatMsg,
-  input,
-  output,
-} from "@daydreamsai/core";
+import { context, extension, input, output } from "@daydreamsai/core";
 import { z } from "zod";
 
 const chatContext = context({
@@ -21,7 +15,6 @@ Current ISO time is: ${date.toISOString()}, timestamp: ${date.getTime()}`;
 
 export const chat = extension({
   name: "chat",
-
   contexts: {
     chat: chatContext,
   },
@@ -29,27 +22,19 @@ export const chat = extension({
     message: input({
       schema: z.object({ user: z.string(), content: z.string() }),
       format({ data }) {
-        return formatMsg({
-          role: "user",
-          user: data.user,
-          content: data.content,
-        });
+        return {
+          tag: "input",
+          params: { user: data.user },
+          children: data.content,
+        };
       },
     }),
   },
   outputs: {
     message: output({
-      schema: z.object({
-        user: z.string().describe("the user you are replying to"),
-        content: z.string(),
-      }),
-      handler(_params, _ctx, _agent) {
-        return {
-          data: _params,
-          timestamp: Date.now(),
-        };
-      },
+      schema: z.string(),
       required: true,
+      examples: [`<output type="message">Hi!</output>`],
     }),
   },
   actions: [],
