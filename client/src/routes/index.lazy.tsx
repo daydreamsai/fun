@@ -96,12 +96,6 @@ function Index() {
     );
   }
 
-  // Function to get a display name for the chat
-  const getChatDisplayName = (chatId: string) => {
-    // For now, just return "Gigaverse 1" for all chats
-    return "Gigaverse " + chatId;
-  };
-
   // Upcoming games to tease
   const upcomingGames = [
     {
@@ -170,10 +164,10 @@ function Index() {
                 <Link
                   to="/chats/$chatId"
                   params={{ chatId: chat.args?.id }}
-                  className="block rounded-xl border hover:border-primary transition-colors overflow-hidden shadow-sm"
+                  className="block  border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
                 >
                   {/* Image space */}
-                  <div className="h-48 bg-gray-200 relative overflow-hidden">
+                  <div className="h-48  relative overflow-hidden">
                     <motion.img
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.3 }}
@@ -184,7 +178,7 @@ function Index() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-xl mb-1">
-                      {getChatDisplayName(chat.args?.chatId)}
+                      {chat.args?.id}
                     </h3>
                   </div>
                 </Link>
@@ -195,7 +189,7 @@ function Index() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="col-span-full text-center py-16 border rounded-xl"
+              className="col-span-full text-center py-16 border "
             >
               <h3 className="text-xl font-medium mb-2">No game sessions yet</h3>
               <p className="mb-6">Start your first Gigaverse adventure!</p>
@@ -239,8 +233,8 @@ function Index() {
               custom={index}
               className="relative"
             >
-              <div className="block rounded-xl border">
-                <div className="h-48 bg-gray-200 relative overflow-hidden opacity-60 rounded-t-xl">
+              <div className="block  border">
+                <div className="h-48 bg-gray-200 relative overflow-hidden opacity-60">
                   <img
                     src={game.image}
                     alt={game.name}
