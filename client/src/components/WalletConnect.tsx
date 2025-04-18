@@ -96,7 +96,7 @@ export const WalletConnect: FC = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild className="mr-10 lg:mr-0">
         <Button variant="outline" className="flex items-center gap-2">
           <Wallet className="h-4 w-4" />
           <span>{formatWalletAddress(publicKey.toString())}</span>

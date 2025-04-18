@@ -140,11 +140,11 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
   // Show loading state during any wallet interaction
   if (isChecking || connecting || isAuthenticating) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center w-full justify-start align-bottom p-4 font-mono">
+      <div className="flex min-h-[calc(100vh-4rem)] items-end sm:items-center w-full justify-center p-4 sm:p-8 font-mono">
         <AsciiBackgroundEffect />
-        <Card className="w-[350px] border-2 border-primary/10 shadow-lg self-end bg-background/80 backdrop-blur-sm">
+        <Card className="w-full max-w-sm border-2 border-primary/50 shadow-lg bg-background/80 backdrop-blur-sm">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-center text-xl">
+            <CardTitle className="text-center text-xl uppercase">
               {connecting
                 ? "Connecting Wallet"
                 : isAuthenticating
@@ -169,14 +169,14 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
 
   if (!accessState.hasAccess) {
     return (
-      <div className="flex min-h-[calc(100vh)] items-center w-full justify-start align-bottom p-4 font-mono">
+      <div className="flex min-h-screen items-end sm:items-center w-full justify-center p-4 sm:p-8 font-mono">
         <AsciiBackgroundEffect />
-        <Card className="w-full max-w-md  border border-primary/20 self-end shadow-2xl bg-background/80 backdrop-blur-sm">
+        <Card className="w-full max-w-md border border-primary/20 shadow-2xl bg-background/80 backdrop-blur-sm">
           <CardHeader className="space-y-3 pb-6">
             <img
               src="/Daydreams.svg"
               alt="logo"
-              className=" h-10 mx-auto mb-x"
+              className=" h-10 sm:h-12 mx-auto"
             />
 
             <p className="text-center text-sm text-muted-foreground mb-5">
@@ -347,7 +347,7 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-3 border-t border-primary/10 bg-muted/10 px-6 py-4 backdrop-blur-sm">
+          <CardFooter className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 border-t border-primary/10 bg-muted/10 px-6 py-4 backdrop-blur-sm">
             <div className="flex gap-3 justify-center">
               <Button
                 variant="link"

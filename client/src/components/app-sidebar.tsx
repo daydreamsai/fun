@@ -181,8 +181,6 @@ function ChatHistoryList() {
     );
   }
 
-  console.log(chats);
-
   return (
     <div>
       {chats?.data.map((chat) => (
@@ -200,11 +198,7 @@ function ChatHistoryList() {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar
-      className="uppercase tracking-wider border"
-      collapsible="icon"
-      {...props}
-    >
+    <Sidebar collapsible="icon" {...props}>
       <SidebarContent>
         <NavMain items={data.navMain} />
         {/* <NavProjects projects={data.projects} /> */}
@@ -248,7 +242,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </a>
           </SidebarMenuSubButton>
         </div>
-        {/* <NavUser user={data.user} /> */}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

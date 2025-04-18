@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { AsciiEffect } from "three/examples/jsm/effects/AsciiEffect.js";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+// import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 interface AsciiBackgroundEffectProps {
   className?: string;
@@ -18,8 +18,7 @@ export const AsciiBackgroundEffect = ({
     let renderer: THREE.WebGLRenderer,
       asciiEffect: AsciiEffect,
       camera: THREE.PerspectiveCamera,
-      scene: THREE.Scene,
-      controls: OrbitControls;
+      scene: THREE.Scene;
 
     let sphere: THREE.Mesh;
     let particleSystem: THREE.Points;
@@ -35,6 +34,18 @@ export const AsciiBackgroundEffect = ({
 
     const PRIMARY_COLOR = 0x00ffcc; // Neon cyan
     const SECONDARY_COLOR = 0xff007a; // Neon pink
+
+    let mouseX = 0,
+      mouseY = 0;
+    let windowHalfX = window.innerWidth / 2;
+    let windowHalfY = window.innerHeight / 2;
+
+    const onDocumentMouseMove = (event: MouseEvent) => {
+      mouseX = (event.clientX - windowHalfX) * 0.2; // Adjust multiplier for sensitivity
+      mouseY = (event.clientY - windowHalfY) * 0.2; // Adjust multiplier for sensitivity
+    };
+
+    document.addEventListener("mousemove", onDocumentMouseMove, false);
 
     const init = () => {
       camera = new THREE.PerspectiveCamera(
@@ -186,7 +197,7 @@ export const AsciiBackgroundEffect = ({
         new THREE.LineBasicMaterial({
           color: PRIMARY_COLOR,
           transparent: true,
-          opacity: 0.5,
+          opacity: 0.1,
         })
       );
       scene.add(dataLines);
@@ -196,7 +207,7 @@ export const AsciiBackgroundEffect = ({
 
       asciiEffect = new AsciiEffect(renderer, " ░▒▓█", {
         invert: true,
-        resolution: 0.15,
+        resolution: 0.2,
         color: false,
       });
       asciiEffect.setSize(window.innerWidth, window.innerHeight);
@@ -212,15 +223,13 @@ export const AsciiBackgroundEffect = ({
       asciiEffect.domElement.style.height = "100%";
 
       containerRef.current?.appendChild(asciiEffect.domElement);
-
-      controls = new OrbitControls(camera, asciiEffect.domElement);
-      controls.autoRotate = true;
-      controls.autoRotateSpeed = 0.1;
-      controls.enableZoom = false;
-      controls.enablePan = false;
     };
 
     const onWindowResize = () => {
+      // Update windowHalfX and windowHalfY on resize (use outer scope variables)
+      windowHalfX = window.innerWidth / 2;
+      windowHalfY = window.innerHeight / 2;
+
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -230,6 +239,11 @@ export const AsciiBackgroundEffect = ({
     const animate = (_currentTime: number) => {
       requestAnimationFrame(animate);
       const timer = Date.now() - start;
+
+      // Make camera look towards mouse position
+      camera.position.x += (mouseX - camera.position.x) * 0.05;
+      camera.position.y += (-mouseY - camera.position.y) * 0.05;
+      camera.lookAt(scene.position); // Look at the center of the scene
 
       sphere.rotation.y = timer * 0.0002;
       sphere.scale.setScalar(1 + Math.sin(timer * 0.001) * 0.05);
@@ -267,7 +281,6 @@ export const AsciiBackgroundEffect = ({
 
       dataLines.rotation.y = timer * 0.00005;
 
-      controls.update();
       asciiEffect.render(scene, camera);
     };
 
@@ -279,7 +292,7 @@ export const AsciiBackgroundEffect = ({
         containerRef.current.removeChild(asciiEffect.domElement);
       }
       window.removeEventListener("resize", onWindowResize);
-      controls.dispose();
+      document.removeEventListener("mousemove", onDocumentMouseMove, false); // Remove listener
       renderer.dispose();
     };
   }, []);
