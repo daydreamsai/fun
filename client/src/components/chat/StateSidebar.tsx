@@ -133,14 +133,20 @@ export function StateSidebar({
   }, [activeTab]);
 
   // Placeholder function for claiming energy
-  const handleClaimEnergy = async ({ romId }: { romId: string }) => {
+  const handleClaimEnergy = async ({
+    romId,
+    claimId,
+  }: {
+    romId: string;
+    claimId: string;
+  }) => {
     setIsClaimingEnergy(true);
     try {
       console.log("Claiming energy...");
 
       const response = await gameClient.claimEnergy({
-        romId: romId,
-        claimId: "1",
+        romId,
+        claimId,
       });
 
       console.log("response", response);
@@ -397,7 +403,10 @@ export function StateSidebar({
                           className="w-full text-xs h-6"
                           disabled={calculatedEnergy < 1} // Disable if less than 1 energy
                           onClick={() =>
-                            handleClaimEnergy({ romId: rom.docId })
+                            handleClaimEnergy({
+                              romId: rom.docId,
+                              claimId: "energy",
+                            })
                           } // Add claim handler
                         >
                           {calculatedEnergy >= 1 ? "Claim" : "Producing"}
@@ -418,7 +427,12 @@ export function StateSidebar({
                           size="sm"
                           className="w-full text-xs h-6"
                           disabled={calculatedShard < 1} // Disable if less than 1 shard
-                          // onClick={() => handleClaimShard({ romId: rom.docId })} // Placeholder for claim handler
+                          onClick={() =>
+                            handleClaimEnergy({
+                              romId: rom.docId,
+                              claimId: "shards",
+                            })
+                          }
                         >
                           {calculatedShard >= 1 ? "Claim" : "Producing"}
                         </Button>
@@ -438,7 +452,12 @@ export function StateSidebar({
                           size="sm"
                           className="w-full text-xs h-6"
                           disabled={calculatedDust < 1} // Disable if less than 1 dust
-                          // onClick={() => handleClaimDust({ romId: rom.docId })} // Placeholder for claim handler
+                          onClick={() =>
+                            handleClaimEnergy({
+                              romId: rom.docId,
+                              claimId: "dust",
+                            })
+                          } // Placeholder for claim handler
                         >
                           {calculatedDust >= 1 ? "Claim" : "Producing"}
                         </Button>

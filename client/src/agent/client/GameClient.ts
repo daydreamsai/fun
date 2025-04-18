@@ -63,6 +63,7 @@ export class GameClient {
       endpoint,
       payload
     );
+
     logger.info(`Claim result => success: ${response.success}`);
     return response;
   }
