@@ -48,7 +48,17 @@ import { env } from "./env";
 const app = express();
 const PORT = env.PORT;
 
-app.use(cors());
+// Configure CORS so that the server explicitly allows requests coming from the client
+// domain and also responds properly to pre‑flight (OPTIONS) requests.
+const corsOptions = {
+  // Allow the front‑end origin (env.CLIENT_URL falls back to the production URL)
+  origin: env.CLIENT_URL || "https://play.dreams.fun",
+  credentials: true, // in case you need to send cookies / auth headers
+};
+
+app.use(cors(corsOptions));
+// Enable pre‑flight across‑the‑board so every route handles OPTIONS correctly
+app.options("*", cors(corsOptions));
 
 app.use((req, res, next) => {
   if (req.originalUrl === "/api/webhook") {
