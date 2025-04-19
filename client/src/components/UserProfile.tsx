@@ -63,7 +63,7 @@ export function UserProfile() {
     <Tabs defaultValue="profile" className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-8">
         <TabsTrigger value="profile">Profile</TabsTrigger>
-        <TabsTrigger value="credits">Credits</TabsTrigger>
+        {/* <TabsTrigger value="credits">Credits</TabsTrigger> */}
       </TabsList>
 
       <TabsContent value="profile">
