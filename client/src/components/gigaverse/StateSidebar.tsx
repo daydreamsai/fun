@@ -125,13 +125,9 @@ export function GigaverseStateSidebar({
   }
 
   return (
-    <div className="">
+    <div>
       <img src="/giga.jpeg" alt="Giga Banner" />
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        // className="flex-1 flex flex-col h-full mt-4"
-      >
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="memory">Memory</TabsTrigger>

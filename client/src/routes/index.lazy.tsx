@@ -73,7 +73,7 @@ function Index() {
         const contexts = await agent.getContexts();
 
         console.log(contexts);
-        setChats(contexts.filter((ctx) => ctx.type === "goal") as any);
+        setChats(contexts.filter((ctx) => ctx.type === "gigaverse") as any);
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching chats:", error);
@@ -162,7 +162,7 @@ function Index() {
                 custom={index}
               >
                 <Link
-                  to="/chats/$chatId"
+                  to="/games/gigaverse/$chatId"
                   params={{ chatId: chat.args?.id }}
                   className="block  border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
                 >
@@ -199,7 +199,10 @@ function Index() {
                 variants={buttonVariants}
               >
                 <Button asChild variant="outline">
-                  <Link to="/chats/$chatId" params={{ chatId: `gigaverse-1` }}>
+                  <Link
+                    to="/games/gigaverse/$chatId"
+                    params={{ chatId: `gigaverse-1` }}
+                  >
                     <PlusCircle size={20} className="mr-2" />
                     <span>Start New Game</span>
                   </Link>

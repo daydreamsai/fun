@@ -22,8 +22,7 @@ export function useContextState<TContext extends AnyContext>(ref: {
   return useQuery({
     queryKey: ["context", contextId],
     queryFn: async () => {
-      const state = await agent.getContext(ref);
-      return state;
+      return await agent.getContext(ref);
     },
   });
 }
@@ -37,8 +36,9 @@ export function useWorkingMemory<TContext extends AnyContext>(ref: {
   return useQuery({
     queryKey: ["workingMemory", contextId],
     queryFn: async () => {
-      const workingMemory = await agent.getWorkingMemory(contextId);
-      return structuredClone(getWorkingMemoryAllLogs(workingMemory));
+      return structuredClone(
+        getWorkingMemoryAllLogs(await agent.getWorkingMemory(contextId))
+      );
     },
     initialData: () => [],
   });
