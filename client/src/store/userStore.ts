@@ -41,7 +41,6 @@ interface UserState {
   updateUser: (updates: UserUpdate) => Promise<void>;
   fetchUser: (walletAddress: string) => Promise<User | null>;
   addCredits: (amount: number) => Promise<void>;
-  useCredits: (amount: number) => Promise<boolean>;
 
   // API Key Management
   getApiKey: () => Promise<OpenRouterKeyData | null>;
@@ -211,52 +210,6 @@ export const useUserStore = create<UserState>()(
                 : "Unknown error adding credits",
             isLoading: false,
           });
-        }
-      },
-
-      useCredits: async (amount: number) => {
-        const { currentUser } = get();
-        if (!currentUser) {
-          set({ error: "No user logged in" });
-          return false;
-        }
-
-        if (amount <= 0) {
-          set({ error: "Amount must be greater than 0" });
-          return false;
-        }
-
-        if ((currentUser.credits || 0) < amount) {
-          set({ error: "Insufficient credits" });
-          return false;
-        }
-
-        set({ isLoading: true, error: null });
-        try {
-          const response = await apiPost(
-            `/api/user/${currentUser.id}/use-credits`,
-            { amount }
-          );
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to use credits");
-          }
-
-          const { user, success, message } = await response.json();
-          set({ currentUser: user, isLoading: false });
-          console.log(message);
-          return success;
-        } catch (error) {
-          console.error("Use credits error:", error);
-          set({
-            error:
-              error instanceof Error
-                ? error.message
-                : "Unknown error using credits",
-            isLoading: false,
-          });
-          return false;
         }
       },
 

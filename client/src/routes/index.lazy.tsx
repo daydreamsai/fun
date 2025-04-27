@@ -99,6 +99,12 @@ function Index() {
   // Upcoming games to tease
   const upcomingGames = [
     {
+      id: "ponzi",
+      name: "Ponzi Land",
+      description: "A ponzi game onchain",
+      image: "/ponzi.jpeg",
+    },
+    {
       id: "eternum",
       name: "Eternum",
       description: "An onchain 4x game or epic conquest",
