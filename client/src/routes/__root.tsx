@@ -6,7 +6,6 @@ import {
   Link,
   Outlet,
   ErrorComponent as TanStackErrorComponent,
-  useRouterState,
 } from "@tanstack/react-router";
 
 import {
@@ -23,7 +22,6 @@ import { WalletContextProvider } from "@/context/WalletContext";
 import { TokenGate } from "@/components/TokenGate";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
 
 // Custom error component that passes the error prop correctly
 const CustomErrorComponent = ({ error }: { error: Error }) => {
@@ -32,15 +30,12 @@ const CustomErrorComponent = ({ error }: { error: Error }) => {
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  sidebar?: ReactNode;
 }>()({
   // Add error boundary to handle routing errors
   errorComponent: CustomErrorComponent,
 
   component: () => {
     const { queryClient } = Route.useRouteContext();
-    const matches = useRouterState({ select: (s) => s.matches });
-    const route = matches.reverse().find((d) => d.context.sidebar);
 
     return (
       <>
@@ -73,7 +68,6 @@ export const Route = createRootRouteWithContext<{
                     </header>
                     <Outlet />
                   </SidebarInset>
-                  {route?.context.sidebar}
                 </SidebarProvider>
               </TokenGate>
             </WalletContextProvider>

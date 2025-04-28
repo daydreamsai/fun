@@ -8,6 +8,7 @@ import {
   Settings,
   Trash,
   Cpu,
+  ShieldQuestion,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,13 +26,16 @@ import { GameClient } from "@/agent/client/GameClient";
 import { RomEntity } from "@/agent/client/types/responses";
 import { useContextState, useWorkingMemory } from "@/hooks/agent";
 import { useAgentStore } from "@/store/agentStore";
+import { useSettingsStore } from "@/store/settingsStore";
 
 export function GigaverseStateSidebar({
   args,
   isLoading,
+  clearMemory,
 }: {
   args: InferSchemaArguments<GigaverseContext["schema"]>;
   isLoading?: boolean;
+  clearMemory: () => void;
 }) {
   const agent = useAgentStore((state) => state.agent);
 
@@ -106,6 +110,10 @@ export function GigaverseStateSidebar({
     }
   };
 
+  const setShowHelpWindow = useSettingsStore(
+    (state) => state.setShowHelpWindow
+  );
+
   if (isCollapsed) {
     return (
       <div className="border-l bg-background/95 backdrop-blur flex flex-col items-center py-4 h-full">
@@ -127,6 +135,15 @@ export function GigaverseStateSidebar({
   return (
     <div>
       <img src="/giga.jpeg" alt="Giga Banner" />
+      <div className="flex">
+        <Button className="w-full" onClick={clearMemory}>
+          Clear Memory <Trash className="w-4 h-4 stroke-black" />
+        </Button>
+        <Button className="w-full" onClick={() => setShowHelpWindow(true)}>
+          Help <ShieldQuestion className="w-4 h-4 stroke-black" />
+        </Button>
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -169,17 +186,23 @@ export function GigaverseStateSidebar({
             <div className="text-xs">
               <p>
                 User:{" "}
-                {workingMemory.data.filter((m) => m.ref === "input").length}
+                {
+                  workingMemory.data.filter((m: any) => m.ref === "input")
+                    .length
+                }
               </p>
               <p>
                 Agent:{" "}
-                {workingMemory.data.filter((m) => m.ref === "output").length}
+                {
+                  workingMemory.data.filter((m: any) => m.ref === "output")
+                    .length
+                }
               </p>
               <p>
                 System:{" "}
                 {
                   workingMemory.data.filter(
-                    (m) => !(m.ref === "input" || m.ref === "output")
+                    (m: any) => !(m.ref === "input" || m.ref === "output")
                   ).length
                 }
               </p>

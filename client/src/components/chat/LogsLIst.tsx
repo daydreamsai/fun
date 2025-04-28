@@ -1,5 +1,4 @@
 import { ChevronsUpDown } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { AnyRef } from "@daydreamsai/core";
 import {
   Collapsible,
@@ -7,7 +6,6 @@ import {
   CollapsibleTrigger,
 } from "../ui/collapsible";
 import { Button } from "../ui/button";
-import { useSettingsStore } from "@/store/settingsStore";
 import { ReactNode } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
@@ -19,26 +17,16 @@ export function LogContainer({
   children?: ReactNode;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
-      transition={{
-        duration: 0.3,
-        ease: "easeOut",
-      }}
-      className="flex"
-    >
-      <motion.div
-        layout
+    <div className="flex">
+      <div
         className={cn(
           "relative p-4 text-sm shadow-md transition-all duration-200 max-w-[90%] min-w-[40%] whitespace-pre-wrap break-words border-opacity-50",
           className
         )}
       >
         {children}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -118,17 +106,17 @@ export function LogsList({
   logs: AnyRef[];
   components?: ComponentsRecord;
 }) {
-  // Get show message settings from the store
-  const showThoughtMessages = useSettingsStore(
-    (state) => state.showThoughtMessages
-  );
+  // // Get show message settings from the store
+  // const showThoughtMessages = useSettingsStore(
+  //   (state) => state.showThoughtMessages
+  // );
 
-  const showSystemMessages = useSettingsStore(
-    (state) => state.showSystemMessages
-  );
+  // const showSystemMessages = useSettingsStore(
+  //   (state) => state.showSystemMessages
+  // );
 
   // Filter messages based on settings
-  const filteredMessages = logs.filter((log) => {
+  const filteredMessages = logs.filter((_log: any) => {
     // if (log.ref === "thought" && !showThoughtMessages) return false;
     // if (["input", "output"].includes(log.ref) && !showSystemMessages)
     //   return false;
@@ -145,19 +133,17 @@ export function LogsList({
   };
 
   return (
-    <div className="flex flex-col space-y-4 mx-auto">
-      <AnimatePresence mode="popLayout">
-        {filteredMessages.map((log, i) => {
-          const Component = allComponents[log.ref] as React.FC<{
-            log: AnyRef;
-            getLog: (id: string) => AnyRef | undefined;
-          }>;
+    <div className="flex flex-col space-y-2 w-full">
+      {filteredMessages.map((log) => {
+        const Component = allComponents[log.ref] as React.FC<{
+          log: AnyRef;
+          getLog: (id: string) => AnyRef | undefined;
+        }>;
 
-          return Component ? (
-            <Component key={log.id} log={log} getLog={getLog} />
-          ) : null;
-        })}
-      </AnimatePresence>
+        return Component ? (
+          <Component key={log.id} log={log} getLog={getLog} />
+        ) : null;
+      })}
     </div>
   );
 }

@@ -1,16 +1,15 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { v7 as randomUUIDv7 } from "uuid";
 import { useAutoScroll } from "@/hooks/use-auto-scroll";
-import { HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { hasApiKey, useSettingsStore } from "@/store/settingsStore";
 import { useAgentStore } from "@/store/agentStore";
+import { useTemplateStore } from "@/store/templateStore";
 
-// Import our components
 import { HelpWindow, MessageInput } from "@/components/chat";
-import { gigaverseContext } from "@/agent/giga";
+import { gigaverseContext, gigaverseVariables } from "@/agent/giga";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLogs, useSend } from "@/hooks/agent";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
@@ -19,8 +18,15 @@ import { GigaverseStateSidebar } from "@/components/gigaverse/StateSidebar";
 import { ActionResult } from "@daydreamsai/core";
 import { GigaverseAction } from "@/components/gigaverse/Actions";
 import { LogsList } from "@/components/chat/LogsLIst";
+import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
 
-function GigaverSidebar({ chatId }: { chatId: string }) {
+function GigaverSidebar({
+  chatId,
+  clearMemory,
+}: {
+  chatId: string;
+  clearMemory: () => void;
+}) {
   return (
     <Sidebar
       collapsible="none"
@@ -30,7 +36,11 @@ function GigaverSidebar({ chatId }: { chatId: string }) {
       side="right"
     >
       <SidebarContent className="bg-sidebar">
-        <GigaverseStateSidebar args={{ id: chatId }} isLoading={false} />
+        <GigaverseStateSidebar
+          args={{ id: chatId }}
+          isLoading={false}
+          clearMemory={clearMemory}
+        />
       </SidebarContent>
     </Sidebar>
   );
@@ -38,12 +48,7 @@ function GigaverSidebar({ chatId }: { chatId: string }) {
 
 export const Route = createFileRoute("/games/gigaverse/$chatId")({
   component: RouteComponent,
-  context({ params }) {
-    return {
-      sidebar: <GigaverSidebar chatId={params.chatId} />,
-    };
-  },
-  loader({ params }) {
+  loader({ params }: { params: { chatId: string } }) {
     // Check if user has required API keys
     const hasOpenRouterKey = hasApiKey("openrouterKey");
     const hasGigaverseToken = hasApiKey("gigaverseToken");
@@ -71,14 +76,16 @@ function RouteComponent() {
   const { chatId } = Route.useParams();
 
   const agent = useAgentStore((state) => state.agent);
-
-  // Settings for help window
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
   const setShowHelpWindow = useSettingsStore(
     (state) => state.setShowHelpWindow
   );
 
-  // Check API keys for notification
+  const agentRef = useRef(agent);
+
+  const { template, setTemplate, resetTemplate } = useTemplateStore();
+
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [missingKeys, setMissingKeys] = useState<string[]>([]);
 
   useEffect(() => {
@@ -92,19 +99,18 @@ function RouteComponent() {
     setMissingKeys(missing);
   }, []);
 
-  const { logs } = useLogs({
+  const { logs, clearMemory } = useLogs({
+    agent: agentRef.current,
     context: gigaverseContext,
     args: { id: chatId },
   });
 
-  const { send, abortControllerRef } = useSend({
-    agent,
+  const { send } = useSend({
+    agent: agentRef.current,
     context: gigaverseContext,
     args: { id: chatId },
-    async onSuccess(data, variables) {},
   });
 
-  // Handle message submission
   const handleSubmitMessage = async (message: string) => {
     send.mutate({
       input: {
@@ -117,9 +123,16 @@ function RouteComponent() {
     });
   };
 
+  const handleApplyTemplate = (newTemplate: string) => {
+    setTemplate(newTemplate);
+  };
+
+  const handleResetTemplate = () => {
+    resetTemplate();
+  };
+
   const thoughts = logs.filter((log) => log.ref === "thought");
 
-  // Use our custom hook for scroll management
   const messagesContainerRef = useAutoScroll([logs], {
     threshold: 150,
     behavior: "auto",
@@ -127,17 +140,16 @@ function RouteComponent() {
 
   return (
     <>
-      {/* Help Window */}
       <HelpWindow open={showHelpWindow} onOpenChange={setShowHelpWindow} />
-      {/* Help button: Adjusted right margin for smaller screens */}
-      <Button
-        size="icon"
-        variant="outline"
-        className="fixed bottom-8 right-4 lg:right-8 z-50 rounded-full h-10 w-10"
-        onClick={() => setShowHelpWindow(true)}
-      >
-        <HelpCircle className="h-5 w-5" />
-      </Button>
+      <TemplateEditorDialog
+        open={showTemplateEditor}
+        onOpenChange={setShowTemplateEditor}
+        title="Agent Prompt Template"
+        requiredVariables={gigaverseVariables}
+        initialTemplate={template}
+        onApplyTemplate={handleApplyTemplate}
+        onResetTemplate={handleResetTemplate}
+      />
 
       {/* API Key Notification */}
       {missingKeys.length > 0 && missingKeys.length < 2 && (
@@ -155,45 +167,55 @@ function RouteComponent() {
 
       {/* Main container: flex-col by default, lg:flex-row for larger screens */}
       {/* Messages container: takes full width on small screens, allows space for sidebar on large screens */}
-      <div
-        className="flex flex-col flex-1 overflow-y-scroll pb-80 px-6 mr-0.5"
-        ref={messagesContainerRef}
-        style={{
-          scrollBehavior: "smooth",
-          scrollPaddingBottom: "250px", // Adjust as needed based on MessageInput height
-        }}
-      >
-        {/* Content within messages container: centered with max-width */}
-        <div className="flex-1 p-4 w-full max-w-4xl mx-auto">
-          {thoughts.length > 0 && (
-            <Card className="mb-4 max-h-[250px] min-h-[250px] overflow-y-auto">
-              <CardHeader>
-                <CardTitle>Agent Thoughts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div key={thoughts[thoughts.length - 1].id}>
-                  {thoughts[thoughts.length - 1].content}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-        <LogsList
-          logs={logs}
-          components={{
-            action_call: ({ log, getLog }) => {
-              const result = getLog<ActionResult>(
-                (t) => t.ref === "action_result" && t.callId === log.id
-              );
-
-              if (log.name.startsWith("gigaverse")) {
-                return <GigaverseAction call={log} result={result} />;
-              }
-
-              // todo: render default action
-              return null;
-            },
+      <div className="flex flex-row h-full">
+        <div
+          className="flex flex-col flex-1 overflow-y-scroll pb-80 px-6 mr-0.5"
+          ref={messagesContainerRef}
+          style={{
+            scrollBehavior: "smooth",
+            scrollPaddingBottom: "250px", // Adjust as needed based on MessageInput height
           }}
+        >
+          {/* Content within messages container: centered with max-width */}
+          <div className="pt-4 w-full max-w-4xl">
+            {/* Agent Thoughts Section */}
+            {thoughts.length > 0 && (
+              <Card className="mb-2 max-h-[250px] min-h-[250px] overflow-y-auto border-primary">
+                <CardHeader>
+                  <CardTitle>Agent Thoughts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div key={thoughts[thoughts.length - 1].id}>
+                    {thoughts[thoughts.length - 1].content}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          <LogsList
+            logs={logs}
+            components={{
+              action_call: ({ log, getLog }) => {
+                const result = getLog<ActionResult>(
+                  (t) => t.ref === "action_result" && t.callId === log.id
+                );
+
+                if (log.name.startsWith("gigaverse")) {
+                  return (
+                    <GigaverseAction key={log.id} call={log} result={result} />
+                  );
+                }
+
+                return null;
+              },
+            }}
+          />
+        </div>
+        <GigaverSidebar
+          chatId={chatId}
+          clearMemory={() =>
+            clearMemory("working-memory:gigaverse:gigaverse-1")
+          }
         />
       </div>
 
@@ -201,6 +223,7 @@ function RouteComponent() {
         isLoading={send.isPending}
         disabled={missingKeys.length === 2}
         onSubmit={handleSubmitMessage}
+        setShowTemplateEditor={setShowTemplateEditor}
         placeholderText={
           missingKeys.length === 2
             ? "Please set up API keys in settings to start chatting"

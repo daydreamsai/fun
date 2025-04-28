@@ -116,12 +116,40 @@ export const browserStorage = (): MemoryStore => {
       try {
         // 1. Delete from IndexedDB
         await idbDelete(key);
+
+        console.log("Deleted from IndexedDB", key);
         // 2. Delete from in-memory cache
         await memoryStore.delete(key);
       } catch (error) {
         console.error(`IndexedDB delete failed for key "${key}":`, error);
         await memoryStore.delete(key); // Ensure memory is updated even if IDB fails
         throw error; // Re-throw to indicate persistence layer failure
+      }
+    },
+    async keys(): Promise<string[]> {
+      try {
+        // 1. Get keys from in-memory cache
+        const memoryKeys = await memoryStore.keys();
+
+        // 2. Get keys from IndexedDB
+        const db = await getDb();
+        const idbKeys = await db.getAllKeys(STORE_NAME);
+
+        // 3. Combine and deduplicate
+        const allKeys = new Set([...memoryKeys, ...(idbKeys as string[])]);
+        return Array.from(allKeys);
+      } catch (error) {
+        console.error("Failed to retrieve keys:", error);
+        // Fallback: try returning only memory keys if IDB fails
+        try {
+          return await memoryStore.keys();
+        } catch (memError) {
+          console.error(
+            "Failed to retrieve memory keys after IDB failure:",
+            memError
+          );
+          return []; // Return empty array if both fail
+        }
       }
     },
   };

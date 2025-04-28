@@ -43,7 +43,7 @@ export function HelpWindow({ open, onOpenChange }: HelpWindowProps) {
               <div className="bg-muted p-3 rounded-md">
                 <p className="font-medium">Quick Start:</p>
                 <ul className="list-disc list-inside space-y-1 mt-1">
-                  <li>Just say "hey start playing" to begin</li>
+                  <li>Just say "hey start playing and don't stop" to begin</li>
                   <li>
                     The AI agent will automatically run your dungeon adventures
                   </li>
@@ -60,11 +60,20 @@ export function HelpWindow({ open, onOpenChange }: HelpWindowProps) {
             <div className="text-sm space-y-2">
               <ul className="list-disc list-inside space-y-1">
                 <li>
+                  If the agent is saying it can't continue but you are in the
+                  middle of a run, just tell it "You must use rock the next
+                  move, you have enough energy"
+                </li>
+                <li>
                   <strong>Constant 400 errors</strong> - check your energy
                   levels
                 </li>
                 <li>
                   Try refreshing the page if the game becomes unresponsive
+                </li>
+                <li>
+                  The agent remembers actions, if you have been going for a long
+                  time - reseting sometimes helps.
                 </li>
               </ul>
             </div>

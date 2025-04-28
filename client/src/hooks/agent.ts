@@ -45,17 +45,18 @@ export function useWorkingMemory<TContext extends AnyContext>(ref: {
 }
 
 export function useLogs<TContext extends AnyContext>(ref: {
+  agent: AnyAgent;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
+  amount?: number;
 }) {
-  const agent = useAgentStore((state) => state.agent);
   const [logs, setLogs] = useState<AnyRef[]>([]);
-  const contextId = agent.getContextId(ref);
+  const contextId = ref.agent.getContextId(ref);
 
   const workingMemory = useWorkingMemory(ref);
 
   useEffect(() => {
-    const unsubscribe = agent.subscribeContext(contextId, (log) => {
+    const unsubscribe = ref.agent.subscribeContext(contextId, (log) => {
       setLogs((logs) => [...logs.filter((l) => l.id !== log.id), log]);
     });
     return () => {
@@ -79,10 +80,16 @@ export function useLogs<TContext extends AnyContext>(ref: {
     });
   }, [workingMemory.data]);
 
+  const clearMemory = async (id: string) => {
+    await ref.agent.memory.store.delete(id);
+    setLogs([]);
+  };
+
   return {
-    logs,
+    logs: logs.slice(-(ref.amount || 15)),
     setLogs,
     workingMemory,
+    clearMemory,
   };
 }
 
@@ -118,7 +125,7 @@ export function useSend<TContext extends AnyContext>({
     mutationKey: ["send", id],
     mutationFn: async ({
       input,
-      modelName,
+
       actions,
       contexts,
     }: SendArguments) => {
@@ -136,11 +143,11 @@ export function useSend<TContext extends AnyContext>({
       });
     },
 
-    async onSuccess(data, variables) {
+    async onSuccess(data: AnyRef[], variables: SendArguments) {
       onSuccess?.(data, variables);
     },
 
-    onError(error) {
+    onError(error: any) {
       console.error(error);
     },
   });

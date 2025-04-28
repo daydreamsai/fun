@@ -10,6 +10,8 @@ import { string, z } from "zod";
 
 import { useSettingsStore } from "@/store/settingsStore";
 import { GameClient } from "./client/GameClient";
+// Import the template store
+import { useTemplateStore } from "@/store/templateStore";
 
 // Get the token directly from the store for better reactivity
 export const getGigaToken = () => useSettingsStore.getState().gigaverseToken;
@@ -26,8 +28,8 @@ export const getApiBaseUrl = () => {
   return "https://proxy-production-0fee.up.railway.app/api";
 };
 
-// Define an interface for the state
-interface GigaverseState {
+// Define an interface for the state (template removed)
+export interface GigaverseState {
   actionToken: string;
   energy: number;
   currentDungeon: string;
@@ -58,7 +60,38 @@ interface GigaverseState {
   lastEnemyMove: string;
 }
 
-// Template for the agent's context
+export const gigaverseVariables: string[] = [
+  "actionToken",
+  "energy",
+  "currentDungeon",
+  "currentRoom",
+  "currentEnemy",
+  "currentLoot",
+  "currentHP",
+  "playerHealth",
+  "playerMaxHealth",
+  "playerShield",
+  "playerMaxShield",
+  "rockAttack",
+  "rockDefense",
+  "rockCharges",
+  "paperAttack",
+  "paperDefense",
+  "paperCharges",
+  "scissorAttack",
+  "scissorDefense",
+  "scissorCharges",
+  "enemyHealth",
+  "enemyMaxHealth",
+  "enemyShield",
+  "enemyMaxShield",
+  "lootPhase",
+  "lootOptions",
+  "lastBattleResult",
+  "lastEnemyMove",
+];
+
+// Default template remains exported for initialization elsewhere if needed
 export const template = `
 You are an daydreams agent playing the Gigaverse game, a strategic roguelike dungeon crawler game based on rock-paper-scissors mechanics with additional RPG elements. Your goal is to progress as far as possible through the dungeon, defeating enemies and collecting loot to strengthen your character.
 
@@ -73,9 +106,10 @@ You are an daydreams agent playing the Gigaverse game, a strategic roguelike dun
 <goal>
 Your goal is to progress as far as possible through the dungeon, defeating enemies and collecting loot to strengthen your character.
 
+If you die during the game, immediately start a new run and continue playing. If you encounter any errors, ask the user to re-authenticate.
 
+Your final output should consist only of the Decision, Explanation, and Next Steps, and should not duplicate or rehash any of the work you did in the battle planning section.
 
-IMPORTANT: Always keep playing until you cannot anymore.
 </goal>
 
 <game_overview>
@@ -153,10 +187,9 @@ Then send a message, provide your final decision and explanation.
 Decision: [Your chosen action]
 Explanation: [A clear explanation of why you chose this action and how it aligns with your overall strategy]
 Next Steps: [Brief outline of your plan for the next few turns or rooms]
-</mmesage_format>
+</message_format>
 
-If you die during the game, immediately start a new run and continue playing. If you encounter any errors, ask the user to re-authenticate.
-Remember to constantly monitor the game state, adapt your strategy as needed, and always strive to make the best possible decisions for long-term success in the dungeon. Your final output should consist only of the Decision, Explanation, and Next Steps, and should not duplicate or rehash any of the work you did in the battle planning section.
+
 `;
 
 export type GigaverseContext = typeof gigaverseContext;
@@ -171,7 +204,7 @@ export const gigaverseContext = context({
   maxSteps: 100,
   maxWorkingMemorySize: 20,
 
-  setup(args, settings, agent) {
+  setup() {
     const client = new GameClient(getApiBaseUrl(), getGigaToken());
     return { client };
   },
@@ -307,7 +340,10 @@ export const gigaverseContext = context({
   },
 
   render({ memory }) {
-    return render(template, memory);
+    // Get the current template from the Zustand store
+    const currentTemplate = useTemplateStore.getState().template;
+    // Use the template from the store
+    return render(currentTemplate, memory);
   },
 }).setActions([
   /**
@@ -514,118 +550,6 @@ export const gigaverseContext = context({
       }
     },
   }),
-
-  /**
-   * Action to fetch the player's current state in the dungeon
-   */
-  // action({
-  //   name: "getPlayerState",
-  //   description:
-  //     "Fetch the current state of the player in the dungeon, you should do this when you start a new run or when you die",
-  //   schema: z.object({}),
-  //   async handler(_data, { memory }, _agent: Agent) {
-  //     const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
-  //     try {
-  //       const response = await gameClient.fetchDungeonState();
-
-  //       if (!response.data) {
-  //         throw new Error(
-  //           `Fetch player state failed with status ${response.success}`
-  //         );
-  //       }
-
-  //       // Update the state with player data
-  //       if (
-  //         response.data &&
-  //         response.data.run &&
-  //         response.data.run.players &&
-  //         response.data.run.players.length > 0
-  //       ) {
-  //         const playerData = response.data.run.players[0]; // First player is the user
-
-  //         // Update player stats
-  //         memory.currentHP = playerData.health.current.toString();
-  //         memory.playerHealth = playerData.health.current.toString();
-  //         memory.playerMaxHealth = playerData.health.currentMax.toString();
-  //         memory.playerShield = playerData.shield.current.toString();
-  //         memory.playerMaxShield = playerData.shield.currentMax.toString();
-
-  //         // Update rock/paper/scissor stats
-  //         memory.rockAttack = playerData.rock.currentATK.toString();
-  //         memory.rockDefense = playerData.rock.currentDEF.toString();
-  //         memory.rockCharges = playerData.rock.currentCharges.toString();
-
-  //         memory.paperAttack = playerData.paper.currentATK.toString();
-  //         memory.paperDefense = playerData.paper.currentDEF.toString();
-  //         memory.paperCharges = playerData.paper.currentCharges.toString();
-
-  //         memory.scissorAttack = playerData.scissor.currentATK.toString();
-  //         memory.scissorDefense = playerData.scissor.currentDEF.toString();
-  //         memory.scissorCharges = playerData.scissor.currentCharges.toString();
-
-  //         // Update loot phase status
-  //         memory.lootPhase = (response.data.run.lootPhase || false).toString();
-
-  //         // Update loot options if available
-  //         if (
-  //           response.data.run.lootOptions &&
-  //           response.data.run.lootOptions.length > 0
-  //         ) {
-  //           memory.lootOptions = response.data.run.lootOptions;
-  //           memory.currentLoot =
-  //             response.data.run.lootOptions.length.toString();
-  //         }
-
-  //         // Update room information if available
-  //         if (response.data.entity) {
-  //           memory.currentRoom = response.data.entity.ROOM_NUM_CID.toString();
-  //           memory.currentDungeon =
-  //             response.data.entity.DUNGEON_ID_CID.toString();
-  //           memory.currentEnemy = response.data.entity.ENEMY_CID.toString();
-  //         }
-
-  //         // Update enemy stats if available
-  //         if (response.data.run.players.length > 1) {
-  //           const enemyData = response.data.run.players[1]; // Second player is the enemy
-  //           memory.enemyHealth = enemyData.health.current.toString();
-  //           memory.enemyMaxHealth = enemyData.health.currentMax.toString();
-  //           memory.enemyShield = enemyData.shield.current.toString();
-  //           memory.enemyMaxShield = enemyData.shield.currentMax.toString();
-
-  //           // Update battle result and enemy move if available
-  //           if (enemyData.lastMove) {
-  //             memory.lastEnemyMove = enemyData.lastMove;
-
-  //             // Determine battle result based on thisPlayerWin and otherPlayerWin properties
-  //             if (playerData.thisPlayerWin === true) {
-  //               memory.lastBattleResult = "win";
-  //             } else if (enemyData.thisPlayerWin === true) {
-  //               memory.lastBattleResult = "lose";
-  //             } else {
-  //               memory.lastBattleResult = "draw";
-  //             }
-  //           }
-  //         }
-  //       }
-
-  //       return {
-  //         success: true,
-  //         playerState: response.data,
-  //         message: "Successfully fetched player's dungeon state",
-  //       };
-  //     } catch (error: unknown) {
-  //       const errorMessage =
-  //         error instanceof Error ? error.message : String(error);
-  //       console.error("Error fetching player state:", error);
-
-  //       return {
-  //         success: false,
-  //         error: errorMessage,
-  //         message: "Failed to fetch player's dungeon state",
-  //       };
-  //     }
-  //   },
-  // }),
 
   /**
    * Action to start a new dungeon run
