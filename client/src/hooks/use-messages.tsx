@@ -4,11 +4,11 @@ import { useState, useCallback, useMemo } from "react";
 
 // Define the enum for valid action names
 export enum ActionName {
-  AttackInDungeon = "attackInDungeon",
-  GetUpcomingEnemies = "getUpcomingEnemies",
-  GetPlayerState = "getPlayerState",
-  StartNewRun = "startNewRun",
-  ManuallyUpdateState = "manuallyUpdateState",
+  AttackInDungeon = "gigaverse.attackInDungeon",
+  GetUpcomingEnemies = "gigaverse.getUpcomingEnemies",
+  GetPlayerState = "gigaverse.getPlayerState",
+  StartNewRun = "gigaverse.startNewRun",
+  ManuallyUpdateState = "gigaverse.manuallyUpdateState",
 }
 
 // Define the enum for valid log ref values

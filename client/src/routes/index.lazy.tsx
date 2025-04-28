@@ -65,15 +65,16 @@ function Index() {
   const agent = useAgentStore((state) => state.agent);
 
   const [chats, setChats] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     async function fetchChats() {
+      console.log("fetching chats");
+      setIsLoading(true);
       try {
         const contexts = await agent.getContexts();
 
-        console.log(contexts);
-        setChats(contexts.filter((ctx) => ctx.type === "goal") as any);
+        setChats(contexts.filter((ctx) => ctx.type === "gigaverse") as any);
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching chats:", error);
@@ -162,14 +163,14 @@ function Index() {
           {chats?.length > 0 ? (
             chats.map((chat: any, index: number) => (
               <motion.div
-                key={chat.id}
+                key={chat.key}
                 variants={itemVariants}
                 whileHover="hover"
                 custom={index}
               >
                 <Link
-                  to="/chats/$chatId"
-                  params={{ chatId: chat.args?.id }}
+                  to="/games/gigaverse/$chatId"
+                  params={{ chatId: chat.key }}
                   className="block  border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
                 >
                   {/* Image space */}
@@ -183,9 +184,7 @@ function Index() {
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-xl mb-1">
-                      {chat.args?.id}
-                    </h3>
+                    <h3 className="font-semibold text-xl mb-1">{chat.key}</h3>
                   </div>
                 </Link>
               </motion.div>
@@ -205,7 +204,10 @@ function Index() {
                 variants={buttonVariants}
               >
                 <Button asChild variant="outline">
-                  <Link to="/chats/$chatId" params={{ chatId: `gigaverse-1` }}>
+                  <Link
+                    to="/games/gigaverse/$chatId"
+                    params={{ chatId: `gigaverse-1` }}
+                  >
                     <PlusCircle size={20} className="mr-2" />
                     <span>Start New Game</span>
                   </Link>

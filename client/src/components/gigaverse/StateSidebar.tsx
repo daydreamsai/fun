@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { AnyAgent } from "@daydreamsai/core";
+import { useState, useEffect } from "react";
+import { InferSchemaArguments } from "@daydreamsai/core";
 import {
   ChevronLeft,
   Eye,
@@ -8,106 +8,58 @@ import {
   Settings,
   Trash,
   Cpu,
+  ShieldQuestion,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import { Card } from "@/components/ui/card";
-
 import {
   getAbstractAddress,
   getApiBaseUrl,
   getGigaToken,
+  GigaverseContext,
   gigaverseContext,
 } from "@/agent/giga";
 import { GameStatus } from "@/components/chat/GameStatus";
 import { browserStorage } from "@/agent";
 import { GameClient } from "@/agent/client/GameClient";
 import { RomEntity } from "@/agent/client/types/responses";
+import { useContextState, useWorkingMemory } from "@/hooks/agent";
+import { useAgentStore } from "@/store/agentStore";
+import { useSettingsStore } from "@/store/settingsStore";
 
-export function StateSidebar({
-  contextId,
-  messages,
-  dreams,
+export function GigaverseStateSidebar({
+  args,
   isLoading,
+  clearMemory,
 }: {
-  contextId: string;
-  messages: any[];
-  dreams: AnyAgent;
+  args: InferSchemaArguments<GigaverseContext["schema"]>;
   isLoading?: boolean;
+  clearMemory: () => void;
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [_isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [memoryStats, setMemoryStats] = useState<{
-    size: number;
-    lastUpdated: string;
-  }>({
-    size: 0,
-    lastUpdated: "Not loaded",
-  });
-  const [workingMemory, setWorkingMemory] = useState<any>(null);
-  const [showFullMemory, setShowFullMemory] = useState(false);
+  const agent = useAgentStore((state) => state.agent);
 
-  const [goalContext, setGoalContext] = useState<any>(null);
+  const contextId = agent.getContextId({
+    context: gigaverseContext,
+    args,
+  });
+
+  const workingMemory = useWorkingMemory({ context: gigaverseContext, args });
+
+  const gigaverseState = useContextState({
+    context: gigaverseContext,
+    args,
+  });
+
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const [showFullMemory, setShowFullMemory] = useState(false);
 
   // ROMS Tab State
   const [userRoms, setUserRoms] = useState<RomEntity[]>([]);
   const [isFetchingRoms, setIsFetchingRoms] = useState(false);
   const [_isClaimingEnergy, setIsClaimingEnergy] = useState(false);
-
-  const refreshMemoryStats = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      const memory = await dreams.getWorkingMemory(contextId);
-      setWorkingMemory(memory);
-      setMemoryStats({
-        size: JSON.stringify(memory).length,
-        lastUpdated: new Date().toLocaleTimeString(),
-      });
-    } catch (error) {
-      console.error("Failed to refresh memory stats:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [dreams, contextId]);
-
-  useEffect(() => {
-    refreshMemoryStats();
-  }, [refreshMemoryStats]);
-
-  // Fix async useMemo pattern
-  useEffect(() => {
-    let isMounted = true;
-    const fetchGoalContext = async () => {
-      try {
-        // Use the gigaverseContext directly
-        if (!gigaverseContext) {
-          console.warn("Goal context not found");
-          return;
-        }
-
-        const result = await dreams.getContext({
-          context: gigaverseContext,
-          args: {
-            id: "gigaverse-1",
-          },
-        });
-
-        if (isMounted) {
-          setGoalContext(result);
-        }
-      } catch (error) {
-        console.error("Failed to fetch goal context:", error);
-      }
-    };
-
-    fetchGoalContext();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [dreams]);
 
   const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
 
@@ -158,6 +110,10 @@ export function StateSidebar({
     }
   };
 
+  const setShowHelpWindow = useSettingsStore(
+    (state) => state.setShowHelpWindow
+  );
+
   if (isCollapsed) {
     return (
       <div className="border-l bg-background/95 backdrop-blur flex flex-col items-center py-4 h-full">
@@ -177,13 +133,18 @@ export function StateSidebar({
   }
 
   return (
-    <div className="w-96 border-l bg-background/95 backdrop-blur flex flex-col ">
+    <div>
       <img src="/giga.jpeg" alt="Giga Banner" />
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        // className="flex-1 flex flex-col h-full mt-4"
-      >
+      <div className="flex">
+        <Button className="w-full" onClick={clearMemory}>
+          Clear Memory <Trash className="w-4 h-4 stroke-black" />
+        </Button>
+        <Button className="w-full" onClick={() => setShowHelpWindow(true)}>
+          Help <ShieldQuestion className="w-4 h-4 stroke-black" />
+        </Button>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="memory">Memory</TabsTrigger>
@@ -194,11 +155,11 @@ export function StateSidebar({
           value="overview"
           className="flex-1 overflow-y-auto px-2 border-primary/20"
         >
-          <GameStatus state={goalContext} />
+          <GameStatus state={gigaverseState.data} />
 
           <Card className="p-3 mb-3">
             <h4 className="text-sm font-medium mb-1">Message Count</h4>
-            <p className="text-xs">{messages.length}</p>
+            <p className="text-xs">{workingMemory.data.length}</p>
           </Card>
 
           <Card className="p-3 mb-3">
@@ -223,10 +184,27 @@ export function StateSidebar({
           <Card className="p-3 mb-3">
             <h4 className="text-sm font-medium mb-1">Message Types</h4>
             <div className="text-xs">
-              <p>User: {messages.filter((m) => m.type === "user").length}</p>
-              <p>Agent: {messages.filter((m) => m.type === "agent").length}</p>
               <p>
-                System: {messages.filter((m) => m.type === "system").length}
+                User:{" "}
+                {
+                  workingMemory.data.filter((m: any) => m.ref === "input")
+                    .length
+                }
+              </p>
+              <p>
+                Agent:{" "}
+                {
+                  workingMemory.data.filter((m: any) => m.ref === "output")
+                    .length
+                }
+              </p>
+              <p>
+                System:{" "}
+                {
+                  workingMemory.data.filter(
+                    (m: any) => !(m.ref === "input" || m.ref === "output")
+                  ).length
+                }
               </p>
             </div>
           </Card>
@@ -234,8 +212,8 @@ export function StateSidebar({
           <Card className="p-3 mb-3">
             <h4 className="text-sm font-medium mb-1">Working Memory</h4>
             <div className="text-xs">
-              <p>Size: {(memoryStats.size / 1024).toFixed(2)} KB</p>
-              <p>Last Updated: {memoryStats.lastUpdated}</p>
+              <p>Size: {(workingMemory.data.length / 1024).toFixed(2)} KB</p>
+              <p>Last Updated: {workingMemory.dataUpdatedAt}</p>
             </div>
           </Card>
 
@@ -282,14 +260,14 @@ export function StateSidebar({
             {workingMemory ? (
               <pre className="text-xs whitespace-pre-wrap break-all">
                 {showFullMemory
-                  ? JSON.stringify(workingMemory, null, 2)
+                  ? JSON.stringify(workingMemory.data, null, 2)
                   : JSON.stringify(
                       {
-                        messages: workingMemory.messages?.length || 0,
-                        context: workingMemory.context
-                          ? Object.keys(workingMemory.context)
-                          : "N/A",
-                        keys: Object.keys(workingMemory),
+                        logs: workingMemory.data?.length || 0,
+                        // context: workingMemory.context
+                        //   ? Object.keys(workingMemory.context)
+                        //   : "N/A",
+                        // logs: workingMemory.data,
                       },
                       null,
                       2
@@ -474,102 +452,6 @@ export function StateSidebar({
           )}
         </TabsContent>
       </Tabs>
-      {/* <div className="flex justify-between items-center p-4">
-        <h3 className="font-medium">Chat State</h3>
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={refreshMemoryStats}
-            disabled={isRefreshing}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsCollapsed(true)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="px-4 pb-2">
-        <div className="flex items-center gap-2 mb-2">
-          <Settings className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Model</span>
-        </div>
-        <Select value={selectedModel} onValueChange={handleModelChange}>
-          <SelectTrigger className="w-full text-sm">
-            <SelectValue placeholder="Select a model" />
-          </SelectTrigger>
-          <SelectContent>
-            {VALID_MODELS.map((model) => {
-              const displayName = model
-                .split("/")
-                .pop()
-                ?.replace(/-/g, " ")
-                .replace(/:beta$/, " (Beta)");
-
-              return (
-                <SelectItem key={model} value={model} className="text-sm">
-                  {displayName || model}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-
-        {modelChangeNotification && (
-          <div className="mt-2 text-xs p-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-md transition-opacity duration-300">
-            Model changed to{" "}
-            <span className="font-medium">
-              {selectedModel
-                .split("/")
-                .pop()
-                ?.replace(/-/g, " ")
-                .replace(/:beta$/, " (Beta)")}
-            </span>
-            . New messages will use this model.
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 pb-2 mt-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Code className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Display Settings</span>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="showThoughts" className="text-sm">
-              Show Thoughts
-            </Label>
-            <Switch
-              id="showThoughts"
-              checked={settings.showThoughtMessages}
-              onCheckedChange={settings.setShowThoughtMessages}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="showSystem" className="text-sm">
-              Show System Messages
-            </Label>
-            <Switch
-              id="showSystem"
-              checked={settings.showSystemMessages}
-              onCheckedChange={settings.setShowSystemMessages}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="h-px bg-border mx-4 my-2"></div> */}
     </div>
   );
 }

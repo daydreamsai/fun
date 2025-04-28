@@ -139,7 +139,7 @@ function ChatHistoryList() {
       try {
         const contexts = await agent.getContexts();
         console.log("contexts", contexts);
-        return contexts.filter((ctx) => ctx.type === "goal");
+        return contexts.filter((ctx) => ctx.type === "gigaverse");
       } catch (error) {
         console.error("Error fetching contexts:", error);
         return [];
@@ -183,11 +183,11 @@ function ChatHistoryList() {
 
   return (
     <div>
-      {chats?.data.map((chat) => (
-        <SidebarMenuSubItem key={chat.id}>
+      {chats?.data.map((chat: any) => (
+        <SidebarMenuSubItem key={chat.key}>
           <SidebarMenuSubButton asChild>
-            <Link to={"/chats/$chatId"} params={{ chatId: chat.args?.id }}>
-              <div className="font-medium truncate">{chat.args?.id}</div>
+            <Link to={"/games/gigaverse/$chatId"} params={{ chatId: chat.key }}>
+              <div className="font-medium truncate">{chat.key}</div>
             </Link>
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>

@@ -40,11 +40,11 @@ export interface MessageType {
   error?: string;
   action?: {
     type:
-      | "attackInDungeon"
-      | "getUpcomingEnemies"
-      | "getPlayerState"
-      | "startNewRun"
-      | "manuallyUpdateState";
+      | "gigaverse.attackInDungeon"
+      | "gigaverse.getUpcomingEnemies"
+      | "gigaverse.getPlayerState"
+      | "gigaverse.startNewRun"
+      | "gigaverse.manuallyUpdateState";
     result?: "win" | "lose" | "draw";
     move?:
       | "rock"
@@ -93,6 +93,9 @@ export function MessagesList({
         if (parsedContent.user && parsedContent.content) {
           return parsedContent.content;
         }
+        if (typeof parsedContent === "string") {
+          return parsedContent;
+        }
       } catch (e) {
         // If parsing fails, just return the original content
       }
@@ -109,7 +112,7 @@ export function MessagesList({
     const iconClass = "h-5 w-5 mr-2";
 
     switch (action.type) {
-      case "attackInDungeon":
+      case "gigaverse.attackInDungeon":
         if (action.result === "win") {
           return <TrophyIcon className={`${iconClass} text-green-500`} />;
         } else if (action.result === "lose") {
@@ -118,16 +121,16 @@ export function MessagesList({
           return <Swords className={`${iconClass} text-yellow-500`} />;
         }
 
-      case "getPlayerState":
+      case "gigaverse.getPlayerState":
         return <Shield className={`${iconClass} text-blue-500`} />;
 
-      case "getUpcomingEnemies":
+      case "gigaverse.getUpcomingEnemies":
         return <Flag className={`${iconClass} text-purple-500`} />;
 
-      case "startNewRun":
+      case "gigaverse.startNewRun":
         return <Play className={`${iconClass} text-green-500`} />;
 
-      case "manuallyUpdateState":
+      case "gigaverse.manuallyUpdateState":
         return <RefreshCw className={`${iconClass} text-amber-500`} />;
 
       default:
@@ -258,65 +261,71 @@ export function MessagesList({
                   </div>
                 )}
 
-                {msg.action && msg.action.type === "attackInDungeon" && (
-                  <div className="mt-3 p-3 bg-primary/10 rounded-md border border-primary/50">
-                    {msg.action.move && (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {renderMoveIcon(msg.action.move)}
-                          <span className="text-sm font-medium capitalize">
-                            {msg.action.move.replace("_", " ")}
-                          </span>
-                        </div>
-                        {msg.action.result && (
-                          <div
-                            className={`px-2 py-1 rounded text-xs uppercase font-bold ${
-                              msg.action.result === "win"
-                                ? "bg-green-500/10 text-green-500"
-                                : msg.action.result === "lose"
-                                  ? "bg-red-500/10 text-red-500"
-                                  : "bg-yellow-500/10 text-yellow-500"
-                            }`}
-                          >
-                            {msg.action.result}
+                {msg.action &&
+                  msg.action.type === "gigaverse.attackInDungeon" && (
+                    <div className="mt-3 p-3 bg-primary/10 rounded-md border border-primary/50">
+                      {msg.action.move && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {renderMoveIcon(msg.action.move)}
+                            <span className="text-sm font-medium capitalize">
+                              {msg.action.move.replace("_", " ")}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                          {msg.action.result && (
+                            <div
+                              className={`px-2 py-1 rounded text-xs uppercase font-bold ${
+                                msg.action.result === "win"
+                                  ? "bg-green-500/10 text-green-500"
+                                  : msg.action.result === "lose"
+                                    ? "bg-red-500/10 text-red-500"
+                                    : "bg-yellow-500/10 text-yellow-500"
+                              }`}
+                            >
+                              {msg.action.result}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                {msg.action && msg.action.type === "startNewRun" && (
+                {msg.action && msg.action.type === "gigaverse.startNewRun" && (
                   <div className="mt-3 p-3 bg-green-500/5 rounded-md border border-green-500/30 flex items-center gap-2">
                     <Play className="h-5 w-5 text-green-500" />
                     <span className="text-sm font-medium">New Run Started</span>
                   </div>
                 )}
 
-                {msg.action && msg.action.type === "getPlayerState" && (
-                  <div className="mt-3 p-3 bg-blue-500/5 rounded-md border border-blue-500/30 flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-blue-500" />
-                    <span className="text-sm font-medium">
-                      Player Status Updated
-                    </span>
-                  </div>
-                )}
+                {msg.action &&
+                  msg.action.type === "gigaverse.getPlayerState" && (
+                    <div className="mt-3 p-3 bg-blue-500/5 rounded-md border border-blue-500/30 flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-blue-500" />
+                      <span className="text-sm font-medium">
+                        Player Status Updated
+                      </span>
+                    </div>
+                  )}
 
-                {msg.action && msg.action.type === "getUpcomingEnemies" && (
-                  <div className="mt-3 p-3 bg-purple-500/5 rounded-md border border-purple-500/30 flex items-center gap-2">
-                    <Flag className="h-5 w-5 text-purple-500" />
-                    <span className="text-sm font-medium">Enemies Scouted</span>
-                  </div>
-                )}
+                {msg.action &&
+                  msg.action.type === "gigaverse.getUpcomingEnemies" && (
+                    <div className="mt-3 p-3 bg-purple-500/5 rounded-md border border-purple-500/30 flex items-center gap-2">
+                      <Flag className="h-5 w-5 text-purple-500" />
+                      <span className="text-sm font-medium">
+                        Enemies Scouted
+                      </span>
+                    </div>
+                  )}
 
-                {msg.action && msg.action.type === "manuallyUpdateState" && (
-                  <div className="mt-3 p-3 bg-amber-500/5 rounded-md border border-amber-500/30 flex items-center gap-2">
-                    <RefreshCw className="h-5 w-5 text-amber-500" />
-                    <span className="text-sm font-medium">
-                      Game State Updated
-                    </span>
-                  </div>
-                )}
+                {msg.action &&
+                  msg.action.type === "gigaverse.manuallyUpdateState" && (
+                    <div className="mt-3 p-3 bg-amber-500/5 rounded-md border border-amber-500/30 flex items-center gap-2">
+                      <RefreshCw className="h-5 w-5 text-amber-500" />
+                      <span className="text-sm font-medium">
+                        Game State Updated
+                      </span>
+                    </div>
+                  )}
               </motion.div>
             </motion.div>
           );
