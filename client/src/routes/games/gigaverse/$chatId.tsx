@@ -19,6 +19,8 @@ import { ActionResult } from "@daydreamsai/core";
 import { GigaverseAction } from "@/components/gigaverse/Actions";
 import { LogsList } from "@/components/chat/LogsLIst";
 import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
+import { Menu } from "lucide-react";
+import clsx from "clsx";
 
 function GigaverSidebar({
   chatId,
@@ -31,9 +33,11 @@ function GigaverSidebar({
     <Sidebar
       collapsible="none"
       className={cn(
-        "sticky hidden lg:flex w-96 top-0 min-h-svh max-h-svh border-l shrink-0 h-full"
+        "sticky w-96 top-0 min-h-svh max-h-svh border-l shrink-0 h-full"
       )}
       side="right"
+      // open={isMobileSidebarOpen}
+      // onOpenChange={setIsMobileSidebarOpen}
     >
       <SidebarContent className="bg-sidebar">
         <GigaverseStateSidebar
@@ -138,6 +142,9 @@ function RouteComponent() {
     behavior: "auto",
   });
 
+  // State for mobile sidebar
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   return (
     <>
       <HelpWindow open={showHelpWindow} onOpenChange={setShowHelpWindow} />
@@ -211,13 +218,35 @@ function RouteComponent() {
             }}
           />
         </div>
-        <GigaverSidebar
-          chatId={chatId}
-          clearMemory={() =>
-            clearMemory("working-memory:gigaverse:gigaverse-1")
-          }
-        />
+        <div
+          className={clsx(
+            "flex-col flex-shrink-0 border-l bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-y-auto transition-transform duration-300 ease-in-out",
+            "lg:flex lg:static lg:translate-x-0 lg:z-auto lg:border-l", // Large screen styles (static positioning)
+            {
+              "fixed inset-y-0 right-0 z-40 translate-x-0": isMobileSidebarOpen, // Mobile open styles
+              "fixed inset-y-0 right-0 z-40 translate-x-full":
+                !isMobileSidebarOpen, // Mobile closed styles
+            }
+          )}
+        >
+          <GigaverSidebar
+            chatId={chatId}
+            clearMemory={() =>
+              clearMemory("working-memory:gigaverse:gigaverse-1")
+            }
+          />
+        </div>
       </div>
+
+      {/* Sidebar Toggle Button (Mobile) */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-4 right-4 z-50 lg:hidden" // Show only on small screens
+        onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+      >
+        <Menu className="h-6 w-6" />
+      </Button>
 
       <MessageInput
         isLoading={send.isPending}

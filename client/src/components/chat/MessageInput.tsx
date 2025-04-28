@@ -40,7 +40,9 @@ export function MessageInput({
         transition={{ duration: 0.2, delay: 0.2 }}
         onClick={() => setShowTemplateEditor(true)}
       >
-        System <Notebook className="w-4 h-4 ml-2 fill-black" />
+        <span className="hidden md:block text-black">System</span>
+
+        <Notebook className="w-4 h-4 ml-2 fill-black" />
       </motion.button>
       <motion.form
         initial={{ opacity: 0, y: 20 }}
