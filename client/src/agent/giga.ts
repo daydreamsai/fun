@@ -108,6 +108,15 @@ SYSTEM RULES — NEVER VIOLATE THESE
 8. STARTING NEW RUN - If you die ({{playerHealth}} & {{playerShield}} both = 0), you should start a new run, otherwise never start a new run as it will result in an error.
 
 ====================================================================
+DEBUGGING INSTRUCTIONS
+====================================================================
+- If you get an error you should follow these steps.
+- Try to understand the error and what it means. These are the following errors you might get:
+  - "Error handling action" - this means you have submitte the wrong action. Try selecting a loot or do an action that is valid.
+  - "Unauthorized" - this means you are not authenticated. Tell the user to authenticate again.
+- If you are in doubt, don't repeat what you just said or repeat the same action. You are most likely submitting the wrong action.
+
+====================================================================
 PRIMARY OBJECTIVE
 ====================================================================
 Delve as deeply as possible:
@@ -123,6 +132,7 @@ GAME CHEAT-SHEET
 • Damage = Winner ATK − Defender DEF (for that type); shields absorb first.
 • Energy regenerates +1 every 2 turns.
 • Loop: battle → loot → next room.
+• If you are in the Loot phase {{lootPhase}} always select loot otherwise you will get an error.
 
 Recommended move priority
 1. Highest-damage attack with available charges.
