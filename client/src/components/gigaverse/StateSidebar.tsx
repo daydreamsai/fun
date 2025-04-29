@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { InferSchemaArguments } from "@daydreamsai/core";
+import { AnyAgent, InferSchemaArguments } from "@daydreamsai/core";
 import {
   ChevronLeft,
   Eye,
@@ -25,20 +25,20 @@ import { browserStorage } from "@/agent";
 import { GameClient } from "@/agent/client/GameClient";
 import { RomEntity } from "@/agent/client/types/responses";
 import { useContextState, useWorkingMemory } from "@/hooks/agent";
-import { useAgentStore } from "@/store/agentStore";
+
 import { useSettingsStore } from "@/store/settingsStore";
 
 export function GigaverseStateSidebar({
+  agent,
   args,
   isLoading,
   clearMemory,
 }: {
+  agent: AnyAgent;
   args: InferSchemaArguments<GigaverseContext["schema"]>;
   isLoading?: boolean;
   clearMemory: () => void;
 }) {
-  const agent = useAgentStore((state) => state.agent);
-
   const contextId = agent.getContextId({
     context: gigaverseContext,
     args,

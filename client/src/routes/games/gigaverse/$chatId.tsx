@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { v7 as randomUUIDv7 } from "uuid";
 import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { useLogs, useSend } from "@/hooks/agent";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { GigaverseStateSidebar } from "@/components/gigaverse/StateSidebar";
-import { ActionResult } from "@daydreamsai/core";
+import { ActionResult, AnyAgent } from "@daydreamsai/core";
 import { GigaverseAction } from "@/components/gigaverse/Actions";
 import { LogsList } from "@/components/chat/LogsLIst";
 import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
@@ -23,9 +23,11 @@ import { Menu } from "lucide-react";
 import clsx from "clsx";
 
 function GigaverSidebar({
+  agent,
   chatId,
   clearMemory,
 }: {
+  agent: AnyAgent;
   chatId: string;
   clearMemory: () => void;
 }) {
@@ -41,6 +43,7 @@ function GigaverSidebar({
     >
       <SidebarContent className="bg-sidebar">
         <GigaverseStateSidebar
+          agent={agent}
           args={{ id: chatId }}
           isLoading={false}
           clearMemory={clearMemory}
@@ -52,6 +55,7 @@ function GigaverSidebar({
 
 export const Route = createFileRoute("/games/gigaverse/$chatId")({
   component: RouteComponent,
+
   loader({ params }: { params: { chatId: string } }) {
     // Check if user has required API keys
     const hasOpenRouterKey = hasApiKey("openrouterKey");
@@ -85,7 +89,6 @@ function RouteComponent() {
 
   const { template, setTemplate, resetTemplate } = useTemplateStore();
   const agent = useAgentStore((state) => state.agent);
-  const agentRef = useRef(agent);
 
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
   const setShowHelpWindow = useSettingsStore(
@@ -104,13 +107,13 @@ function RouteComponent() {
   }, []);
 
   const { logs, clearMemory } = useLogs({
-    agent: agentRef.current,
+    agent: agent,
     context: gigaverseContext,
     args: { id: chatId },
   });
 
   const { send } = useSend({
-    agent: agentRef.current,
+    agent: agent,
     context: gigaverseContext,
     args: { id: chatId },
   });
@@ -226,7 +229,11 @@ function RouteComponent() {
             }
           )}
         >
-          <GigaverSidebar chatId={chatId} clearMemory={() => clearMemory()} />
+          <GigaverSidebar
+            agent={agent}
+            chatId={chatId}
+            clearMemory={() => clearMemory()}
+          />
         </div>
       </div>
 
