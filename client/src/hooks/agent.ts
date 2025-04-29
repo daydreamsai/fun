@@ -7,37 +7,37 @@ import {
   AnyAction,
   AnyAgent,
 } from "@daydreamsai/core";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useAgentStore } from "@/store/agentStore";
 import { useMutation } from "@tanstack/react-query";
 import { useRef } from "react";
 
 export function useContextState<TContext extends AnyContext>(ref: {
+  agent: AnyAgent;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
 }) {
-  const agent = useAgentStore((state) => state.agent);
-  const contextId = agent.getContextId(ref);
+  const contextId = ref.agent.getContextId(ref);
   return useQuery({
     queryKey: ["context", contextId],
     queryFn: async () => {
-      return await agent.getContext(ref);
+      return await ref.agent.getContext(ref);
     },
   });
 }
 
 export function useWorkingMemory<TContext extends AnyContext>(ref: {
+  agent: AnyAgent;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
 }) {
-  const agent = useAgentStore((state) => state.agent);
-  const contextId = agent.getContextId(ref);
+  const contextId = ref.agent.getContextId(ref);
+
   return useQuery({
     queryKey: ["workingMemory", contextId],
     queryFn: async () => {
       return structuredClone(
-        getWorkingMemoryAllLogs(await agent.getWorkingMemory(contextId))
+        getWorkingMemoryAllLogs(await ref.agent.getWorkingMemory(contextId))
       );
     },
     initialData: () => [],
@@ -52,6 +52,7 @@ export function useLogs<TContext extends AnyContext>(ref: {
 }) {
   const [logs, setLogs] = useState<AnyRef[]>([]);
   const contextId = ref.agent.getContextId(ref);
+  const queryClient = useQueryClient();
 
   const workingMemory = useWorkingMemory(ref);
 
@@ -62,27 +63,35 @@ export function useLogs<TContext extends AnyContext>(ref: {
     return () => {
       unsubscribe();
     };
-  }, [contextId]);
+  }, [contextId, ref.agent]);
 
   useEffect(() => {
     setLogs([]);
   }, [contextId]);
 
   useEffect(() => {
-    setLogs((logs) => {
-      const map = new Map(
-        [...workingMemory.data, ...logs].map((log) => [log.id, log])
-      );
+    if (workingMemory.data) {
+      setLogs((logs) => {
+        const map = new Map(
+          [...(workingMemory.data || []), ...logs].map((log) => [log.id, log])
+        );
 
-      return Array.from(map.values()).sort((a, b) =>
-        a.timestamp >= b.timestamp ? 1 : -1
-      );
-    });
+        return Array.from(map.values()).sort((a, b) =>
+          a.timestamp >= b.timestamp ? 1 : -1
+        );
+      });
+    }
   }, [workingMemory.data]);
 
-  const clearMemory = async (id: string) => {
-    await ref.agent.memory.store.delete(id);
+  const clearMemory = async () => {
+    await ref.agent.memory.store.delete("working-memory:" + contextId);
     setLogs([]);
+
+    await queryClient.setQueryData(["workingMemory", contextId], []);
+
+    await queryClient.resetQueries({
+      queryKey: ["context", contextId],
+    });
   };
 
   return {

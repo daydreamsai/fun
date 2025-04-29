@@ -44,9 +44,14 @@ export function GigaverseStateSidebar({
     args,
   });
 
-  const workingMemory = useWorkingMemory({ context: gigaverseContext, args });
+  const workingMemory = useWorkingMemory({
+    agent,
+    context: gigaverseContext,
+    args,
+  });
 
   const gigaverseState = useContextState({
+    agent,
     context: gigaverseContext,
     args,
   });

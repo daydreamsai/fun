@@ -79,18 +79,18 @@ export const Route = createFileRoute("/games/gigaverse/$chatId")({
 function RouteComponent() {
   const { chatId } = Route.useParams();
 
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [missingKeys, setMissingKeys] = useState<string[]>([]);
+
+  const { template, setTemplate, resetTemplate } = useTemplateStore();
   const agent = useAgentStore((state) => state.agent);
+  const agentRef = useRef(agent);
+
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
   const setShowHelpWindow = useSettingsStore(
     (state) => state.setShowHelpWindow
   );
-
-  const agentRef = useRef(agent);
-
-  const { template, setTemplate, resetTemplate } = useTemplateStore();
-
-  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
-  const [missingKeys, setMissingKeys] = useState<string[]>([]);
 
   useEffect(() => {
     const hasOpenRouterKey = hasApiKey("openrouterKey");
@@ -141,9 +141,6 @@ function RouteComponent() {
     threshold: 150,
     behavior: "auto",
   });
-
-  // State for mobile sidebar
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   return (
     <>
@@ -229,12 +226,7 @@ function RouteComponent() {
             }
           )}
         >
-          <GigaverSidebar
-            chatId={chatId}
-            clearMemory={() =>
-              clearMemory("working-memory:gigaverse:gigaverse-1")
-            }
-          />
+          <GigaverSidebar chatId={chatId} clearMemory={() => clearMemory()} />
         </div>
       </div>
 
