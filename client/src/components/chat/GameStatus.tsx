@@ -2,12 +2,15 @@ import { MAX_ENERGY } from "@/agent/client/GameClient";
 import { GigaverseContext } from "@/agent/giga";
 import { Card } from "@/components/ui/card";
 import { ContextState } from "@daydreamsai/core";
+import { Button } from "../ui/button";
+import { RefreshCcw } from "lucide-react";
 
 interface GameStatusProps {
   state: ContextState<GigaverseContext> | undefined;
+  reloadEnergy: () => void;
 }
 
-export function GameStatus({ state }: GameStatusProps) {
+export function GameStatus({ state, reloadEnergy }: GameStatusProps) {
   return (
     <Card className="p-1 mb-4 border-2 border-primary/20 bg-primary/5 ">
       <div className="flex flex-col w-full bg-background/80 p-3">
@@ -16,6 +19,9 @@ export function GameStatus({ state }: GameStatusProps) {
           <span className="text-sm">
             {state?.memory?.energy?.toFixed(1) || 0} / {MAX_ENERGY}
           </span>
+          <Button size="icon" onClick={reloadEnergy}>
+            <RefreshCcw className="w-4 h-4 stroke-black" />
+          </Button>
         </div>
         <div className="w-full bg-gray-200 h-2.5 dark:bg-gray-700">
           <div

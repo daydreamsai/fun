@@ -9,6 +9,8 @@ import {
   Trash,
   Cpu,
   ShieldQuestion,
+  RefreshCcw,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +30,8 @@ import { useContextState, useWorkingMemory } from "@/hooks/agent";
 
 import { useSettingsStore } from "@/store/settingsStore";
 
+const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
+
 export function GigaverseStateSidebar({
   agent,
   args,
@@ -39,6 +43,25 @@ export function GigaverseStateSidebar({
   isLoading?: boolean;
   clearMemory: () => void;
 }) {
+  // Add a state variable to force updates
+  const [updateCounter, setUpdateCounter] = useState(0);
+
+  const getEnergy = async () => {
+    const energy = await gameClient.getEnergy(getAbstractAddress());
+
+    const agentUpdate = agent.getContext({
+      context: gigaverseContext,
+      args,
+    });
+
+    (await agentUpdate).memory.energy = energy;
+
+    // Force a re-render by updating the local state
+    setUpdateCounter((prev) => prev + 1);
+
+    return energy;
+  };
+
   const contextId = agent.getContextId({
     context: gigaverseContext,
     args,
@@ -65,8 +88,9 @@ export function GigaverseStateSidebar({
   const [userRoms, setUserRoms] = useState<RomEntity[]>([]);
   const [isFetchingRoms, setIsFetchingRoms] = useState(false);
   const [_isClaimingEnergy, setIsClaimingEnergy] = useState(false);
-
-  const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
+  const [claimingStatus, setClaimingStatus] = useState<Record<string, boolean>>(
+    {}
+  );
 
   // Fetch User ROMs when ROMS tab is active
   useEffect(() => {
@@ -97,9 +121,10 @@ export function GigaverseStateSidebar({
     romId: string;
     claimId: string;
   }) => {
-    setIsClaimingEnergy(true);
+    const statusKey = `${romId}-${claimId}`;
+    setClaimingStatus((prev) => ({ ...prev, [statusKey]: true }));
     try {
-      console.log("Claiming energy...");
+      console.log(`Claiming ${claimId} for ROM ${romId}...`);
 
       const response = await gameClient.claimEnergy({
         romId,
@@ -108,10 +133,10 @@ export function GigaverseStateSidebar({
 
       console.log("response", response);
     } catch (error) {
-      console.error("Failed to claim energy:", error);
-      alert("Failed to claim energy. (Placeholder)");
+      console.error(`Failed to claim ${claimId}:`, error);
+      alert(`Failed to claim ${claimId}.`);
     } finally {
-      setIsClaimingEnergy(false);
+      setClaimingStatus((prev) => ({ ...prev, [statusKey]: false }));
     }
   };
 
@@ -160,7 +185,7 @@ export function GigaverseStateSidebar({
           value="overview"
           className="flex-1 overflow-y-auto px-2 border-primary/20"
         >
-          <GameStatus state={gigaverseState.data} />
+          <GameStatus state={gigaverseState.data} reloadEnergy={getEnergy} />
 
           <Card className="p-3 mb-3">
             <h4 className="text-sm font-medium mb-1">Message Count</h4>
@@ -319,6 +344,14 @@ export function GigaverseStateSidebar({
           ) : userRoms.length > 0 ? (
             <div className="space-y-3 p-2">
               {userRoms.map((rom) => {
+                // Calculate loading states for this ROM's buttons
+                const isClaimingEnergy =
+                  claimingStatus[`${rom.docId}-energy`] || false;
+                const isClaimingShard =
+                  claimingStatus[`${rom.docId}-shard`] || false;
+                const isClaimingDust =
+                  claimingStatus[`${rom.docId}-dust`] || false;
+
                 // Calculate available resources based on production rates and time
                 const calculatedEnergy = Math.min(
                   rom.factoryStats.percentageOfAWeekSinceLastEnergyClaim *
@@ -381,18 +414,24 @@ export function GigaverseStateSidebar({
                           </span>
                         </div>
                         <Button
-                          variant="default"
+                          variant={isClaimingEnergy ? "secondary" : "default"}
                           size="sm"
                           className="w-full text-xs h-6"
-                          disabled={calculatedEnergy < 1} // Disable if less than 1 energy
+                          disabled={isClaimingEnergy || calculatedEnergy < 1}
                           onClick={() =>
                             handleClaimEnergy({
                               romId: rom.docId,
                               claimId: "energy",
                             })
-                          } // Add claim handler
+                          }
                         >
-                          {calculatedEnergy >= 1 ? "Claim" : "Producing"}
+                          {isClaimingEnergy ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : calculatedEnergy >= 1 ? (
+                            "Claim"
+                          ) : (
+                            "Producing"
+                          )}
                         </Button>
                       </div>
 
@@ -406,18 +445,24 @@ export function GigaverseStateSidebar({
                           </span>
                         </div>
                         <Button
-                          variant="default"
+                          variant={isClaimingShard ? "secondary" : "default"}
                           size="sm"
                           className="w-full text-xs h-6"
-                          disabled={calculatedShard < 1} // Disable if less than 1 shard
+                          disabled={isClaimingShard || calculatedShard < 1}
                           onClick={() =>
                             handleClaimEnergy({
                               romId: rom.docId,
-                              claimId: "shards",
+                              claimId: "shard",
                             })
                           }
                         >
-                          {calculatedShard >= 1 ? "Claim" : "Producing"}
+                          {isClaimingShard ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : calculatedShard >= 1 ? (
+                            "Claim"
+                          ) : (
+                            "Producing"
+                          )}
                         </Button>
                       </div>
 
@@ -431,18 +476,24 @@ export function GigaverseStateSidebar({
                           </span>
                         </div>
                         <Button
-                          variant="default"
+                          variant={isClaimingDust ? "secondary" : "default"}
                           size="sm"
                           className="w-full text-xs h-6"
-                          disabled={calculatedDust < 1} // Disable if less than 1 dust
+                          disabled={isClaimingDust || calculatedDust < 1}
                           onClick={() =>
                             handleClaimEnergy({
                               romId: rom.docId,
                               claimId: "dust",
                             })
-                          } // Placeholder for claim handler
+                          }
                         >
-                          {calculatedDust >= 1 ? "Claim" : "Producing"}
+                          {isClaimingDust ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : calculatedDust >= 1 ? (
+                            "Claim"
+                          ) : (
+                            "Producing"
+                          )}
                         </Button>
                       </div>
                     </div>
