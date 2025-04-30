@@ -9,7 +9,6 @@ import {
   Trash,
   Cpu,
   ShieldQuestion,
-  RefreshCcw,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,7 @@ export function GigaverseStateSidebar({
   clearMemory: () => void;
 }) {
   // Add a state variable to force updates
-  const [updateCounter, setUpdateCounter] = useState(0);
+  const [_updateCounter, setUpdateCounter] = useState(0);
 
   const getEnergy = async () => {
     const energy = await gameClient.getEnergy(getAbstractAddress());
@@ -87,7 +86,7 @@ export function GigaverseStateSidebar({
   // ROMS Tab State
   const [userRoms, setUserRoms] = useState<RomEntity[]>([]);
   const [isFetchingRoms, setIsFetchingRoms] = useState(false);
-  const [_isClaimingEnergy, setIsClaimingEnergy] = useState(false);
+  const [_isClaimingEnergy, _setIsClaimingEnergy] = useState(false);
   const [claimingStatus, setClaimingStatus] = useState<Record<string, boolean>>(
     {}
   );
