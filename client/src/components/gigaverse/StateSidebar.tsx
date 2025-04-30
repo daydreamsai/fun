@@ -41,11 +41,7 @@ export function GigaverseStateSidebar({
   isLoading?: boolean;
   clearMemory: () => void;
 }) {
-  // Get agent directly from the store
   const agent = useAgentStore((state) => state.agent);
-
-  // Add a state variable to force updates
-  const [_updateCounter, setUpdateCounter] = useState(0);
 
   const getEnergy = async () => {
     const energy = await gameClient.getEnergy(getAbstractAddress());
@@ -56,9 +52,6 @@ export function GigaverseStateSidebar({
     });
 
     (await agentUpdate).memory.energy = energy;
-
-    // Force a re-render by updating the local state
-    setUpdateCounter((prev) => prev + 1);
 
     return energy;
   };
