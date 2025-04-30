@@ -15,7 +15,7 @@ import { useLogs, useSend } from "@/hooks/agent";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { GigaverseStateSidebar } from "@/components/gigaverse/StateSidebar";
-import { ActionResult, AnyAgent } from "@daydreamsai/core";
+import { ActionResult } from "@daydreamsai/core";
 import { GigaverseAction } from "@/components/gigaverse/Actions";
 import { LogsList } from "@/components/chat/LogsLIst";
 import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
@@ -23,11 +23,9 @@ import { Menu } from "lucide-react";
 import clsx from "clsx";
 
 function GigaverSidebar({
-  agent,
   chatId,
   clearMemory,
 }: {
-  agent: AnyAgent;
   chatId: string;
   clearMemory: () => void;
 }) {
@@ -43,7 +41,6 @@ function GigaverSidebar({
     >
       <SidebarContent className="bg-sidebar">
         <GigaverseStateSidebar
-          agent={agent}
           args={{ id: chatId }}
           isLoading={false}
           clearMemory={clearMemory}
@@ -229,11 +226,7 @@ function RouteComponent() {
             }
           )}
         >
-          <GigaverSidebar
-            agent={agent}
-            chatId={chatId}
-            clearMemory={() => clearMemory()}
-          />
+          <GigaverSidebar chatId={chatId} clearMemory={() => clearMemory()} />
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AnyAgent, InferSchemaArguments } from "@daydreamsai/core";
+import { InferSchemaArguments } from "@daydreamsai/core";
 import {
   ChevronLeft,
   Eye,
@@ -28,20 +28,22 @@ import { RomEntity } from "@/agent/client/types/responses";
 import { useContextState, useWorkingMemory } from "@/hooks/agent";
 
 import { useSettingsStore } from "@/store/settingsStore";
+import { useAgentStore } from "@/store/agentStore";
 
 const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
 
 export function GigaverseStateSidebar({
-  agent,
   args,
   isLoading,
   clearMemory,
 }: {
-  agent: AnyAgent;
   args: InferSchemaArguments<GigaverseContext["schema"]>;
   isLoading?: boolean;
   clearMemory: () => void;
 }) {
+  // Get agent directly from the store
+  const agent = useAgentStore((state) => state.agent);
+
   // Add a state variable to force updates
   const [_updateCounter, setUpdateCounter] = useState(0);
 
