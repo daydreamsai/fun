@@ -120,149 +120,149 @@ function Index() {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="p-6 w-full mx-auto max-w-7xl"
-    >
-      <div className="flex items-center justify-between mb-8 mt-8">
-        <motion.h1
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 100 }}
-          className="text-3xl font-bold"
-        >
-          <img src="/Daydreams.svg" className="h-12" />
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className=" text-gray-500 mt-2 font-normal"
-          >
-            agentic-automation for your web3 games
-          </motion.p>
-        </motion.h1>
-      </div>
-
-      {/* Gigaverse Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-16"
+    <div className="overflow-y-scroll">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="p-6 w-full mx-auto max-w-7xl"
       >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Play Gigaverse</h2>
+        <div className="flex items-center justify-between mb-8 mt-8">
+          <motion.h1
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 100 }}
+            className="text-3xl font-bold"
+          >
+            <img src="/Daydreams.svg" className="h-12" />
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className=" text-gray-500 mt-2 font-normal"
+            >
+              agentic-automation for your web3 games
+            </motion.p>
+          </motion.h1>
         </div>
-
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-3"} gap-6`}
+        {/* Gigaverse Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-16"
         >
-          {chats?.length > 0 ? (
-            chats.map((chat: any, index: number) => (
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Play Gigaverse</h2>
+          </div>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-3"} gap-6`}
+          >
+            {chats?.length > 0 ? (
+              chats.map((chat: any, index: number) => (
+                <motion.div
+                  key={chat.key}
+                  variants={itemVariants}
+                  whileHover="hover"
+                  custom={index}
+                >
+                  <Link
+                    to="/games/gigaverse/$chatId"
+                    params={{ chatId: chat.key }}
+                    className="block  border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
+                  >
+                    {/* Image space */}
+                    <div className="h-48  relative overflow-hidden">
+                      <motion.img
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.3 }}
+                        src="/giga.jpeg"
+                        alt="Game Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-xl mb-1">{chat.key}</h3>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))
+            ) : (
               <motion.div
-                key={chat.key}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="col-span-full text-center py-16 border "
+              >
+                <h3 className="text-xl font-medium mb-2">
+                  No game sessions yet
+                </h3>
+                <p className="mb-6">Start your first Gigaverse adventure!</p>
+                <motion.div
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={buttonVariants}
+                >
+                  <Button asChild variant="outline">
+                    <Link
+                      to="/games/gigaverse/$chatId"
+                      params={{ chatId: `gigaverse-1` }}
+                    >
+                      <PlusCircle size={20} className="mr-2" />
+                      <span>Start New Game</span>
+                    </Link>
+                  </Button>
+                </motion.div>
+              </motion.div>
+            )}
+          </motion.div>
+        </motion.section>
+        {/* Upcoming Games Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mb-12"
+        >
+          <h2 className="text-2xl font-bold mb-6">Upcoming Agent Games</h2>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-3"} gap-6`}
+          >
+            {upcomingGames.map((game, index) => (
+              <motion.div
+                key={game.id}
                 variants={itemVariants}
                 whileHover="hover"
                 custom={index}
+                className="relative"
               >
-                <Link
-                  to="/games/gigaverse/$chatId"
-                  params={{ chatId: chat.key }}
-                  className="block  border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
-                >
-                  {/* Image space */}
-                  <div className="h-48  relative overflow-hidden">
-                    <motion.img
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ duration: 0.3 }}
-                      src="/giga.jpeg"
-                      alt="Game Preview"
+                <div className="block  border">
+                  <div className="h-48 bg-gray-200 relative overflow-hidden opacity-60">
+                    <img
+                      src={game.image}
+                      alt={game.name}
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <span className="text-white font-semibold px-4 py-2 rounded-full bg-black/50 backdrop-blur-sm">
+                        Coming Soon
+                      </span>
+                    </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-xl mb-1">{chat.key}</h3>
-                  </div>
-                </Link>
-              </motion.div>
-            ))
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="col-span-full text-center py-16 border "
-            >
-              <h3 className="text-xl font-medium mb-2">No game sessions yet</h3>
-              <p className="mb-6">Start your first Gigaverse adventure!</p>
-              <motion.div
-                whileHover="hover"
-                whileTap="tap"
-                variants={buttonVariants}
-              >
-                <Button asChild variant="outline">
-                  <Link
-                    to="/games/gigaverse/$chatId"
-                    params={{ chatId: `gigaverse-1` }}
-                  >
-                    <PlusCircle size={20} className="mr-2" />
-                    <span>Start New Game</span>
-                  </Link>
-                </Button>
-              </motion.div>
-            </motion.div>
-          )}
-        </motion.div>
-      </motion.section>
-
-      {/* Upcoming Games Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="mb-12"
-      >
-        <h2 className="text-2xl font-bold mb-6">Upcoming Agent Games</h2>
-
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-3"} gap-6`}
-        >
-          {upcomingGames.map((game, index) => (
-            <motion.div
-              key={game.id}
-              variants={itemVariants}
-              whileHover="hover"
-              custom={index}
-              className="relative"
-            >
-              <div className="block  border">
-                <div className="h-48 bg-gray-200 relative overflow-hidden opacity-60">
-                  <img
-                    src={game.image}
-                    alt={game.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                    <span className="text-white font-semibold px-4 py-2 rounded-full bg-black/50 backdrop-blur-sm">
-                      Coming Soon
-                    </span>
+                    <h3 className="font-semibold text-xl mb-1">{game.name}</h3>
+                    <p className="text-sm text-gray-500">{game.description}</p>
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-xl mb-1">{game.name}</h3>
-                  <p className="text-sm text-gray-500">{game.description}</p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </motion.section>
-    </motion.div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.section>
+      </motion.div>
+    </div>
   );
 }
