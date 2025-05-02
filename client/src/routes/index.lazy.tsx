@@ -60,8 +60,6 @@ export const Route = createLazyFileRoute("/")({
 });
 
 function Index() {
-  const isMobile = useIsMobile();
-
   const agent = useAgentStore((state) => state.agent);
 
   const [chats, setChats] = useState([]);
@@ -157,7 +155,7 @@ function Index() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-3"} gap-6`}
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}
           >
             {chats?.length > 0 ? (
               chats.map((chat: any, index: number) => (
@@ -230,7 +228,7 @@ function Index() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-3"} gap-6`}
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}
           >
             {upcomingGames.map((game, index) => (
               <motion.div
