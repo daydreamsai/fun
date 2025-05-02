@@ -170,7 +170,7 @@ function Index() {
                   <Link
                     to="/games/gigaverse/$chatId"
                     params={{ chatId: chat.key }}
-                    className="block  border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
+                    className="block bg-background border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
                   >
                     {/* Image space */}
                     <div className="h-48  relative overflow-hidden">
@@ -240,7 +240,7 @@ function Index() {
                 custom={index}
                 className="relative"
               >
-                <div className="block  border">
+                <div className="block bg-background border">
                   <div className="h-48 bg-gray-200 relative overflow-hidden opacity-60">
                     <img
                       src={game.image}
