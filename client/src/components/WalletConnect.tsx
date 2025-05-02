@@ -1,7 +1,11 @@
 import { FC, useEffect, useState } from "react";
 import { useWalletContext } from "@/context/WalletContext";
 import { Button } from "@/components/ui/button";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import {
+  useWalletModal,
+  WalletMultiButton,
+} from "@solana/wallet-adapter-react-ui";
+import { useWalletMultiButton } from "@solana/wallet-adapter-base-ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,12 +22,19 @@ import { authenticateWithWallet } from "@/utils/wallet";
 import { toast } from "sonner";
 
 export const WalletConnect: FC = () => {
+  const { setVisible: setModalVisible } = useWalletModal();
   const wallet = useWalletContext();
   const { publicKey, connected, disconnect } = wallet;
   const { isLoading, login, user } = useUser();
   const navigate = useNavigate();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  const { buttonState, onConnect } = useWalletMultiButton({
+    onSelectWallet() {
+      setModalVisible(true);
+    },
+  });
 
   // Format wallet address for display
   const formatWalletAddress = (address: string): string => {
@@ -70,7 +81,22 @@ export const WalletConnect: FC = () => {
 
   if (!connected || !publicKey) {
     return (
-      <WalletMultiButton className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-4 py-2" />
+      <Button
+        onClick={() => {
+          switch (buttonState) {
+            case "no-wallet":
+              setModalVisible(true);
+              break;
+            case "has-wallet":
+              if (onConnect) {
+                onConnect();
+              }
+              break;
+          }
+        }}
+      >
+        Connect
+      </Button>
     );
   }
 
