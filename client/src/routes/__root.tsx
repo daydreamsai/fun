@@ -6,6 +6,7 @@ import {
   Link,
   Outlet,
   ErrorComponent as TanStackErrorComponent,
+  useRouterState,
 } from "@tanstack/react-router";
 
 import {
@@ -20,6 +21,9 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { WalletConnect } from "@/components/WalletConnect";
 import { WalletContextProvider } from "@/context/WalletContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactElement, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Menu, PanelRight } from "lucide-react";
 
 // Custom error component that passes the error prop correctly
 const CustomErrorComponent = ({ error }: { error: Error }) => {
@@ -28,12 +32,18 @@ const CustomErrorComponent = ({ error }: { error: Error }) => {
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
+  sidebar?: ReactElement;
 }>()({
   // Add error boundary to handle routing errors
   errorComponent: CustomErrorComponent,
 
-  component: () => {
+  component: function Root() {
     const { queryClient } = Route.useRouteContext();
+
+    const matches = useRouterState({ select: (s) => s.matches });
+    const sidebar = matches.reverse().find((d) => d.context.sidebar);
+
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(true);
 
     return (
       <>
@@ -59,12 +69,26 @@ export const Route = createRootRouteWithContext<{
                         </BreadcrumbList>
                       </Breadcrumb> */}
                     </div>
-                    <div className="ml-auto pr-4">
+                    <div className="ml-auto pr-4 flex items-center gap-4">
+                      {/* Sidebar Toggle Button (Mobile) */}
                       <WalletConnect />
+                      {sidebar?.context.sidebar && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="" // Show only on small screens
+                          onClick={() =>
+                            setIsMobileSidebarOpen(!isMobileSidebarOpen)
+                          }
+                        >
+                          <PanelRight />
+                        </Button>
+                      )}
                     </div>
                   </header>
                   <Outlet />
                 </SidebarInset>
+                {isMobileSidebarOpen && sidebar?.context.sidebar}
               </SidebarProvider>
               {/* </TokenGate> */}
             </WalletContextProvider>

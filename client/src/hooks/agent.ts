@@ -12,82 +12,88 @@ import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRef } from "react";
 
-export function useContextState<TContext extends AnyContext>(ref: {
+export function useContextState<TContext extends AnyContext>({
+  agent,
+  ...ref
+}: {
   agent: AnyAgent;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
 }) {
-  const contextId = ref.agent.getContextId(ref);
+  const contextId = agent.getContextId(ref);
   return useQuery({
     queryKey: ["context", contextId],
     queryFn: async () => {
-      return await ref.agent.getContext(ref);
+      return await agent.getContext(ref);
     },
   });
 }
 
-export function useWorkingMemory<TContext extends AnyContext>(ref: {
+export function useWorkingMemory<TContext extends AnyContext>({
+  agent,
+  ...ref
+}: {
   agent: AnyAgent;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
 }) {
-  const contextId = ref.agent.getContextId(ref);
-
+  const contextId = agent.getContextId(ref);
+  console.log({ contextId });
   return useQuery({
     queryKey: ["workingMemory", contextId],
+
     queryFn: async () => {
+      console.log("fetching working memory", contextId);
       return structuredClone(
-        getWorkingMemoryAllLogs(await ref.agent.getWorkingMemory(contextId))
+        getWorkingMemoryAllLogs(await agent.getWorkingMemory(contextId))
       );
     },
     initialData: () => [],
   });
 }
 
-export function useLogs<TContext extends AnyContext>(ref: {
+export function useLogs<TContext extends AnyContext>({
+  agent,
+  ...ref
+}: {
   agent: AnyAgent;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
-  amount?: number;
 }) {
   const [logs, setLogs] = useState<AnyRef[]>([]);
-  const contextId = ref.agent.getContextId(ref);
+  const contextId = agent.getContextId(ref);
   const queryClient = useQueryClient();
 
-  const workingMemory = useWorkingMemory(ref);
+  const workingMemory = useWorkingMemory({ agent, ...ref });
 
   useEffect(() => {
-    const unsubscribe = ref.agent.subscribeContext(contextId, (log) => {
+    const unsubscribe = agent.subscribeContext(contextId, (log, done) => {
       setLogs((logs) => [...logs.filter((l) => l.id !== log.id), log]);
     });
     return () => {
       unsubscribe();
     };
-  }, [contextId, ref.agent]);
+  }, [contextId, agent]);
 
   useEffect(() => {
     setLogs([]);
   }, [contextId]);
 
   useEffect(() => {
-    if (workingMemory.data) {
-      setLogs((logs) => {
-        const map = new Map(
-          [...(workingMemory.data || []), ...logs].map((log) => [log.id, log])
-        );
-
-        return Array.from(map.values()).sort((a, b) =>
-          a.timestamp >= b.timestamp ? 1 : -1
-        );
-      });
-    }
-  }, [workingMemory.data]);
+    console.log("gerere");
+    setLogs(
+      workingMemory.data
+        .slice()
+        .sort((a, b) => (a.timestamp >= b.timestamp ? 1 : -1))
+    );
+  }, [workingMemory.data, workingMemory.dataUpdatedAt]);
 
   const clearMemory = async () => {
-    await ref.agent.memory.store.delete("working-memory:" + contextId);
+    await agent.memory.store.delete("working-memory:" + contextId);
+
     setLogs([]);
 
-    await queryClient.setQueryData(["workingMemory", contextId], []);
+    workingMemory.refetch();
 
     await queryClient.resetQueries({
       queryKey: ["context", contextId],
@@ -95,7 +101,7 @@ export function useLogs<TContext extends AnyContext>(ref: {
   };
 
   return {
-    logs: logs.slice(-(ref.amount || 15)),
+    logs,
     setLogs,
     workingMemory,
     clearMemory,
@@ -132,12 +138,7 @@ export function useSend<TContext extends AnyContext>({
 
   const send = useMutation({
     mutationKey: ["send", id],
-    mutationFn: async ({
-      input,
-
-      actions,
-      contexts,
-    }: SendArguments) => {
+    mutationFn: async ({ input, actions, contexts }: SendArguments) => {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 

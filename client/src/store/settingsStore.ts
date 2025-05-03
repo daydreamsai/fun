@@ -8,6 +8,7 @@ export const VALID_MODELS = [
   "google/gemma-3-27b-it",
   "qwen/qwq-32b",
   "google/gemini-2.0-flash-001",
+  "google/gemini-2.5-flash-preview",
 ] as const;
 
 export interface UserSettings {

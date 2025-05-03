@@ -1,7 +1,7 @@
 import { context, extension, input, output } from "@daydreamsai/core";
 import { z } from "zod";
 
-const chatContext = context({
+export const chatContext = context({
   type: "chat",
   maxSteps: 100,
   schema: z.object({ chatId: z.string() }),
@@ -34,7 +34,9 @@ export const chat = extension({
     message: output({
       schema: z.string(),
       required: true,
-      examples: [`<output type="message">Hi!</output>`],
+      examples: [
+        `<output type="message">Hello! How can I assist you today?</output>`,
+      ],
     }),
   },
   actions: [],

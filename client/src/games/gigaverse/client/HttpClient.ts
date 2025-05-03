@@ -1,17 +1,20 @@
 // path: src/client/HttpClient.ts
 
-import { logger } from "../utils/logger";
+import { Logger } from "@daydreamsai/core";
 
 /**
  * Minimal HTTP client that wraps fetch calls with logging.
  */
 export class HttpClient {
+  private logger: Logger;
+
   private readonly baseUrl: string;
   private authToken: string;
 
-  constructor(baseUrl: string, authToken: string) {
+  constructor(baseUrl: string, authToken: string, logger: Logger) {
     this.baseUrl = baseUrl;
     this.authToken = authToken;
+    this.logger = logger;
   }
 
   public setAuthToken(newToken: string) {
@@ -25,7 +28,7 @@ export class HttpClient {
     endpoint: string,
     body: Record<string, any>
   ): Promise<T> {
-    logger.info(`POST -> ${endpoint}`);
+    this.logger.info("gigaverse-http-client", `POST -> ${endpoint}`);
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "POST",
@@ -39,7 +42,10 @@ export class HttpClient {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      logger.error(`HTTP error ${response.status}: ${errorBody}`);
+      this.logger.error(
+        "gigaverse-http-client",
+        `HTTP error ${response.status}: ${errorBody}`
+      );
       throw new Error(`POST ${endpoint} failed -> ${response.status}`);
     }
 
@@ -50,7 +56,7 @@ export class HttpClient {
    * Sends a GET request with the current auth token.
    */
   public async get<T>(endpoint: string): Promise<T> {
-    logger.info(`GET -> ${endpoint}`);
+    this.logger.info("gigaverse-http-client", `GET -> ${endpoint}`);
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "GET",
@@ -62,7 +68,10 @@ export class HttpClient {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      logger.error(`HTTP error ${response.status}: ${errorBody}`);
+      this.logger.error(
+        "gigaverse-http-client",
+        `HTTP error ${response.status}: ${errorBody}`
+      );
       throw new Error(`GET ${endpoint} failed -> ${response.status}`);
     }
 

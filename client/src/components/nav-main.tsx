@@ -34,7 +34,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
     <SidebarGroup>
       <SidebarGroupLabel>
         <Link to="/">
-          <img src="/Daydreams.svg" className=" h-6" />
+          <img src="/Daydreams-white.svg" className="h-6 text-white" />
         </Link>
       </SidebarGroupLabel>
       <SidebarMenu className="my-4">

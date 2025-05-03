@@ -3,24 +3,29 @@ import { useEffect, useState } from "react";
 import { v7 as randomUUIDv7 } from "uuid";
 import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { Button } from "@/components/ui/button";
-
 import { hasApiKey, useSettingsStore } from "@/store/settingsStore";
 import { useAgentStore } from "@/store/agentStore";
 import { useTemplateStore } from "@/store/templateStore";
-
 import { HelpWindow, MessageInput } from "@/components/chat";
-import { gigaverseContext, gigaverseVariables } from "@/agent/giga";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLogs, useSend } from "@/hooks/agent";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { GigaverseStateSidebar } from "@/components/gigaverse/StateSidebar";
+import {
+  defaultInstructions,
+  gigaverseContext,
+  gigaverseVariables,
+} from "@/games/gigaverse/context";
+import { GigaverseStateSidebar } from "@/games/gigaverse/components/StateSidebar";
+import { GigaverseAction } from "@/games/gigaverse/components/Actions";
 import { ActionResult } from "@daydreamsai/core";
-import { GigaverseAction } from "@/components/gigaverse/Actions";
 import { LogsList } from "@/components/chat/LogsLIst";
 import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
-import { Menu } from "lucide-react";
-import clsx from "clsx";
+import { Notebook, ScrollText } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function GigaverSidebar({
   chatId,
@@ -32,12 +37,8 @@ function GigaverSidebar({
   return (
     <Sidebar
       collapsible="none"
-      className={cn(
-        "sticky w-96 top-0 min-h-svh max-h-svh border-l shrink-0 h-full"
-      )}
+      className={cn("w-96 border-l min-h-svh max-h-svh shrink-0 h-full")}
       side="right"
-      // open={isMobileSidebarOpen}
-      // onOpenChange={setIsMobileSidebarOpen}
     >
       <SidebarContent className="bg-sidebar">
         <GigaverseStateSidebar
@@ -52,7 +53,11 @@ function GigaverSidebar({
 
 export const Route = createFileRoute("/games/gigaverse/$chatId")({
   component: RouteComponent,
-
+  context({ params }) {
+    return {
+      sidebar: <GigaverSidebar chatId={params.chatId} clearMemory={() => {}} />,
+    };
+  },
   loader({ params }: { params: { chatId: string } }) {
     // Check if user has required API keys
     const hasOpenRouterKey = hasApiKey("openrouterKey");
@@ -84,7 +89,7 @@ function RouteComponent() {
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [missingKeys, setMissingKeys] = useState<string[]>([]);
 
-  const { template, setTemplate, resetTemplate } = useTemplateStore();
+  const { templates, setTemplate, resetTemplate } = useTemplateStore();
   const agent = useAgentStore((state) => state.agent);
 
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
@@ -109,11 +114,13 @@ function RouteComponent() {
     args: { id: chatId },
   });
 
-  const { send } = useSend({
+  const { send, abortControllerRef } = useSend({
     agent: agent,
     context: gigaverseContext,
     args: { id: chatId },
   });
+
+  console.log({ logs });
 
   const handleSubmitMessage = async (message: string) => {
     send.mutate({
@@ -128,11 +135,11 @@ function RouteComponent() {
   };
 
   const handleApplyTemplate = (newTemplate: string) => {
-    setTemplate(newTemplate);
+    setTemplate("gigaverse", newTemplate);
   };
 
   const handleResetTemplate = () => {
-    resetTemplate();
+    resetTemplate("gigaverse");
   };
 
   const thoughts = logs.filter((log) => log.ref === "thought");
@@ -150,9 +157,17 @@ function RouteComponent() {
         onOpenChange={setShowTemplateEditor}
         title="Agent Prompt Template"
         requiredVariables={gigaverseVariables}
-        initialTemplate={template}
+        initialTemplate={templates["gigaverse"] ?? defaultInstructions}
         onApplyTemplate={handleApplyTemplate}
         onResetTemplate={handleResetTemplate}
+        templateKey="gigaverse"
+        sections={{
+          instructions: {
+            label: "Gigaverse Strategy",
+            default: defaultInstructions,
+          },
+          system: { label: "Gigaverse Rules", default: "" },
+        }}
       />
 
       {/* API Key Notification */}
@@ -169,88 +184,80 @@ function RouteComponent() {
         </div>
       )}
 
-      {/* Main container: flex-col by default, lg:flex-row for larger screens */}
-      {/* Messages container: takes full width on small screens, allows space for sidebar on large screens */}
-      <div className="flex flex-row h-full">
-        <div
-          className="flex flex-col flex-1 overflow-y-scroll pb-80 px-6 mr-0.5"
-          ref={messagesContainerRef}
-          style={{
-            scrollBehavior: "smooth",
-            scrollPaddingBottom: "250px", // Adjust as needed based on MessageInput height
-          }}
-        >
-          {/* Content within messages container: centered with max-width */}
+      <div
+        className="flex flex-col flex-1 px-6 mr-0.5 overflow-y-scroll pt-8 pb-40"
+        ref={messagesContainerRef}
+        style={{
+          scrollBehavior: "smooth",
+          scrollPaddingBottom: "250px", // Adjust as needed based on MessageInput height
+        }}
+      >
+        {/* Content within messages container: centered with max-width */}
+        {/* {thoughts.length > 0 && (
           <div className="pt-4 w-full max-w-4xl">
-            {/* Agent Thoughts Section */}
-            {thoughts.length > 0 && (
-              <Card className="mb-2 max-h-[250px] min-h-[250px] overflow-y-auto border-primary">
-                <CardHeader>
-                  <CardTitle>Agent Thoughts</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div key={thoughts[thoughts.length - 1].id}>
-                    {thoughts[thoughts.length - 1].content}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <Card className="mb-2 max-h-[250px] min-h-[250px] overflow-y-auto border-primary">
+              <CardHeader>
+                <CardTitle>Agent Thoughts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div key={thoughts[thoughts.length - 1].id}>
+                  {thoughts[thoughts.length - 1].content}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          <LogsList
-            logs={logs}
-            components={{
-              action_call: ({ log, getLog }) => {
-                const result = getLog<ActionResult>(
-                  (t) => t.ref === "action_result" && t.callId === log.id
+        )} */}
+        <LogsList
+          logs={logs}
+          components={{
+            // thought: () => null,
+            action_call: ({ log, getLog }) => {
+              const result = getLog<ActionResult>(
+                (t) => t.ref === "action_result" && t.callId === log.id
+              );
+
+              if (log.name.startsWith("gigaverse")) {
+                return (
+                  <GigaverseAction key={log.id} call={log} result={result} />
                 );
+              }
 
-                if (log.name.startsWith("gigaverse")) {
-                  return (
-                    <GigaverseAction key={log.id} call={log} result={result} />
-                  );
-                }
-
-                return null;
-              },
-            }}
-          />
-        </div>
-        <div
-          className={clsx(
-            "flex-col flex-shrink-0 border-l bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-y-auto transition-transform duration-300 ease-in-out",
-            "lg:flex lg:static lg:translate-x-0 lg:z-auto lg:border-l", // Large screen styles (static positioning)
-            {
-              "fixed inset-y-0 right-0 z-40 translate-x-0": isMobileSidebarOpen, // Mobile open styles
-              "fixed inset-y-0 right-0 z-40 translate-x-full":
-                !isMobileSidebarOpen, // Mobile closed styles
-            }
-          )}
-        >
-          <GigaverSidebar chatId={chatId} clearMemory={() => clearMemory()} />
-        </div>
+              return null;
+            },
+          }}
+        />
       </div>
 
-      {/* Sidebar Toggle Button (Mobile) */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 right-4 z-50 lg:hidden" // Show only on small screens
-        onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-      >
-        <Menu className="h-6 w-6" />
-      </Button>
+      <div className="bg-background flex mt-auto">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              disabled={send.isPending}
+              onClick={() => setShowTemplateEditor(true)}
+              className="h-full flex text-muted-foreground"
+            >
+              <ScrollText />
+              {/* <span className="hidden md:inline">Instructions</span> */}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Instructions</p>
+          </TooltipContent>
+        </Tooltip>
 
-      <MessageInput
-        isLoading={send.isPending}
-        disabled={missingKeys.length === 2}
-        onSubmit={handleSubmitMessage}
-        setShowTemplateEditor={setShowTemplateEditor}
-        placeholderText={
-          missingKeys.length === 2
-            ? "Please set up API keys in settings to start chatting"
-            : undefined
-        }
-      />
+        <MessageInput
+          isLoading={send.isPending}
+          disabled={missingKeys.length === 2}
+          onSubmit={handleSubmitMessage}
+          abortControllerRef={abortControllerRef}
+          placeholderText={
+            missingKeys.length === 2
+              ? "Please set up API keys in settings to start chatting"
+              : undefined
+          }
+        />
+      </div>
     </>
   );
 }
