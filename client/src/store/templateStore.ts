@@ -1,26 +1,50 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export type Template = {
+  id: string;
+  title: string;
+  tags: string[];
+  section: string;
+  prompt: string;
+};
+
 interface TemplateState {
-  templates: Record<string, string>;
-  setTemplate: (key: string, newTemplate: string) => void;
-  resetTemplate: (key: string) => void;
+  templates: Record<string, Template[]>;
+  createTemplate: (key: string, template: Template) => void;
+  updateTemplate: (key: string, template: Template) => void;
+  deleteTemplate: (key: string, templateId: string) => void;
 }
 
 export const useTemplateStore = create<TemplateState>()(
   persist(
     (set) => ({
       templates: {},
-      setTemplate: (key, template) =>
+      createTemplate: (contextType, template) =>
         set(({ templates }) => {
-          templates[key] = template;
+          if (templates[contextType] === undefined) {
+            templates[contextType] = [];
+          }
+          templates[contextType].push(template);
           return {
             templates,
           };
         }),
-      resetTemplate: (key) =>
+      updateTemplate: (contextType, template) =>
         set(({ templates }) => {
-          delete templates[key];
+          const current = templates[contextType].find(
+            (t) => t.id === template.id
+          );
+
+          if (current) Object.assign(current, template);
+
+          return {
+            templates,
+          };
+        }),
+      deleteTemplate: (key, id) =>
+        set(({ templates }) => {
+          templates[key] = templates[key].filter((t) => t.id !== id);
           return {
             templates,
           };
@@ -28,7 +52,7 @@ export const useTemplateStore = create<TemplateState>()(
     }),
     {
       name: "agent-template-storage",
-      version: 2,
+      version: 4,
     }
   )
 );

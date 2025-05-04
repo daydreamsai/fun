@@ -82,6 +82,7 @@ export const WalletConnect: FC = () => {
   if (!connected || !publicKey) {
     return (
       <Button
+        size="sm"
         onClick={() => {
           switch (buttonState) {
             case "no-wallet":

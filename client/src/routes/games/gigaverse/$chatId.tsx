@@ -89,7 +89,7 @@ function RouteComponent() {
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [missingKeys, setMissingKeys] = useState<string[]>([]);
 
-  const { templates, setTemplate, resetTemplate } = useTemplateStore();
+  const { templates } = useTemplateStore();
   const agent = useAgentStore((state) => state.agent);
 
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
@@ -135,11 +135,11 @@ function RouteComponent() {
   };
 
   const handleApplyTemplate = (newTemplate: string) => {
-    setTemplate("gigaverse", newTemplate);
+    // setTemplate("gigaverse", newTemplate);
   };
 
   const handleResetTemplate = () => {
-    resetTemplate("gigaverse");
+    // resetTemplate("gigaverse");
   };
 
   const thoughts = logs.filter((log) => log.ref === "thought");
@@ -154,12 +154,8 @@ function RouteComponent() {
       <HelpWindow open={showHelpWindow} onOpenChange={setShowHelpWindow} />
       <TemplateEditorDialog
         open={showTemplateEditor}
-        onOpenChange={setShowTemplateEditor}
-        title="Agent Prompt Template"
-        requiredVariables={gigaverseVariables}
-        initialTemplate={templates["gigaverse"] ?? defaultInstructions}
-        onApplyTemplate={handleApplyTemplate}
-        onResetTemplate={handleResetTemplate}
+        title="Gigaverse Instructions"
+        variables={gigaverseVariables}
         templateKey="gigaverse"
         sections={{
           instructions: {
@@ -168,6 +164,9 @@ function RouteComponent() {
           },
           system: { label: "Gigaverse Rules", default: "" },
         }}
+        onOpenChange={setShowTemplateEditor}
+        onApplyTemplate={handleApplyTemplate}
+        onResetTemplate={handleResetTemplate}
       />
 
       {/* API Key Notification */}

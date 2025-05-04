@@ -19,7 +19,7 @@ export function LogContainer({
   return (
     <div
       className={cn(
-        "relative w-full py-2 px-4 text-sm border border-border/50 flex flex-col bg-card hover:brightness-105",
+        "relative w-full py-2 px-4 text-sm border border-border/50 flex flex-col bg-card",
         className
       )}
     >

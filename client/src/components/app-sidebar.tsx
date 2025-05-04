@@ -6,12 +6,18 @@ import {
   Settings,
   Twitter,
   Github,
+  Brain,
+  Wallet,
 } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
@@ -199,6 +205,18 @@ function ChatHistoryList() {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader className="py-3">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton className="bg-secondary group-[[data-state=expanded]]:bg-inherit">
+              {/* <Link to="/" className="size-8"> */}
+              <Brain className="data group-[[data-state=expanded]]:hidden"></Brain>
+              <img src="/Daydreams-white.svg" className="h-6 text-white" />
+              {/* </Link> */}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         {/* <NavProjects projects={data.projects} /> */}
