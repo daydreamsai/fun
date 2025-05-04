@@ -48,20 +48,10 @@ export const useAgentStore = create<AgentState>((set) => {
     }
   });
 
-  const unsubscribeTemplate = useTemplateStore.subscribe((state, prevState) => {
-    // Only recreate if relevant settings changed
-    const relevantSettingsChanged = state.template !== prevState.template;
-
-    if (relevantSettingsChanged) {
-      recreateAgent();
-    }
-  });
-
   // Clean up subscription when store is destroyed
   // This is important to prevent memory leaks
   if (typeof window !== "undefined") {
     window.addEventListener("beforeunload", unsubscribe);
-    window.addEventListener("beforeunload", unsubscribeTemplate);
   }
 
   return {

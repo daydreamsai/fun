@@ -12,6 +12,7 @@ import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import {
   defaultInstructions,
+  defaultRules,
   gigaverseContext,
   gigaverseVariables,
 } from "@/games/gigaverse/context";
@@ -160,9 +161,24 @@ function RouteComponent() {
         sections={{
           instructions: {
             label: "Gigaverse Strategy",
-            default: defaultInstructions,
+            default: {
+              id: "gigaverse-instructions-default",
+              title: "Default",
+              section: "instructions",
+              prompt: defaultInstructions,
+              tags: ["default"],
+            },
           },
-          system: { label: "Gigaverse Rules", default: "" },
+          rules: {
+            label: "Gigaverse Rules",
+            default: {
+              id: "gigaverse-rules-default",
+              title: "Default",
+              section: "rules",
+              prompt: defaultRules,
+              tags: ["default"],
+            },
+          },
         }}
         onOpenChange={setShowTemplateEditor}
         onApplyTemplate={handleApplyTemplate}

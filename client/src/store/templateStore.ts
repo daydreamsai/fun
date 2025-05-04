@@ -11,17 +11,32 @@ export type Template = {
 
 interface TemplateState {
   templates: Record<string, Template[]>;
+
+  selected: Record<string, Record<string, string>>;
+
   createTemplate: (key: string, template: Template) => void;
   updateTemplate: (key: string, template: Template) => void;
   deleteTemplate: (key: string, templateId: string) => void;
+
+  selectTemplate: (key: string, section: string, templateId: string) => void;
 }
 
 export const useTemplateStore = create<TemplateState>()(
   persist(
     (set) => ({
       templates: {},
+      selected: {},
+      selectTemplate: (key, section, templateId) =>
+        set(({ selected }) => {
+          if (!selected[key]) {
+            selected[key] = {};
+          }
+          selected[key][section] = templateId;
+          return { selected };
+        }),
       createTemplate: (contextType, template) =>
         set(({ templates }) => {
+          console.log({ templates });
           if (templates[contextType] === undefined) {
             templates[contextType] = [];
           }
@@ -52,7 +67,7 @@ export const useTemplateStore = create<TemplateState>()(
     }),
     {
       name: "agent-template-storage",
-      version: 4,
+      version: 6,
     }
   )
 );

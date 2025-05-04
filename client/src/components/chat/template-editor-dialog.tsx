@@ -37,7 +37,7 @@ interface TemplateEditorDialogProps {
   onApplyTemplate: (newTemplate: string) => void;
   onResetTemplate?: () => void;
   templateKey: string;
-  sections?: Record<string, { label: string; default?: string }>;
+  sections?: Record<string, { label: string; default: Template }>;
 }
 
 // Regex to find {{variable}} patterns
@@ -59,23 +59,28 @@ export function TemplateEditorDialog({
 }: TemplateEditorDialogProps) {
   const [state, setState] = useState<State>({ page: "index" });
 
-  const templates = useTemplateStore((state) => state.templates[templateKey]);
+  const {
+    selected,
+    templates: store,
+    selectTemplate,
+    createTemplate,
+    updateTemplate,
+  } = useTemplateStore();
 
-  const { createTemplate, updateTemplate } = useTemplateStore();
+  const templates = store[templateKey]?.slice() ?? [];
 
-  const [selectedTemplates, setSelectedTemplates] = useState<
-    Record<string, string>
-  >({});
-
-  // Update local state if the initial template changes from props
-
-  const handleApply = () => {
-    onOpenChange(false); // Close dialog on apply
-  };
-
-  const handleReset = () => {
-    toast.info(`${title} template reset.`);
-  };
+  useEffect(() => {
+    if (store[templateKey] === undefined || store[templateKey].length === 0) {
+      for (const section of Object.values(sections)) {
+        createTemplate(templateKey, section.default);
+        selectTemplate(
+          templateKey,
+          section.default.section,
+          section.default.id
+        );
+      }
+    }
+  }, [store]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,61 +110,24 @@ export function TemplateEditorDialog({
                     </Button>
                   </div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {(templates ?? [])
+                    {templates
                       .filter((template) => template.section === section)
                       .map((template) => {
                         const isSelected =
-                          selectedTemplates[section] === template.id;
-                        return (
-                          <div
-                            key={template.id}
-                            className={cn(
-                              "md:aspect-square border p-4 rounded flex flex-col hover:border-primary/50",
-                              isSelected ? "border-primary" : "border-border"
-                            )}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="font-medium text-lg">
-                                {template.title}
-                              </div>
-                              <div className="flex gap-1">
-                                {isSelected && <Badge>active</Badge>}
-                              </div>
-                            </div>
-                            <div className="mt-2">
-                              {template.prompt.slice(0, 150)}...
-                            </div>
-                            <div className="flex mt-4 gap-2">
-                              {template.tags.map((tag, i) => (
-                                <Badge variant="secondary" key={i}>
-                                  {tag.trim()}
-                                </Badge>
-                              ))}
-                            </div>
-                            <div className="mt-4 md:mt-auto flex justify-between">
-                              <Button
-                                variant="ghost"
-                                onClick={() => {
-                                  setState({ page: "edit", id: template.id });
-                                }}
-                              >
-                                Edit
-                              </Button>
+                          selected[templateKey] &&
+                          selected[templateKey][section] === template.id;
 
-                              <Button
-                                variant="secondary"
-                                disabled={isSelected}
-                                onClick={() => {
-                                  setSelectedTemplates((selected) => ({
-                                    ...selected,
-                                    [section]: template.id,
-                                  }));
-                                }}
-                              >
-                                {isSelected ? "Selected" : "Select"}
-                              </Button>
-                            </div>
-                          </div>
+                        return (
+                          <TemplateCard
+                            template={template}
+                            isSelected={isSelected}
+                            onEdit={() => {
+                              setState({ page: "edit", id: template.id });
+                            }}
+                            onSelect={() => {
+                              selectTemplate(templateKey, section, template.id);
+                            }}
+                          />
                         );
                       })}
                     <div
@@ -227,6 +195,50 @@ export function TemplateEditorDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function TemplateCard({
+  template,
+  isSelected,
+  onSelect,
+  onEdit,
+}: {
+  template: Template;
+  isSelected: boolean;
+  onEdit: () => void;
+  onSelect: () => void;
+}) {
+  return (
+    <div
+      key={template.id}
+      className={cn(
+        "md:aspect-square border p-4 rounded flex flex-col hover:border-primary/50",
+        isSelected ? "border-primary" : "border-border"
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <div className="font-medium text-lg">{template.title}</div>
+        <div className="flex gap-1">{isSelected && <Badge>active</Badge>}</div>
+      </div>
+      <div className="mt-2">{template.prompt.slice(0, 150)}...</div>
+      <div className="flex mt-4 gap-2">
+        {template.tags.map((tag, i) => (
+          <Badge variant="secondary" key={i}>
+            {tag.trim()}
+          </Badge>
+        ))}
+      </div>
+      <div className="mt-4 md:mt-auto flex justify-between">
+        <Button variant="ghost" onClick={onEdit}>
+          Edit
+        </Button>
+
+        <Button variant="secondary" disabled={isSelected} onClick={onSelect}>
+          {isSelected ? "Selected" : "Select"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
