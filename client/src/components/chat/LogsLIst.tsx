@@ -17,15 +17,13 @@ export function LogContainer({
   children?: ReactNode;
 }) {
   return (
-    <div className="flex">
-      <div
-        className={cn(
-          "relative p-4 text-sm shadow-md transition-all duration-200 max-w-[90%] min-w-[40%] whitespace-pre-wrap break-words border-opacity-50",
-          className
-        )}
-      >
-        {children}
-      </div>
+    <div
+      className={cn(
+        "relative w-full py-2 px-4 text-sm border border-border/50 flex flex-col bg-card",
+        className
+      )}
+    >
+      {children}
     </div>
   );
 }
@@ -44,50 +42,61 @@ export type ComponentsRecord<T extends AnyRef = AnyRef> = Partial<{
 export const defaultComponents: ComponentsRecord = {
   thought: ({ log }) => {
     return (
-      <LogContainer className="bg-card text-muted-foreground border hover:brightness-105">
+      <LogContainer>
         <Collapsible>
-          <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between">
+          <div className="text-muted-foreground text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between">
             {log.ref}
             <CollapsibleTrigger>
-              <Button variant="ghost" size="sm">
-                <ChevronsUpDown className="h-4 w-4" />
-                <span className="sr-only">Toggle</span>
+              <Button variant="ghost" size="icon" className="w-7 h-7 -mr-2">
+                <ChevronsUpDown />
               </Button>
             </CollapsibleTrigger>
           </div>
           <CollapsibleContent>
-            {log.content && <div className="text-base">{log.content}</div>}
+            {log.content && (
+              <pre className="whitespace-pre-wrap break-all my-2 text-white">
+                {log.content.trim()}
+              </pre>
+            )}
           </CollapsibleContent>
         </Collapsible>
       </LogContainer>
     );
   },
   input: ({ log }) => {
+    const content = log.data?.content ?? log.content;
     return (
-      <LogContainer className="bg-card text-muted-foreground border hover:brightness-105">
-        <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between">
+      <LogContainer>
+        <div className="text-muted-foreground text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between pt-2">
           User
         </div>
         {log.type === "message" && (
-          <div>{log.data?.content ?? log.content}</div>
+          <div className="whitespace-pre-wrap break-all my-2">
+            {content.trim()}
+          </div>
         )}
       </LogContainer>
     );
   },
   output: ({ log }) => {
+    const content = log.data ?? log.content;
     return (
-      <LogContainer className="bg-card text-muted-foreground border hover:brightness-105">
-        <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between">
+      <LogContainer>
+        <div className="text-muted-foreground text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between pt-2">
           Agent
         </div>
-        {log.type === "message" && <div>{log.data ?? log.content}</div>}
+        {log.type === "message" && (
+          <div className="whitespace-pre-wrap break-all my-2">
+            {content.trim()}
+          </div>
+        )}
       </LogContainer>
     );
   },
   // action_call: ({ log, getLog }) => {
 
   //   return (
-  //     <LogContainer className="bg-card text-muted-foreground border hover:brightness-105">
+  //     <LogContainer>
   //       <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between">
   //         System
   //       </div>
@@ -133,7 +142,7 @@ export function LogsList({
   };
 
   return (
-    <div className="flex flex-col space-y-2 w-full">
+    <div className="flex flex-col gap-4 max-w-[80%] min-w-[40%]">
       {filteredMessages.map((log) => {
         const Component = allComponents[log.ref] as React.FC<{
           log: AnyRef;

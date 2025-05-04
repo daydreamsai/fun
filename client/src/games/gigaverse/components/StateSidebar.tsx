@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import { InferSchemaArguments } from "@daydreamsai/core";
+import {
+  InferSchemaArguments,
+  Logger,
+  prepareContexts,
+} from "@daydreamsai/core";
 import {
   ChevronLeft,
   Eye,
@@ -20,22 +24,26 @@ import {
   getGigaToken,
   GigaverseContext,
   gigaverseContext,
-} from "@/agent/giga";
-import { GameStatus } from "@/components/chat/GameStatus";
+} from "../context";
+import { GameStatus } from "@/games/gigaverse/components/GameStatus";
 import { browserStorage } from "@/agent";
-import { GameClient } from "@/agent/client/GameClient";
-import { RomEntity } from "@/agent/client/types/responses";
+import { GameClient } from "../client/GameClient";
+
 import { useContextState, useWorkingMemory } from "@/hooks/agent";
 
 import { useSettingsStore } from "@/store/settingsStore";
 import { useAgentStore } from "@/store/agentStore";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const gameClient = new GameClient(getApiBaseUrl(), getGigaToken());
+const gameClient = new GameClient(
+  getApiBaseUrl(),
+  getGigaToken(),
+  new Logger({})
+);
 
 export function GigaverseStateSidebar({
   args,
   isLoading,
-  clearMemory,
 }: {
   args: InferSchemaArguments<GigaverseContext["schema"]>;
   isLoading?: boolean;
@@ -43,22 +51,26 @@ export function GigaverseStateSidebar({
 }) {
   const agent = useAgentStore((state) => state.agent);
 
-  const getEnergy = async () => {
-    const energy = await gameClient.getEnergy(getAbstractAddress());
+  const contextId = agent.getContextId({ context: gigaverseContext, args });
 
-    const agentUpdate = agent.getContext({
-      context: gigaverseContext,
-      args,
-    });
+  const stateQuery = useQuery({
+    queryKey: ["gigaverse", contextId],
+    queryFn: async () => {
+      const ctxState = await agent.getContext({
+        context: gigaverseContext,
+        args,
+      });
 
-    (await agentUpdate).memory.energy = energy;
+      const workingMemory = await agent.getWorkingMemory(ctxState.id);
 
-    return energy;
-  };
+      const res = await prepareContexts({
+        agent,
+        ctxState,
+        workingMemory,
+      });
 
-  const contextId = agent.getContextId({
-    context: gigaverseContext,
-    args,
+      return res;
+    },
   });
 
   const workingMemory = useWorkingMemory({
@@ -73,66 +85,70 @@ export function GigaverseStateSidebar({
     args,
   });
 
+  useEffect(() => {
+    return agent.subscribeContext(contextId, (log, done) => {
+      if (!done) return;
+      switch (log.ref) {
+        case "step": {
+          gigaverseState.refetch();
+          break;
+        }
+        case "action_result": {
+          if (log.name.startsWith("gigaverse")) {
+            gigaverseState.refetch();
+          }
+          break;
+        }
+      }
+    });
+  }, [contextId]);
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
   const [showFullMemory, setShowFullMemory] = useState(false);
 
   // ROMS Tab State
-  const [userRoms, setUserRoms] = useState<RomEntity[]>([]);
-  const [isFetchingRoms, setIsFetchingRoms] = useState(false);
-  const [_isClaimingEnergy, _setIsClaimingEnergy] = useState(false);
   const [claimingStatus, setClaimingStatus] = useState<Record<string, boolean>>(
     {}
   );
 
-  // Fetch User ROMs when ROMS tab is active
-  useEffect(() => {
-    if (activeTab === "roms" && getAbstractAddress()) {
-      const fetchRoms = async () => {
-        setIsFetchingRoms(true);
+  const queryClient = useQueryClient();
 
-        try {
-          const roms = await gameClient.getUserRoms(getAbstractAddress());
-          console.log("roms", roms);
-          setUserRoms(roms.entities);
-        } catch (error) {
-          console.error("Failed to fetch user ROMs:", error);
-          setUserRoms([]);
-        } finally {
-          setIsFetchingRoms(false);
-        }
-      };
-      fetchRoms();
-    }
-  }, [activeTab]);
+  const abstractAddress = getAbstractAddress();
 
-  // Placeholder function for claiming energy
-  const handleClaimEnergy = async ({
-    romId,
-    claimId,
-  }: {
-    romId: string;
-    claimId: string;
-  }) => {
-    const statusKey = `${romId}-${claimId}`;
-    setClaimingStatus((prev) => ({ ...prev, [statusKey]: true }));
-    try {
-      console.log(`Claiming ${claimId} for ROM ${romId}...`);
+  const romsQuery = useQuery({
+    enabled: !!abstractAddress && activeTab === "roms",
+    queryKey: ["gigaverse:roms", abstractAddress],
+    queryFn: async () => {
+      const roms = await gameClient.getUserRoms(abstractAddress);
+      return roms;
+    },
+  });
 
+  const claimEnergyMutation = useMutation({
+    mutationFn: async ({
+      romId,
+      claimId,
+    }: {
+      romId: string;
+      claimId: string;
+    }) => {
       const response = await gameClient.claimEnergy({
         romId,
         claimId,
       });
-
-      console.log("response", response);
-    } catch (error) {
-      console.error(`Failed to claim ${claimId}:`, error);
-      alert(`Failed to claim ${claimId}.`);
-    } finally {
-      setClaimingStatus((prev) => ({ ...prev, [statusKey]: false }));
-    }
-  };
+      return response;
+    },
+    onMutate({ romId, claimId }) {
+      const statusKey = `${romId}-${claimId}`;
+      setClaimingStatus((state) => ({ ...state, [statusKey]: true }));
+    },
+    onSettled(_, __, { romId, claimId }) {
+      const statusKey = `${romId}-${claimId}`;
+      setClaimingStatus((state) => ({ ...state, [statusKey]: false }));
+    },
+  });
 
   const setShowHelpWindow = useSettingsStore(
     (state) => state.setShowHelpWindow
@@ -158,28 +174,57 @@ export function GigaverseStateSidebar({
 
   return (
     <div>
-      <img src="/giga.jpeg" alt="Giga Banner" />
       <div className="flex">
-        <Button className="w-full" onClick={clearMemory}>
-          Clear Memory <Trash className="w-4 h-4 stroke-black" />
+        <Button
+          variant="outline"
+          className="w-full text-muted-foreground"
+          onClick={() => setShowHelpWindow(true)}
+        >
+          Help <ShieldQuestion />
         </Button>
-        <Button className="w-full" onClick={() => setShowHelpWindow(true)}>
-          Help <ShieldQuestion className="w-4 h-4 stroke-black" />
+        <Button
+          variant="outline"
+          className="w-full text-muted-foreground"
+          onClick={async () => {
+            await agent.deleteContext(contextId);
+            await queryClient.invalidateQueries({
+              type: "active",
+              exact: false,
+              predicate(query) {
+                console.log(query);
+                try {
+                  return query.queryKey[1] === contextId;
+                } catch (error) {
+                  return false;
+                }
+              },
+            });
+          }}
+        >
+          Clear Memory <Trash />
         </Button>
       </div>
+      <img src="/giga.jpeg" alt="Giga Banner" />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="memory">Memory</TabsTrigger>
           <TabsTrigger value="roms">ROMS</TabsTrigger>
+          <TabsTrigger value="memory">Memory</TabsTrigger>
         </TabsList>
 
         <TabsContent
           value="overview"
           className="flex-1 overflow-y-auto px-2 border-primary/20"
         >
-          <GameStatus state={gigaverseState.data} reloadEnergy={getEnergy} />
+          <GameStatus
+            state={gigaverseState.data}
+            lastUpdated={gigaverseState.dataUpdatedAt}
+            refresh={async () => {
+              await stateQuery.refetch();
+              await gigaverseState.refetch();
+            }}
+          />
 
           <Card className="p-3 mb-3">
             <h4 className="text-sm font-medium mb-1">Message Count</h4>
@@ -331,13 +376,13 @@ export function GigaverseStateSidebar({
             </Button> */}
           </div>
 
-          {isFetchingRoms ? (
+          {romsQuery.isLoading ? (
             <p className="text-xs text-muted-foreground text-center py-4">
               Loading ROMs...
             </p>
-          ) : userRoms.length > 0 ? (
+          ) : romsQuery.data && romsQuery.data.entities.length > 0 ? (
             <div className="space-y-3 p-2">
-              {userRoms.map((rom) => {
+              {romsQuery.data?.entities.map((rom) => {
                 // Calculate loading states for this ROM's buttons
                 const isClaimingEnergy =
                   claimingStatus[`${rom.docId}-energy`] || false;
@@ -413,7 +458,7 @@ export function GigaverseStateSidebar({
                           className="w-full text-xs h-6"
                           disabled={isClaimingEnergy || calculatedEnergy < 1}
                           onClick={() =>
-                            handleClaimEnergy({
+                            claimEnergyMutation.mutate({
                               romId: rom.docId,
                               claimId: "energy",
                             })
@@ -444,7 +489,7 @@ export function GigaverseStateSidebar({
                           className="w-full text-xs h-6"
                           disabled={isClaimingShard || calculatedShard < 1}
                           onClick={() =>
-                            handleClaimEnergy({
+                            claimEnergyMutation.mutate({
                               romId: rom.docId,
                               claimId: "shard",
                             })
@@ -475,7 +520,7 @@ export function GigaverseStateSidebar({
                           className="w-full text-xs h-6"
                           disabled={isClaimingDust || calculatedDust < 1}
                           onClick={() =>
-                            handleClaimEnergy({
+                            claimEnergyMutation.mutate({
                               romId: rom.docId,
                               claimId: "dust",
                             })

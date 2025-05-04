@@ -211,7 +211,6 @@ export const AsciiBackgroundEffect = ({
         color: false,
       });
       asciiEffect.setSize(window.innerWidth, window.innerHeight);
-      asciiEffect.domElement.style.color = "#00FFCC";
       asciiEffect.domElement.style.backgroundColor = "transparent";
       asciiEffect.domElement.style.position = "absolute";
       asciiEffect.domElement.style.top = "0";
@@ -221,6 +220,8 @@ export const AsciiBackgroundEffect = ({
       asciiEffect.domElement.style.zIndex = "-1";
       asciiEffect.domElement.style.width = "100%";
       asciiEffect.domElement.style.height = "100%";
+
+      asciiEffect.domElement.classList.add("text-primary");
 
       containerRef.current?.appendChild(asciiEffect.domElement);
     };

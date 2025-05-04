@@ -6,7 +6,6 @@ import {
 } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -32,12 +31,7 @@ interface NavItem {
 export function NavMain({ items }: { items: NavItem[] }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>
-        <Link to="/">
-          <img src="/Daydreams.svg" className=" h-6" />
-        </Link>
-      </SidebarGroupLabel>
-      <SidebarMenu className="my-4">
+      <SidebarMenu>
         {items.map((item) =>
           item.items ? (
             <Collapsible

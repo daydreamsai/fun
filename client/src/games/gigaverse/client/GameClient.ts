@@ -1,7 +1,6 @@
 // path: src/client/GameClient.ts
 
 import { HttpClient } from "./HttpClient";
-import { logger } from "../utils/logger";
 
 import {
   ActionPayload,
@@ -25,6 +24,7 @@ import {
   BaseResponse,
   GetEnergyResponse,
 } from "./types/responses";
+import { Logger } from "@daydreamsai/core";
 
 export const MAX_ENERGY = 240;
 
@@ -32,11 +32,13 @@ export const MAX_ENERGY = 240;
  * Main SDK class exposing methods for dungeon runs, user data, items, etc.
  */
 export class GameClient {
+  private logger: Logger;
   private httpClient: HttpClient;
   private currentActionToken: string | number | null = null;
 
-  constructor(baseUrl: string, authToken: string) {
-    this.httpClient = new HttpClient(baseUrl, authToken);
+  constructor(baseUrl: string, authToken: string, logger: Logger) {
+    this.httpClient = new HttpClient(baseUrl, authToken, logger);
+    this.logger = logger;
   }
 
   public setAuthToken(newToken: string) {
@@ -57,19 +59,22 @@ export class GameClient {
   public async claimEnergy(
     payload: ClaimEnergyPayload
   ): Promise<ClaimEnergyResponse> {
-    logger.info("Claiming resource...");
+    this.logger.info("gigaverse-http-client", "Claiming resource...");
     const endpoint = "/roms/factory/claim";
     const response = await this.httpClient.post<ClaimEnergyResponse>(
       endpoint,
       payload
     );
 
-    logger.info(`Claim result => success: ${response.success}`);
+    this.logger.info(
+      "gigaverse-http-client",
+      `Claim result => success: ${response.success}`
+    );
     return response;
   }
 
   public async getEnergy(address: string): Promise<number> {
-    logger.info("Getting energy...");
+    this.logger.info("gigaverse-http-client", "Getting energy...");
     const regenRate = 2777777;
 
     const now = Date.now() / 1000;
@@ -100,7 +105,7 @@ export class GameClient {
    * Starts a dungeon run, storing the returned actionToken automatically.
    */
   public async startRun(payload: StartRunPayload): Promise<BaseResponse> {
-    logger.info("Starting dungeon run...");
+    this.logger.info("gigaverse-http-client", "Starting dungeon run...");
     const endpoint = "/game/dungeon/action";
     const body = {
       action: "start_run",
@@ -112,7 +117,10 @@ export class GameClient {
     const response = await this.httpClient.post<BaseResponse>(endpoint, body);
     if (response.actionToken) {
       this.setActionToken(response.actionToken);
-      logger.info(`New action token: ${response.actionToken}`);
+      this.logger.info(
+        "gigaverse-http-client",
+        `New action token: ${response.actionToken}`
+      );
     }
     return response;
   }
@@ -122,7 +130,10 @@ export class GameClient {
    * Action can be "rock", "paper", "scissor", "loot_one", etc.
    */
   public async playMove(payload: ActionPayload): Promise<BaseResponse> {
-    logger.info(`Performing action: ${payload.action}`);
+    this.logger.info(
+      "gigaverse-http-client",
+      `Performing action: ${payload.action}`
+    );
     const endpoint = "/game/dungeon/action";
 
     const finalToken = payload.actionToken ?? this.currentActionToken ?? "";
@@ -136,10 +147,14 @@ export class GameClient {
     const response = await this.httpClient.post<BaseResponse>(endpoint, body);
     if (response.actionToken) {
       this.setActionToken(response.actionToken);
-      logger.info(`Updated action token: ${response.actionToken}`);
+      this.logger.info(
+        "gigaverse-http-client",
+        `Updated action token: ${response.actionToken}`
+      );
     }
     if (response.gameItemBalanceChanges?.length) {
-      logger.info(
+      this.logger.info(
+        "gigaverse-http-client",
         `gameItemBalanceChanges: ${JSON.stringify(response.gameItemBalanceChanges)}`
       );
     }
@@ -150,7 +165,10 @@ export class GameClient {
    * Uses an item (e.g. "use_item" action with itemId, index).
    */
   public async useItem(payload: ActionPayload): Promise<BaseResponse> {
-    logger.info(`Using item. ID: ${payload.data?.itemId}`);
+    this.logger.info(
+      "gigaverse-http-client",
+      `Using item. ID: ${payload.data?.itemId}`
+    );
     const endpoint = "/game/dungeon/action";
 
     const finalToken = payload.actionToken ?? this.currentActionToken ?? "";
@@ -164,10 +182,14 @@ export class GameClient {
     const response = await this.httpClient.post<BaseResponse>(endpoint, body);
     if (response.actionToken) {
       this.setActionToken(response.actionToken);
-      logger.info(`Updated action token: ${response.actionToken}`);
+      this.logger.info(
+        "gigaverse-http-client",
+        `Updated action token: ${response.actionToken}`
+      );
     }
     if (response.gameItemBalanceChanges?.length) {
-      logger.info(
+      this.logger.info(
+        "gigaverse-http-client",
         `gameItemBalanceChanges: ${JSON.stringify(response.gameItemBalanceChanges)}`
       );
     }
@@ -178,7 +200,10 @@ export class GameClient {
    * Retrieves all ROMs associated with the given address.
    */
   public async getUserRoms(address: string): Promise<GetUserRomsResponse> {
-    logger.info(`Fetching user ROMs for address: ${address}`);
+    this.logger.info(
+      "gigaverse-http-client",
+      `Fetching user ROMs for address: ${address}`
+    );
     const endpoint = `/roms/player/${address}`;
     return this.httpClient.get<GetUserRomsResponse>(endpoint);
   }
@@ -187,7 +212,7 @@ export class GameClient {
    * Fetches the current dungeon state. If run=null, not in a run.
    */
   public async fetchDungeonState(): Promise<BaseResponse> {
-    logger.info("Fetching dungeon state...");
+    this.logger.info("gigaverse-http-client", "Fetching dungeon state...");
     const endpoint = "/game/dungeon/state";
     return this.httpClient.get<BaseResponse>(endpoint);
   }
@@ -196,7 +221,7 @@ export class GameClient {
    * Retrieves all available game items from the indexer.
    */
   public async getAllGameItems(): Promise<GetAllGameItemsResponse> {
-    logger.info("Fetching all game items...");
+    this.logger.info("gigaverse-http-client", "Fetching all game items...");
     const endpoint = "/indexer/gameitems";
     return this.httpClient.get<GetAllGameItemsResponse>(endpoint);
   }
@@ -205,7 +230,7 @@ export class GameClient {
    * Retrieves all enemies from the indexer.
    */
   public async getAllEnemies(): Promise<GetAllEnemiesResponse> {
-    logger.info("Fetching enemies...");
+    this.logger.info("gigaverse-http-client", "Fetching enemies...");
     const endpoint = "/indexer/enemies";
     return this.httpClient.get<GetAllEnemiesResponse>(endpoint);
   }
@@ -214,7 +239,7 @@ export class GameClient {
    * Retrieves the wallet address and a flag indicating if the user can enter the game.
    */
   public async getUserMe(): Promise<GetUserMeResponse> {
-    logger.info("Fetching /user/me");
+    this.logger.info("gigaverse-http-client", "Fetching /user/me");
     const endpoint = "/user/me";
     return this.httpClient.get<GetUserMeResponse>(endpoint);
   }
@@ -223,7 +248,7 @@ export class GameClient {
    * Retrieves all 'noob' heroes for the given address.
    */
   public async getNoobs(address: string): Promise<GetNoobsResponse> {
-    logger.info(`Fetching noobs for: ${address}`);
+    this.logger.info("gigaverse-http-client", `Fetching noobs for: ${address}`);
     const endpoint = `/indexer/player/noobs/${address}`;
     return this.httpClient.get<GetNoobsResponse>(endpoint);
   }
@@ -232,7 +257,10 @@ export class GameClient {
    * Retrieves all usernames (GigaName NFTs) for the given address.
    */
   public async getUsernames(address: string): Promise<GetUsernamesResponse> {
-    logger.info(`Fetching usernames for: ${address}`);
+    this.logger.info(
+      "gigaverse-http-client",
+      `Fetching usernames for: ${address}`
+    );
     const endpoint = `/indexer/player/usernames/${address}`;
     return this.httpClient.get<GetUsernamesResponse>(endpoint);
   }
@@ -241,7 +269,10 @@ export class GameClient {
    * Retrieves faction info (e.g. faction ID) for the given address.
    */
   public async getFaction(address: string): Promise<GetFactionResponse> {
-    logger.info(`Fetching faction for: ${address}`);
+    this.logger.info(
+      "gigaverse-http-client",
+      `Fetching faction for: ${address}`
+    );
     const endpoint = `/factions/player/${address}`;
     return this.httpClient.get<GetFactionResponse>(endpoint);
   }
@@ -250,7 +281,10 @@ export class GameClient {
    * Retrieves balances of various items for the given address.
    */
   public async getUserBalances(address: string): Promise<GetBalancesResponse> {
-    logger.info(`Fetching user balances for: ${address}`);
+    this.logger.info(
+      "gigaverse-http-client",
+      `Fetching user balances for: ${address}`
+    );
     const endpoint = `/importexport/balances/${address}`;
     return this.httpClient.get<GetBalancesResponse>(endpoint);
   }
@@ -261,7 +295,10 @@ export class GameClient {
   public async getHeroSkillsProgress(
     noobId: string | number
   ): Promise<GetSkillsProgressResponse> {
-    logger.info(`Fetching skill progress for noobId: ${noobId}`);
+    this.logger.info(
+      "gigaverse-http-client",
+      `Fetching skill progress for noobId: ${noobId}`
+    );
     const endpoint = `/offchain/skills/progress/${noobId}`;
     return this.httpClient.get<GetSkillsProgressResponse>(endpoint);
   }
@@ -272,7 +309,10 @@ export class GameClient {
   public async getConsumables(
     address: string
   ): Promise<GetConsumablesResponse> {
-    logger.info(`Fetching consumables for: ${address}`);
+    this.logger.info(
+      "gigaverse-http-client",
+      `Fetching consumables for: ${address}`
+    );
     const endpoint = `/indexer/player/gameitems/${address}`;
     return this.httpClient.get<GetConsumablesResponse>(endpoint);
   }
@@ -281,7 +321,7 @@ export class GameClient {
    * Retrieves global skill definitions from /offchain/skills.
    */
   public async getAllSkills(): Promise<GetAllSkillsResponse> {
-    logger.info("Fetching skill definitions...");
+    this.logger.info("gigaverse-http-client", "Fetching skill definitions...");
     const endpoint = "/offchain/skills";
     return this.httpClient.get<GetAllSkillsResponse>(endpoint);
   }

@@ -1,13 +1,13 @@
-import { FormEvent } from "react";
-import { Loader2, Notebook } from "lucide-react";
-import { motion } from "framer-motion";
+import { FormEvent, MutableRefObject } from "react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 interface MessageInputProps {
   isLoading: boolean;
   disabled: boolean;
   onSubmit: (message: string) => Promise<void>;
   placeholderText?: string;
-  setShowTemplateEditor: (show: boolean) => void;
+  abortControllerRef: MutableRefObject<AbortController | undefined>;
 }
 
 export function MessageInput({
@@ -15,74 +15,47 @@ export function MessageInput({
   disabled,
   onSubmit,
   placeholderText,
-  setShowTemplateEditor,
+  abortControllerRef,
 }: MessageInputProps) {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const msg = new FormData(form).get("message") as string;
-
     if (!msg.trim()) return;
-
     form.reset();
     await onSubmit(msg);
   };
 
   return (
-    <div className="bg-background flex mt-auto sticky bottom-0 left-0 right-0 w-full">
-      <motion.button
-        className="bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary h-full w-1/12 max-w-64 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center self-stretch"
+    <form onSubmit={handleSubmit} className="flex w-full">
+      <Input
+        type="text"
+        name="message"
+        placeholder={
+          placeholderText ||
+          (isLoading ? "Waiting for response..." : "Type your message...")
+        }
+        className="border flex-1 px-6 py-4 focus:outline-none focus:border-primary"
         disabled={disabled || isLoading}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.2, delay: 0.2 }}
-        onClick={() => setShowTemplateEditor(true)}
-      >
-        <span className="hidden md:block text-black">System</span>
-
-        <Notebook className="w-4 h-4 ml-2 fill-black" />
-      </motion.button>
-      <motion.form
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        onSubmit={handleSubmit}
-        className="bg-background flex mt-auto sticky bottom-0 left-0 right-0 w-full h-full"
-      >
-        <motion.input
-          type="text"
-          name="message"
-          placeholder={
-            placeholderText ||
-            (isLoading ? "Waiting for response..." : "Type your message...")
-          }
-          className="border flex-1 px-6 py-4 rounded-lg bg-background text-foreground placeholder:text-primary focus:outline-none focus:border-primary"
-          disabled={disabled || isLoading}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2, delay: 0.1 }}
-        />
-        <motion.button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary h-full w-1/4 max-w-64 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center self-stretch"
-          disabled={disabled || isLoading}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2, delay: 0.2 }}
+      />
+      {isLoading ? (
+        <Button
+          type="button"
+          className="h-full w-52 max-w-[35%]"
+          onClick={() => {
+            abortControllerRef.current?.abort();
+          }}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              Thinking...
-            </>
-          ) : (
-            "Send"
-          )}
-        </motion.button>
-      </motion.form>
-    </div>
+          Stop
+        </Button>
+      ) : (
+        <Button
+          className="h-full w-52 max-w-[35%]"
+          disabled={disabled || isLoading}
+        >
+          Send
+        </Button>
+      )}
+    </form>
   );
 }

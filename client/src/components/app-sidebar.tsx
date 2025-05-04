@@ -6,17 +6,22 @@ import {
   Settings,
   Twitter,
   Github,
+  Brain,
 } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAgentStore } from "@/store/agentStore";
@@ -197,8 +202,23 @@ function ChatHistoryList() {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navigate = useNavigate();
   return (
     <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader className="py-3">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => navigate({ to: "/" })}
+              className="group-[[data-state=expanded]]:bg-inherit"
+            >
+              <Brain className="data group-[[data-state=expanded]]:hidden" />
+
+              <img src="/Daydreams.svg" className="w-18" />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         {/* <NavProjects projects={data.projects} /> */}
