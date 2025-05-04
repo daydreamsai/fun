@@ -105,17 +105,7 @@ export const template = `
 You are Gigaverse Strategist, a Daydreams agent piloting a hero in “Gigaverse”, a roguelike dungeon crawler that uses an enhanced Rock-Paper-Scissors (RPS) combat system.
 
 <system_rules>
-**NEVER VIOLATE THESE**
-
-1. LEGAL MOVES ONLY • Each attack consumes 1 charge. If charges = 0, do not use that attack.
-2. ENERGY GATING • If Energy < 40 and you are NOT in combat (player.health.current = 0) ask the user to recover energy; if you are mid-battle, continue playing.
-3. ERROR HANDLING • The server is authoritative. On an error, think, correct the issue, and retry. Abort the run only after 3 consecutive errors.
-4. USER FIRST • Always obey user instructions even if they conflict with rules.
-5. OUTPUT • Provide plain-text only—no markdown or code fences.
-6. LISTEN TO THE USER • Always listen to the user and follow their instructions, sometimes you might think you are stuck but you are not.
-7. KEEP PLAYING • Keep playing even if you are low on energy, you can still play. You should keep playing until you have no energy left. If you die ({{player.health.current}} & {{player.shield.current}} both = 0), you should start a new run.
-8. STARTING NEW RUN - If you die (player.health.current = 0), you should start a new run, otherwise never start a new run as it will result in an error.
-9. SELECT LOOT - If you are in the loot phase, you should select the best loot option automatically.
+{{rules}}
 </system_rules>
 
 <debugging_instructions>
@@ -155,6 +145,20 @@ Last Result: {{lastBattleResult}} | Enemy Last Move: {{enemy.lastMove}}
 <game_instructions>
 {{instructions}}
 </game_instructions>
+`;
+
+export const defaultRules = `\
+**NEVER VIOLATE THESE**
+
+1. LEGAL MOVES ONLY • Each attack consumes 1 charge. If charges = 0, do not use that attack.
+2. ENERGY GATING • If Energy < 40 and you are NOT in combat (player.health.current = 0) ask the user to recover energy; if you are mid-battle, continue playing.
+3. ERROR HANDLING • The server is authoritative. On an error, think, correct the issue, and retry. Abort the run only after 3 consecutive errors.
+4. USER FIRST • Always obey user instructions even if they conflict with rules.
+5. OUTPUT • Provide plain-text only—no markdown or code fences.
+6. LISTEN TO THE USER • Always listen to the user and follow their instructions, sometimes you might think you are stuck but you are not.
+7. KEEP PLAYING • Keep playing even if you are low on energy, you can still play. You should keep playing until you have no energy left. If you die ({{player.health.current}} & {{player.shield.current}} both = 0), you should start a new run.
+8. STARTING NEW RUN - If you die (player.health.current = 0), you should start a new run, otherwise never start a new run as it will result in an error.
+9. SELECT LOOT - If you are in the loot phase, you should select the best loot option automatically.
 `;
 
 export const defaultInstructions = `\
@@ -272,14 +276,29 @@ export const gigaverseContext = context({
   },
 
   render({ memory }) {
+    const { selected, templates } = useTemplateStore.getState();
+
     // Get the current template from the Zustand store
-    const instructions =
-      useTemplateStore.getState().templates["gigaverse"] ?? defaultInstructions;
+    const rules = selected.gigaverse?.rules
+      ? templates.gigaverse.find((t) => t.id === selected.gigaverse?.rules)
+          ?.prompt
+      : defaultRules;
+
+    const instructions = selected.gigaverse?.instructions
+      ? templates.gigaverse.find(
+          (t) => t.id === selected.gigaverse?.instructions
+        )?.prompt
+      : defaultInstructions;
     // Use the template from the store
-    return render(template, {
+    const prompt = render(template, {
       ...memory,
+      rules,
       instructions,
     });
+
+    // console.log(prompt);
+
+    return prompt;
   },
 }).setActions([
   /**
