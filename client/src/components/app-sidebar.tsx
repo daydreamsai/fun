@@ -7,7 +7,6 @@ import {
   Twitter,
   Github,
   Brain,
-  Wallet,
 } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import {
@@ -22,7 +21,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAgentStore } from "@/store/agentStore";
@@ -203,16 +202,19 @@ function ChatHistoryList() {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navigate = useNavigate();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="py-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton className="bg-secondary group-[[data-state=expanded]]:bg-inherit">
-              <Link to="/" className="size-8">
-              <Brain className="data group-[[data-state=expanded]]:hidden"></Brain>
-              <img src="/Daydreams-white.svg" className="h-6 text-white" />
-              </Link>
+            <SidebarMenuButton
+              onClick={() => navigate({ to: "/" })}
+              className="group-[[data-state=expanded]]:bg-inherit"
+            >
+              <Brain className="data group-[[data-state=expanded]]:hidden" />
+
+              <img src="/Daydreams.svg" className="w-18" />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
