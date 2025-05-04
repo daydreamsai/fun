@@ -5,7 +5,7 @@ import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { Button } from "@/components/ui/button";
 import { hasApiKey, useSettingsStore } from "@/store/settingsStore";
 import { useAgentStore } from "@/store/agentStore";
-import { useTemplateStore } from "@/store/templateStore";
+
 import { HelpWindow, MessageInput } from "@/components/chat";
 import { useLogs, useSend } from "@/hooks/agent";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
@@ -21,7 +21,7 @@ import { GigaverseAction } from "@/games/gigaverse/components/Actions";
 import { ActionResult } from "@daydreamsai/core";
 import { LogsList } from "@/components/chat/LogsLIst";
 import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
-import { Notebook, ScrollText } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -86,11 +86,9 @@ export const Route = createFileRoute("/games/gigaverse/$chatId")({
 function RouteComponent() {
   const { chatId } = Route.useParams();
 
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [missingKeys, setMissingKeys] = useState<string[]>([]);
 
-  const { templates } = useTemplateStore();
   const agent = useAgentStore((state) => state.agent);
 
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
@@ -109,7 +107,7 @@ function RouteComponent() {
     setMissingKeys(missing);
   }, []);
 
-  const { logs, clearMemory } = useLogs({
+  const { logs } = useLogs({
     agent: agent,
     context: gigaverseContext,
     args: { id: chatId },
@@ -135,15 +133,13 @@ function RouteComponent() {
     });
   };
 
-  const handleApplyTemplate = (newTemplate: string) => {
+  const handleApplyTemplate = () => {
     // setTemplate("gigaverse", newTemplate);
   };
 
   const handleResetTemplate = () => {
     // resetTemplate("gigaverse");
   };
-
-  const thoughts = logs.filter((log) => log.ref === "thought");
 
   const messagesContainerRef = useAutoScroll([logs], {
     threshold: 150,

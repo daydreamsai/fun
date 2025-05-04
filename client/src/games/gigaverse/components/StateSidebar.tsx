@@ -3,7 +3,6 @@ import {
   InferSchemaArguments,
   Logger,
   prepareContexts,
-  saveContextWorkingMemory,
 } from "@daydreamsai/core";
 import {
   ChevronLeft,
@@ -29,7 +28,7 @@ import {
 import { GameStatus } from "@/games/gigaverse/components/GameStatus";
 import { browserStorage } from "@/agent";
 import { GameClient } from "../client/GameClient";
-import { RomEntity } from "../client/types/responses";
+
 import { useContextState, useWorkingMemory } from "@/hooks/agent";
 
 import { useSettingsStore } from "@/store/settingsStore";
@@ -45,7 +44,6 @@ const gameClient = new GameClient(
 export function GigaverseStateSidebar({
   args,
   isLoading,
-  clearMemory,
 }: {
   args: InferSchemaArguments<GigaverseContext["schema"]>;
   isLoading?: boolean;

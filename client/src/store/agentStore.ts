@@ -2,7 +2,6 @@ import { createAgent } from "@/agent";
 import { create } from "zustand";
 import { AnyAgent } from "@daydreamsai/core";
 import { useSettingsStore } from "@/store/settingsStore";
-import { useTemplateStore } from "./templateStore";
 
 interface AgentState {
   agent: AnyAgent;

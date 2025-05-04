@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { ContextState } from "@daydreamsai/core";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";

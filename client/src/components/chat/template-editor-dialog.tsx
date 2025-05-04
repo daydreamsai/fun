@@ -1,10 +1,4 @@
-import {
-  HelpCircle,
-  AlertCircle,
-  RotateCcw,
-  ScrollText,
-  Plus,
-} from "lucide-react";
+import { AlertCircle, ScrollText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -16,7 +10,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState, useEffect, useDeferredValue } from "react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "../ui/badge";
 
