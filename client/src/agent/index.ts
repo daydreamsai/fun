@@ -4,6 +4,7 @@ import {
   createMemory,
   createMemoryStore,
   createVectorStore,
+  service,
 } from "@daydreamsai/core";
 import { chat } from "./chat";
 
@@ -166,14 +167,26 @@ export function createAgent() {
     apiKey: settings.openrouterKey,
   });
 
+  const currentMemoryVersion = 1;
+
+  const memoryMigrator = service({
+    async boot() {
+      const version = await memoryStorage.get<number>("version");
+      if (version !== currentMemoryVersion) {
+        await memoryStorage.clear();
+      }
+      await memoryStorage.set("version", currentMemoryVersion);
+    },
+  });
+
   return createDreams({
     model: openrouter(settings.model || "deepseek/deepseek-r1"),
-
     memory: createMemory(
       memoryStorage,
       createVectorStore(),
       openrouter("openai/gpt-4-turbo")
     ),
     extensions: [chat],
+    services: [memoryMigrator],
   });
 }
