@@ -5,18 +5,20 @@ import "./index.css";
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
 
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useSettingsStore } from "./store/settingsStore";
 
 // Initialize settings store before creating the agent
 // This ensures the store is hydrated from localStorage before agent creation
 useSettingsStore.getState();
 
+const queryClient = new QueryClient();
+
 // Create a new router instance
 const router = createRouter({
   routeTree,
   context: {
-    queryClient: new QueryClient(),
+    queryClient,
   },
   // Add dehydrate/rehydrate options for proper SSR handling
   defaultPreload: "intent",
@@ -38,6 +40,8 @@ const rootElement = document.getElementById("root")!;
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
   </StrictMode>
 );
