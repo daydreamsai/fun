@@ -55,6 +55,7 @@ export function TemplateEditorDialog({
     selectTemplate,
     createTemplate,
     updateTemplate,
+    deleteTemplate,
   } = useTemplateStore();
 
   const templates = store[templateKey]?.slice() ?? [];
@@ -113,6 +114,9 @@ export function TemplateEditorDialog({
                             isSelected={isSelected}
                             onEdit={() => {
                               setState({ page: "edit", id: template.id });
+                            }}
+                            onDelete={() => {
+                              deleteTemplate(templateKey, template.id);
                             }}
                             onSelect={() => {
                               selectTemplate(templateKey, section, template.id);
@@ -187,11 +191,13 @@ function TemplateCard({
   isSelected,
   onSelect,
   onEdit,
+  onDelete,
 }: {
   template: Template;
   isSelected: boolean;
   onEdit: () => void;
   onSelect: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div
@@ -217,7 +223,8 @@ function TemplateCard({
         <Button
           variant="ghost"
           className="text-muted-foreground"
-          onClick={() => {}}
+          disabled={isSelected}
+          onClick={onDelete}
         >
           <Trash />
         </Button>
