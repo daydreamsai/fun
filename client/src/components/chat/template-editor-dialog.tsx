@@ -1,10 +1,4 @@
-import {
-  HelpCircle,
-  AlertCircle,
-  RotateCcw,
-  ScrollText,
-  Plus,
-} from "lucide-react";
+import { AlertCircle, ScrollText, Plus, Trash, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -16,10 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState, useEffect, useDeferredValue } from "react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "../ui/badge";
-
 import { Label } from "../ui/label";
 import { cn } from "@/lib/utils";
 import { Input } from "../ui/input";
@@ -34,8 +26,6 @@ interface TemplateEditorDialogProps {
   title: string;
   description?: string;
   variables?: string[];
-  onApplyTemplate: (newTemplate: string) => void;
-  onResetTemplate?: () => void;
   templateKey: string;
   sections?: Record<string, { label: string; default: Template }>;
 }
@@ -149,12 +139,6 @@ export function TemplateEditorDialog({
                 </div>
               ))}
             </div>
-            {/* <DialogFooter className="ml-1 shrink-0 flex sm:justify-between sm:items-center gap-2 pt-4 border-t">
-              <Button onClick={() => onOpenChange(false)} variant="ghost">
-                Cancel
-              </Button>
-              <Button onClick={handleApply}>Save</Button>
-            </DialogFooter> */}
           </>
         )}
 
@@ -229,12 +213,27 @@ function TemplateCard({
           </Badge>
         ))}
       </div>
-      <div className="mt-4 md:mt-auto flex justify-between">
-        <Button variant="ghost" onClick={onEdit}>
+      <div className="mt-4 md:mt-auto flex">
+        <Button
+          variant="ghost"
+          className="text-muted-foreground"
+          onClick={() => {}}
+        >
+          <Trash />
+        </Button>
+        <Button
+          variant="ghost"
+          className="ml-auto mr-2 text-muted-foreground"
+          onClick={onEdit}
+        >
           Edit
         </Button>
 
-        <Button variant="secondary" disabled={isSelected} onClick={onSelect}>
+        <Button
+          variant={isSelected ? "ghost" : "secondary"}
+          disabled={isSelected}
+          onClick={onSelect}
+        >
           {isSelected ? "Selected" : "Select"}
         </Button>
       </div>
@@ -292,7 +291,6 @@ function TemplateForm({
         className="flex flex-col flex-grow overflow-y-hidden"
         onSubmit={(e) => {
           e.preventDefault();
-          console.log("submitedd");
           const { title, prompt, tags } = Object.fromEntries(
             new FormData(e.currentTarget).entries()
           ) as { title: string; prompt: string; tags: string };

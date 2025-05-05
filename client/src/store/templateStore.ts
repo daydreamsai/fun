@@ -36,7 +36,6 @@ export const useTemplateStore = create<TemplateState>()(
         }),
       createTemplate: (contextType, template) =>
         set(({ templates }) => {
-          console.log({ templates });
           if (templates[contextType] === undefined) {
             templates[contextType] = [];
           }

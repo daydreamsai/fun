@@ -208,7 +208,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="py-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton className="bg-secondary group-[[data-state=expanded]]:bg-inherit">
+            <SidebarMenuButton
+              className="bg-secondary group-[[data-state=expanded]]:bg-inherit"
+              asChild
+            >
               <Link to="/" className="size-8">
               <Brain className="data group-[[data-state=expanded]]:hidden"></Brain>
               <img src="/Daydreams-white.svg" className="h-6 text-white" />

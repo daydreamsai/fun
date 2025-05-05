@@ -1,9 +1,12 @@
 import {
+  AnyAgent,
   type MemoryStore,
+  createContainer,
   createDreams,
   createMemory,
   createMemoryStore,
   createVectorStore,
+  service,
 } from "@daydreamsai/core";
 import { chat } from "./chat";
 
@@ -13,6 +16,8 @@ import { useSettingsStore } from "@/store/settingsStore";
 // import { useUserStore } from "@/store/userStore";
 
 import { openDB, type IDBPDatabase } from "idb";
+import { giga } from "@/games/gigaverse/context";
+import { Cache } from "./utils/cache";
 
 // Get settings directly from the store
 
@@ -155,25 +160,69 @@ export const browserStorage = (): MemoryStore => {
   };
 };
 
+const cacheService = service({
+  register(container) {
+    container.singleton("cache", () => {
+      const store = container.resolve<MemoryStore>("memory");
+
+      console.log("here");
+
+      const cache: Cache = {
+        async get<T>(key: string, resolve: () => Promise<T>): Promise<T> {
+          const cacheKey = `cache:${key}`;
+          let data = await store.get<T>(cacheKey);
+
+          if (!data) {
+            data = await resolve();
+            await store.set(cacheKey, data);
+          }
+
+          return data;
+        },
+      };
+
+      return cache;
+    });
+  },
+});
+
+const memoryMigrator = service({
+  async boot(container) {
+    const currentMemoryVersion = 1;
+    const store = container.resolve<MemoryStore>("memory");
+    const version = await store.get<number>("version");
+
+    if (version !== currentMemoryVersion) {
+      await store.clear();
+    }
+
+    await store.set("version", currentMemoryVersion);
+  },
+});
+
 export function createAgent() {
   // Always get fresh settings when creating the agent
   const settings = useSettingsStore.getState();
   // const user = useUserStore.getState();
 
+  const container = createContainer();
   const memoryStorage = browserStorage();
+
+  container.instance("memory", memoryStorage);
 
   const openrouter = createOpenRouter({
     apiKey: settings.openrouterKey,
   });
 
   return createDreams({
+    container,
     model: openrouter(settings.model || "deepseek/deepseek-r1"),
-
     memory: createMemory(
       memoryStorage,
       createVectorStore(),
       openrouter("openai/gpt-4-turbo")
     ),
     extensions: [chat],
+    services: [memoryMigrator, cacheService],
   });
 }

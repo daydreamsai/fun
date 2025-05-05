@@ -34,6 +34,12 @@ export const chat = extension({
     message: output({
       schema: z.string(),
       required: true,
+      instructions: `\
+To output a message use <output type="message">[content]</output>
+Always try to format the message content for easy reading.
+# Important
+Never use the <template-engine> inside the content of a message. Always write the full content of the message!
+`,
       examples: [
         `<output type="message">Hello! How can I assist you today?</output>`,
       ],

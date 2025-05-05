@@ -153,6 +153,7 @@ export interface SkillsProgressEntity {
 export interface GetConsumablesResponse {
   entities: ConsumableEntity[];
 }
+
 export interface ConsumableEntity {
   docId: string;
   tableName: string;

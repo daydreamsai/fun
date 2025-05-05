@@ -5,36 +5,29 @@ import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { Button } from "@/components/ui/button";
 import { hasApiKey, useSettingsStore } from "@/store/settingsStore";
 import { useAgentStore } from "@/store/agentStore";
-import { useTemplateStore } from "@/store/templateStore";
 import { HelpWindow, MessageInput } from "@/components/chat";
-import { useLogs, useSend } from "@/hooks/agent";
+import { useContextState, useLogs, useSend } from "@/hooks/agent";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { gigaverseContext } from "@/games/gigaverse/context";
 import {
   defaultInstructions,
   defaultRules,
-  gigaverseContext,
   gigaverseVariables,
-} from "@/games/gigaverse/context";
-import { GigaverseStateSidebar } from "@/games/gigaverse/components/StateSidebar";
+} from "@/games/gigaverse/prompts";
+import { GigaverseSidebar } from "@/games/gigaverse/components/Sidebar";
 import { GigaverseAction } from "@/games/gigaverse/components/Actions";
 import { ActionResult } from "@daydreamsai/core";
 import { LogsList } from "@/components/chat/LogsLIst";
 import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
-import { Notebook, ScrollText } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-function GigaverSidebar({
-  chatId,
-  clearMemory,
-}: {
-  chatId: string;
-  clearMemory: () => void;
-}) {
+function GigaverSidebarWrapper({ chatId }: { chatId: string }) {
   return (
     <Sidebar
       collapsible="none"
@@ -42,11 +35,7 @@ function GigaverSidebar({
       side="right"
     >
       <SidebarContent className="bg-sidebar">
-        <GigaverseStateSidebar
-          args={{ id: chatId }}
-          isLoading={false}
-          clearMemory={clearMemory}
-        />
+        <GigaverseSidebar args={{ id: chatId }} />
       </SidebarContent>
     </Sidebar>
   );
@@ -56,7 +45,7 @@ export const Route = createFileRoute("/games/gigaverse/$chatId")({
   component: RouteComponent,
   context({ params }) {
     return {
-      sidebar: <GigaverSidebar chatId={params.chatId} clearMemory={() => {}} />,
+      sidebar: <GigaverSidebarWrapper chatId={params.chatId} />,
     };
   },
   loader({ params }: { params: { chatId: string } }) {
@@ -66,14 +55,14 @@ export const Route = createFileRoute("/games/gigaverse/$chatId")({
 
     // If neither key is available, redirect to settings
     if (!hasOpenRouterKey && !hasGigaverseToken) {
-      return redirect({
+      throw redirect({
         to: "/settings",
       });
     }
 
     // Handle "new" chat redirect
     if (params.chatId === "new") {
-      return redirect({
+      throw redirect({
         to: "/games/gigaverse/$chatId",
         params: {
           chatId: randomUUIDv7(),
@@ -86,11 +75,8 @@ export const Route = createFileRoute("/games/gigaverse/$chatId")({
 function RouteComponent() {
   const { chatId } = Route.useParams();
 
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [missingKeys, setMissingKeys] = useState<string[]>([]);
-
-  const { templates } = useTemplateStore();
   const agent = useAgentStore((state) => state.agent);
 
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
@@ -121,8 +107,6 @@ function RouteComponent() {
     args: { id: chatId },
   });
 
-  console.log({ logs });
-
   const handleSubmitMessage = async (message: string) => {
     send.mutate({
       input: {
@@ -135,19 +119,15 @@ function RouteComponent() {
     });
   };
 
-  const handleApplyTemplate = (newTemplate: string) => {
-    // setTemplate("gigaverse", newTemplate);
-  };
-
-  const handleResetTemplate = () => {
-    // resetTemplate("gigaverse");
-  };
-
-  const thoughts = logs.filter((log) => log.ref === "thought");
-
   const messagesContainerRef = useAutoScroll([logs], {
     threshold: 150,
     behavior: "auto",
+  });
+
+  const ctxState = useContextState({
+    agent,
+    context: gigaverseContext,
+    args: { id: chatId },
   });
 
   return (
@@ -181,8 +161,6 @@ function RouteComponent() {
           },
         }}
         onOpenChange={setShowTemplateEditor}
-        onApplyTemplate={handleApplyTemplate}
-        onResetTemplate={handleResetTemplate}
       />
 
       {/* API Key Notification */}
@@ -198,7 +176,6 @@ function RouteComponent() {
           </Button>
         </div>
       )}
-
       <div
         className="flex flex-col flex-1 px-6 mr-0.5 overflow-y-scroll pt-8 pb-40"
         ref={messagesContainerRef}
@@ -207,25 +184,9 @@ function RouteComponent() {
           scrollPaddingBottom: "250px", // Adjust as needed based on MessageInput height
         }}
       >
-        {/* Content within messages container: centered with max-width */}
-        {/* {thoughts.length > 0 && (
-          <div className="pt-4 w-full max-w-4xl">
-            <Card className="mb-2 max-h-[250px] min-h-[250px] overflow-y-auto border-primary">
-              <CardHeader>
-                <CardTitle>Agent Thoughts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div key={thoughts[thoughts.length - 1].id}>
-                  {thoughts[thoughts.length - 1].content}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )} */}
         <LogsList
           logs={logs}
           components={{
-            // thought: () => null,
             action_call: ({ log, getLog }) => {
               const result = getLog<ActionResult>(
                 (t) => t.ref === "action_result" && t.callId === log.id
@@ -233,7 +194,12 @@ function RouteComponent() {
 
               if (log.name.startsWith("gigaverse")) {
                 return (
-                  <GigaverseAction key={log.id} call={log} result={result} />
+                  <GigaverseAction
+                    key={log.id}
+                    call={log}
+                    result={result}
+                    gameData={ctxState.data?.options.game}
+                  />
                 );
               }
 
@@ -253,14 +219,12 @@ function RouteComponent() {
               className="h-full flex text-muted-foreground"
             >
               <ScrollText />
-              {/* <span className="hidden md:inline">Instructions</span> */}
             </Button>
           </TooltipTrigger>
           <TooltipContent>
             <p>Instructions</p>
           </TooltipContent>
         </Tooltip>
-
         <MessageInput
           isLoading={send.isPending}
           disabled={missingKeys.length === 2}

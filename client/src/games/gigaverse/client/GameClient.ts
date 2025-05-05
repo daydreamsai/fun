@@ -83,8 +83,6 @@ export class GameClient {
       `/offchain/player/energy/${address}`
     );
 
-    console.log("energy", energy);
-
     const lastClaim = energy.entities[0].TIMESTAMP_CID;
 
     const timeSinceLastClaim = now - lastClaim;
@@ -164,7 +162,9 @@ export class GameClient {
   /**
    * Uses an item (e.g. "use_item" action with itemId, index).
    */
-  public async useItem(payload: ActionPayload): Promise<BaseResponse> {
+  public async useItem(
+    payload: Omit<ActionPayload<{ index: number; itemId: number }>, "action">
+  ): Promise<BaseResponse> {
     this.logger.info(
       "gigaverse-http-client",
       `Using item. ID: ${payload.data?.itemId}`
@@ -172,6 +172,7 @@ export class GameClient {
     const endpoint = "/game/dungeon/action";
 
     const finalToken = payload.actionToken ?? this.currentActionToken ?? "";
+
     const body = {
       action: "use_item",
       actionToken: finalToken,
@@ -325,4 +326,38 @@ export class GameClient {
     const endpoint = "/offchain/skills";
     return this.httpClient.get<GetAllSkillsResponse>(endpoint);
   }
+
+  /**
+   * Retrieves global skill definitions from /offchain/skills.
+   */
+  public async getAllItemsOffchain() {
+    this.logger.info(
+      "gigaverse-http-client",
+      "Fetching offchain game items definitions..."
+    );
+    return this.httpClient.get<{ entities: OffchainItems[] }>(
+      "/offchain/gameitems"
+    );
+  }
+
+  public async levelUp(params: {
+    noobId: number;
+    skillId: number;
+    statId: number;
+  }) {
+    this.logger.info("gigaverse-http-client", "Level up");
+    return this.httpClient.post<any>("game/skill/levelup", params);
+  }
 }
+
+export type OffchainItems = {
+  ID_CID: number;
+  docId: string;
+  TYPE_CID: string;
+  NAME_CID: string;
+  DESCRIPTION_CID: string;
+  RARITY_CID: number;
+  RARITY_NAME: string;
+  IMG_URL_CID: string;
+  ICON_URL_CID: string;
+};

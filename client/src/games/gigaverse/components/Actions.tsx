@@ -12,6 +12,8 @@ import {
   Stars,
 } from "lucide-react";
 import { LogContainer } from "@/components/chat/LogsLIst";
+import { DungeonData, GameItemBalanceChange } from "../client/types/game";
+import { GameData } from "../context";
 
 // Helper function to render move icon
 const renderMoveIcon = (move?: string) => {
@@ -37,56 +39,155 @@ const renderMoveIcon = (move?: string) => {
   }
 };
 
+const moveLabel: Record<string, string> = {
+  rock: "Sword",
+  paper: "Shield",
+  scissor: "Spell",
+};
+
+function AttackAction({
+  call,
+  result,
+  gameData,
+}: {
+  call: ActionCall;
+  result?: ActionResult<{
+    result: DungeonData;
+    gameItemBalanceChanges?: GameItemBalanceChange[];
+  }>;
+  gameData?: GameData;
+}) {
+  const run = result?.data.result.run;
+  const lastMove = run?.players[1].lastMove;
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {renderMoveIcon(call.data.action)}
+
+          <span className="text-sm font-medium capitalize">
+            {moveLabel[call.data.action]}
+            {" VS "}
+            {lastMove ? moveLabel[lastMove] : "?"}
+          </span>
+        </div>
+        {run && (
+          <div
+            className={`ml-auto px-2 py-1 rounded text-xs uppercase font-bold ${
+              run.players[0].thisPlayerWin
+                ? "bg-green-500/10 text-green-500"
+                : run.players[0].otherPlayerWin
+                  ? "bg-red-500/10 text-red-500"
+                  : "bg-yellow-500/10 text-yellow-500"
+            }`}
+          >
+            {run.players[0].thisPlayerWin
+              ? "win"
+              : run.players[0].otherPlayerWin
+                ? "lose"
+                : "draw"}
+          </div>
+        )}
+      </div>
+      {gameData &&
+        result?.data.gameItemBalanceChanges &&
+        result?.data.gameItemBalanceChanges.length > 0 && (
+          <div className="mt-4 flex flex-col gap-3">
+            <div>New items</div>
+            <div className="flex gap-2">
+              {result?.data.gameItemBalanceChanges.map((item, i) => {
+                const itemData = gameData.offchain.items.entities.find(
+                  (i) => parseInt(i.docId) === item.id
+                );
+                return (
+                  <div className="text-center flex flex-col">
+                    <img
+                      src={itemData?.IMG_URL_CID}
+                      className="size-12 mb-2"
+                    ></img>
+                    <div>+{item.amount}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+    </div>
+  );
+}
+
+const lootIndexes: Record<string, number> = {
+  loot_one: 0,
+  loot_two: 1,
+  loot_three: 2,
+};
+
 export function GigaverseAction({
   call,
   result,
+  gameData,
 }: {
   call: ActionCall;
   result?: ActionResult;
+  gameData?: GameData;
 }) {
+  if (!call.data?.action) return null;
+
   return (
     <LogContainer className="pb-4">
       <div className="mb-2 text-muted-foreground text-xs font-medium uppercase tracking-wider opacity-80 flex items-center justify-between pt-2">
         Gigaverse
       </div>
 
-      {call.name === "gigaverse.attackInDungeon" && call.data?.action && (
+      {call.name === "gigaverse.attackInDungeon" &&
+        call.data.action.startsWith("loot") && (
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {renderMoveIcon(call.data.action)}
+                <span className="text-sm font-medium capitalize">
+                  {call.data.action.replace("_", " ")}
+                </span>
+                <span>
+                  {result?.data?.lootOptions
+                    ? `- ${
+                        result?.data?.lootOptions?.[
+                          lootIndexes[call.data.action]
+                        ]?.boonTypeString
+                      }`
+                    : ""}
+                </span>
+              </div>
+            </div>
+            {/* <div className="flex mt-3 gap-2">
+              {result?.data?.lootOptions?.map((i: any) => (
+                <div className="aspect-square border size-24 text-xs flex flex-col items-center justify-center gap-1">
+                  <div>{i.boonTypeString}</div>
+                  <div>
+                    ({i.selectedVal1}, {i.selectedVal2})
+                  </div>
+                </div>
+              ))}
+            </div> */}
+            {/* <div>{JSON.stringify(result?.data?.lootOptions ?? [])}</div> */}
+          </div>
+        )}
+
+      {call.name === "gigaverse.attackInDungeon" &&
+        !call.data.action.startsWith("loot") && (
+          <AttackAction call={call} result={result} gameData={gameData} />
+        )}
+
+      {call.name === "gigaverse.useItem" && call.data?.action && (
         <div className="flex justify-between">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {renderMoveIcon(call.data.action)}
-              {call.data.action.startsWith("loot") ? (
-                <span className="text-sm font-medium capitalize">
-                  {call.data.action.replace("_", " ")}
-                </span>
-              ) : (
-                <span className="text-sm font-medium capitalize">
-                  {call.data.action}
-                  {" VS "}
-                  {result?.data.result?.run.players[1].lastMove ?? "?"}
-                </span>
-              )}
+              <div>Use item #{call.data.itemId}</div>
             </div>
           </div>
 
-          {result?.data.result && !call.data.action.startsWith("loot") && (
-            <div
-              className={`px-2 py-1 rounded text-xs uppercase font-bold ${
-                // ""
-                result.data.result.run.players[0].thisPlayerWin
-                  ? "bg-green-500/10 text-green-500"
-                  : result.data.result.run.players[0].otherPlayerWin
-                    ? "bg-red-500/10 text-red-500"
-                    : "bg-yellow-500/10 text-yellow-500"
-              }`}
-            >
-              {result.data.result.run.players[0].thisPlayerWin
-                ? "win"
-                : result.data.result.run.players[0].otherPlayerWin
-                  ? "lose"
-                  : "draw"}
-            </div>
-          )}
           {/* <div>{JSON.stringify(result?.data ?? {})}</div> */}
         </div>
       )}
