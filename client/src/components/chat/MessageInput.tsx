@@ -1,6 +1,4 @@
-import { FormEvent, MutableRefObject, Ref } from "react";
-import { Loader2, Notebook } from "lucide-react";
-import { motion } from "framer-motion";
+import { FormEvent, MutableRefObject } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 

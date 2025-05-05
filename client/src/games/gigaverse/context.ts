@@ -594,7 +594,7 @@ export const giga = extension({
 export function render<Template extends string>(str: Template, data: any) {
   return str
     .trim()
-    .replace(/\{\{([a-zA-Z0-9_.]+)\}\}/g, (match, key: string) => {
+    .replace(/\{\{([a-zA-Z0-9_.]+)\}\}/g, (_match, key: string) => {
       const res = jsonPath(data, key);
       if (!res) return "";
       const [value] = res;

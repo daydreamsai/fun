@@ -214,6 +214,18 @@ export function createAgent() {
     apiKey: settings.openrouterKey,
   });
 
+  const currentMemoryVersion = 1;
+
+  const memoryMigrator = service({
+    async boot() {
+      const version = await memoryStorage.get<number>("version");
+      if (version !== currentMemoryVersion) {
+        await memoryStorage.clear();
+      }
+      await memoryStorage.set("version", currentMemoryVersion);
+    },
+  });
+
   return createDreams({
     container,
     model: openrouter(settings.model || "deepseek/deepseek-r1"),

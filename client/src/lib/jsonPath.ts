@@ -38,13 +38,13 @@ export function jsonPath(
     normalize: function (expr: string): string {
       const subx: string[] = [];
       return expr
-        .replace(/[\['](\??\(.*?\))[\]']/g, function ($0, $1) {
+        .replace(/[\['](\??\(.*?\))[\]']/g, function (_$0, $1) {
           return "[#" + (subx.push($1) - 1) + "]";
         })
         .replace(/'?\.'?|\['?/g, ";")
         .replace(/;;;|;;/g, ";..;")
         .replace(/;$|'?\]|'$/g, "")
-        .replace(/#([0-9]+)/g, function ($0, $1) {
+        .replace(/#([0-9]+)/g, function (_$0, $1) {
           return subx[parseInt($1, 10)];
         });
     },
@@ -74,12 +74,12 @@ export function jsonPath(
         ) {
           P.trace(remainingExpr, val[loc], path + ";" + loc);
         } else if (loc === "*") {
-          P.walk(loc, remainingExpr, val, path, function (m, l, x, v, p) {
+          P.walk(loc, remainingExpr, val, path, function (m, _l, x, v, p) {
             P.trace(m + ";" + x, v, p);
           });
         } else if (loc === "..") {
           P.trace(remainingExpr, val, path);
-          P.walk(loc, remainingExpr, val, path, function (m, l, x, v, p) {
+          P.walk(loc, remainingExpr, val, path, function (m, _l, x, v, p) {
             if (typeof v[m] === "object" && v[m] !== null) {
               P.trace("..;" + x, v[m], p + ";" + m);
             }
@@ -143,7 +143,7 @@ export function jsonPath(
         let step: number = 1;
         loc.replace(
           /^(-?[0-9]*):(-?[0-9]*):?(-?[0-9]*)$/g,
-          function ($0, $1, $2, $3) {
+          function (_$0, $1, $2, $3) {
             start = parseInt($1 || start.toString(), 10);
             end = parseInt($2 || end.toString(), 10);
             step = parseInt($3 || step.toString(), 10);
@@ -176,7 +176,6 @@ export function jsonPath(
     },
   };
 
-  const $ = obj; // Alias for the object
   if (expr && obj && (P.resultType === "VALUE" || P.resultType === "PATH")) {
     P.trace(P.normalize(expr).replace(/^\$;/, ""), obj, "$");
     return P.result.length ? P.result : false;

@@ -1,10 +1,7 @@
 import { FC, useEffect, useState } from "react";
 import { useWalletContext } from "@/context/WalletContext";
 import { Button } from "@/components/ui/button";
-import {
-  useWalletModal,
-  WalletMultiButton,
-} from "@solana/wallet-adapter-react-ui";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useWalletMultiButton } from "@solana/wallet-adapter-base-ui";
 import {
   DropdownMenu,

@@ -1,6 +1,5 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -1,4 +1,4 @@
-import { AlertCircle, ScrollText, Plus, Trash, Edit } from "lucide-react";
+import { AlertCircle, ScrollText, Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {

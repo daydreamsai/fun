@@ -3,27 +3,20 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import {
   createRootRouteWithContext,
-  Link,
   Outlet,
   ErrorComponent as TanStackErrorComponent,
   useRouterState,
 } from "@tanstack/react-router";
 
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-} from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { ModeToggle } from "@/components/mode-toggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { WalletConnect } from "@/components/WalletConnect";
 import { WalletContextProvider } from "@/context/WalletContext";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { ReactElement, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, PanelRight } from "lucide-react";
+import { PanelRight } from "lucide-react";
 import { TokenGate } from "@/components/TokenGate";
 
 // Custom error component that passes the error prop correctly
@@ -39,19 +32,16 @@ export const Route = createRootRouteWithContext<{
   errorComponent: CustomErrorComponent,
 
   component: function Root() {
-    const { queryClient } = Route.useRouteContext();
-
     const matches = useRouterState({ select: (s) => s.matches });
-    const sidebar = matches.reverse().find((d) => d.context.sidebar);
+    const sidebar = [...matches].reverse().find((d) => d.context.sidebar);
 
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(true);
 
     return (
       <>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <WalletContextProvider>
-              <TokenGate>
+        <ThemeProvider>
+          <WalletContextProvider>
+            <TokenGate>
               <SidebarProvider className="font-body">
                 <AppSidebar className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" />
                 <SidebarInset className="bg-transparent bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)] relative h-svh overflow-hidden">
@@ -91,10 +81,9 @@ export const Route = createRootRouteWithContext<{
                 </SidebarInset>
                 {isMobileSidebarOpen && sidebar?.context.sidebar}
               </SidebarProvider>
-              </TokenGate>
-            </WalletContextProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
+            </TokenGate>
+          </WalletContextProvider>
+        </ThemeProvider>
       </>
     );
   },

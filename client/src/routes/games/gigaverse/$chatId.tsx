@@ -95,7 +95,7 @@ function RouteComponent() {
     setMissingKeys(missing);
   }, []);
 
-  const { logs, clearMemory } = useLogs({
+  const { logs } = useLogs({
     agent: agent,
     context: gigaverseContext,
     args: { id: chatId },
