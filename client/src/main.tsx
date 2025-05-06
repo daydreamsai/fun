@@ -24,6 +24,9 @@ const router = createRouter({
   defaultPreload: "intent",
   // Add proper handling for direct navigation
   defaultPreloadStaleTime: 0,
+  defaultOnCatch(error, errorInfo) {
+    console.log({ error, errorInfo });
+  },
 });
 
 // Register the router instance for type safety
@@ -37,11 +40,18 @@ declare module "@tanstack/react-router" {
 const rootElement = document.getElementById("root")!;
 
 // Remove the conditional check that can cause hydration mismatches
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
+const root = ReactDOM.createRoot(rootElement, {
+  onRecoverableError(error, errorInfo) {
+    console.log(error, errorInfo);
+  },
+});
+
+try {
+  root.render(
+    <StrictMode>
       <RouterProvider router={router} />
-    </QueryClientProvider>
-  </StrictMode>
-);
+    </StrictMode>
+  );
+} catch (error) {
+  console.log(error);
+}

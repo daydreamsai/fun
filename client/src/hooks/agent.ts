@@ -26,6 +26,11 @@ export function useContextState<TContext extends AnyContext>({
     queryFn: async () => {
       return await agent.getContext(ref);
     },
+    retry(failureCount, error) {
+      console.log({ error });
+      return false;
+    },
+    throwOnError: false,
   });
 }
 
@@ -38,12 +43,9 @@ export function useWorkingMemory<TContext extends AnyContext>({
   args: InferSchemaArguments<TContext["schema"]>;
 }) {
   const contextId = agent.getContextId(ref);
-  console.log({ contextId });
   return useQuery({
     queryKey: ["workingMemory", contextId],
-
     queryFn: async () => {
-      console.log("fetching working memory", contextId);
       return structuredClone(
         getWorkingMemoryAllLogs(await agent.getWorkingMemory(contextId))
       );
@@ -80,7 +82,6 @@ export function useLogs<TContext extends AnyContext>({
   }, [contextId]);
 
   useEffect(() => {
-    console.log("gerere");
     setLogs(
       workingMemory.data
         .slice()
@@ -158,6 +159,7 @@ export function useSend<TContext extends AnyContext>({
     },
 
     onError(error: any) {
+      console.log({ error });
       console.error(error);
     },
   });

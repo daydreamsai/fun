@@ -23,10 +23,13 @@ import {
   GetAllSkillsResponse,
   BaseResponse,
   GetEnergyResponse,
+  GetGigaJuiceResponse,
+  GetTodayResponse,
 } from "./types/responses";
 import { Logger } from "@daydreamsai/core";
 
 export const MAX_ENERGY = 240;
+export const MAX_JUICE = 480;
 
 /**
  * Main SDK class exposing methods for dungeon runs, user data, items, etc.
@@ -73,32 +76,14 @@ export class GameClient {
     return response;
   }
 
-  public async getEnergy(address: string): Promise<number> {
+  public async getEnergy(address: string): Promise<GetEnergyResponse> {
     this.logger.info("gigaverse-http-client", "Getting energy...");
-    const regenRate = 2777777;
-
-    const now = Date.now() / 1000;
 
     const energy = await this.httpClient.get<GetEnergyResponse>(
       `/offchain/player/energy/${address}`
     );
 
-    console.log("energy", energy);
-
-    const lastClaim = energy.entities[0].TIMESTAMP_CID;
-
-    const timeSinceLastClaim = now - lastClaim;
-
-    const energyToAdd = regenRate * timeSinceLastClaim;
-
-    const newEnergy =
-      (energyToAdd + energy.entities[0].ENERGY_CID) / 1000000000;
-
-    if (newEnergy > MAX_ENERGY) {
-      return MAX_ENERGY;
-    }
-
-    return newEnergy;
+    return energy;
   }
 
   /**
@@ -164,7 +149,9 @@ export class GameClient {
   /**
    * Uses an item (e.g. "use_item" action with itemId, index).
    */
-  public async useItem(payload: ActionPayload): Promise<BaseResponse> {
+  public async useItem(
+    payload: Omit<ActionPayload<{ index: number; itemId: number }>, "action">
+  ): Promise<BaseResponse> {
     this.logger.info(
       "gigaverse-http-client",
       `Using item. ID: ${payload.data?.itemId}`
@@ -172,6 +159,7 @@ export class GameClient {
     const endpoint = "/game/dungeon/action";
 
     const finalToken = payload.actionToken ?? this.currentActionToken ?? "";
+
     const body = {
       action: "use_item",
       actionToken: finalToken,
@@ -325,4 +313,137 @@ export class GameClient {
     const endpoint = "/offchain/skills";
     return this.httpClient.get<GetAllSkillsResponse>(endpoint);
   }
+
+  /**
+   * Retrieves global skill definitions from /offchain/skills.
+   */
+  public async getAllItemsOffchain() {
+    this.logger.info(
+      "gigaverse-http-client",
+      "Fetching offchain game items definitions..."
+    );
+    return this.httpClient.get<{ entities: OffchainItems[] }>(
+      "/offchain/gameitems"
+    );
+  }
+
+  public async levelUp(params: {
+    noobId: number;
+    skillId: number;
+    statId: number;
+  }) {
+    this.logger.info("gigaverse-http-client", "Level up");
+    return this.httpClient.post<BaseResponse<{}>>(
+      "/game/skill/levelup",
+      params
+    );
+  }
+
+  public async getJuice(address: string) {
+    return this.httpClient.get<GetGigaJuiceResponse>(
+      "/gigajuice/player/" + address
+    );
+  }
+
+  public async getToday() {
+    return this.httpClient.get<GetTodayResponse>("/game/dungeon/today");
+  }
+
+  public async getAccount(address: string) {
+    return this.httpClient.get<GetAccountResponse>("/account/" + address);
+  }
+
+  public async getStatic() {
+    return this.httpClient.get<GetStaticResponse>("/offchain/static");
+  }
 }
+
+export interface GetStaticResponse {
+  checkpoints: {
+    DESCRIPTION_CID: string;
+    ID_CID: string;
+    INPUT_AMOUNT_CID_array: number[];
+    INPUT_ID_CID_array: number[];
+    MAX_COMPLETIONS_CID: number;
+    NAME_CID: string;
+    UINT256_CID_array: number[];
+    docId: string;
+  }[];
+  constants: {
+    dungeonEnergyCost: number;
+    energyRegenRate: number;
+    maxEnergy: number;
+    maxEnergyJuiced: number;
+    minTimeBetweenExports: number;
+    minTimeBetweenImports: number;
+    regenRateJuiced: number;
+  };
+  enemies: GetAllEnemiesResponse["entities"];
+  gameItems: OffchainItems[];
+  recipies: any[];
+}
+
+export interface GetAccountResponse {
+  accountEntity: AccountEntity;
+  usernames: GigaNameNFT[];
+  noob: GigaNoobNFT;
+  checkpointProgress: {
+    COMPLETE_CID: boolean;
+    COMPLETIONS_CID: number;
+    ID_CID: string;
+    PLAYER_CID: string;
+    createdAt: string;
+    docId: string;
+    updatedAt: string;
+    __v: number;
+    _id: string;
+  }[];
+}
+
+interface AccountEntity {
+  _id: string;
+  docId: string;
+  tableName: string;
+  GIGA_NAME_TOKENDID_CID: string;
+  createdAt: string;
+  updatedAt: string;
+  NOOB_TOKEN_CID: number;
+}
+
+interface GigaNameNFT {
+  _id: string;
+  docId: string;
+  tableName: string;
+  IS_GIGA_NAME_CID: boolean;
+  createdAt: string;
+  updatedAt: string;
+  NAME_CID: string;
+  OWNER_CID: string;
+  LAST_TRANSFER_TIME_CID: number;
+  INITIALIZED_CID: boolean;
+}
+
+interface GigaNoobNFT {
+  _id: string;
+  docId: string;
+  tableName: string;
+  LAST_TRANSFER_TIME_CID: number;
+  createdAt: string;
+  updatedAt: string;
+  OWNER_CID: string;
+  IS_NOOB_CID: boolean;
+  INITIALIZED_CID: boolean;
+  LEVEL_CID: number;
+}
+
+export type OffchainItems = {
+  ID_CID: number;
+  docId: string;
+  TYPE_CID: string;
+  NAME_CID: string;
+  DESCRIPTION_CID: string;
+  RARITY_CID: number;
+  RARITY_NAME: string;
+  IMG_URL_CID: string;
+  ICON_URL_CID: string;
+};

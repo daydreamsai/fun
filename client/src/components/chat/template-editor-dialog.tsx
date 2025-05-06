@@ -1,4 +1,4 @@
-import { AlertCircle, ScrollText, Plus } from "lucide-react";
+import { AlertCircle, ScrollText, Plus, Trash, GitFork } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -12,13 +12,20 @@ import {
 import { useState, useEffect, useDeferredValue } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "../ui/badge";
-
 import { Label } from "../ui/label";
 import { cn } from "@/lib/utils";
 import { Input } from "../ui/input";
 import { Template, useTemplateStore } from "@/store/templateStore";
 
 import { randomUUIDv7 } from "@daydreamsai/core";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
 
 // import { lightTheme } from "@uiw/react-json-view/";
 interface TemplateEditorDialogProps {
@@ -27,8 +34,6 @@ interface TemplateEditorDialogProps {
   title: string;
   description?: string;
   variables?: string[];
-  onApplyTemplate: (newTemplate: string) => void;
-  onResetTemplate?: () => void;
   templateKey: string;
   sections?: Record<string, { label: string; default: Template }>;
 }
@@ -58,6 +63,7 @@ export function TemplateEditorDialog({
     selectTemplate,
     createTemplate,
     updateTemplate,
+    deleteTemplate,
   } = useTemplateStore();
 
   const templates = store[templateKey]?.slice() ?? [];
@@ -109,13 +115,18 @@ export function TemplateEditorDialog({
                         const isSelected =
                           selected[templateKey] &&
                           selected[templateKey][section] === template.id;
-
                         return (
                           <TemplateCard
                             template={template}
                             isSelected={isSelected}
+                            isDefault={
+                              sections[section].default.id === template.id
+                            }
                             onEdit={() => {
                               setState({ page: "edit", id: template.id });
+                            }}
+                            onDelete={() => {
+                              deleteTemplate(templateKey, template.id);
                             }}
                             onSelect={() => {
                               selectTemplate(templateKey, section, template.id);
@@ -142,12 +153,6 @@ export function TemplateEditorDialog({
                 </div>
               ))}
             </div>
-            {/* <DialogFooter className="ml-1 shrink-0 flex sm:justify-between sm:items-center gap-2 pt-4 border-t">
-              <Button onClick={() => onOpenChange(false)} variant="ghost">
-                Cancel
-              </Button>
-              <Button onClick={handleApply}>Save</Button>
-            </DialogFooter> */}
           </>
         )}
 
@@ -196,42 +201,61 @@ function TemplateCard({
   isSelected,
   onSelect,
   onEdit,
+  onDelete,
+  isDefault,
 }: {
   template: Template;
   isSelected: boolean;
   onEdit: () => void;
   onSelect: () => void;
+  onDelete: () => void;
+  isDefault: boolean;
 }) {
   return (
-    <div
+    <Card
       key={template.id}
       className={cn(
-        "md:aspect-square border p-4 rounded flex flex-col hover:border-primary/50",
+        "md:aspect-square rounded flex flex-col",
         isSelected ? "border-primary" : "border-border"
       )}
     >
-      <div className="flex items-center justify-between">
-        <div className="font-medium text-lg">{template.title}</div>
-        <div className="flex gap-1">{isSelected && <Badge>active</Badge>}</div>
-      </div>
-      <div className="mt-2">{template.prompt.slice(0, 150)}...</div>
-      <div className="flex mt-4 gap-2">
-        {template.tags.map((tag, i) => (
-          <Badge variant="secondary" key={i}>
-            {tag.trim()}
-          </Badge>
-        ))}
-      </div>
-      <div className="mt-4 md:mt-auto flex justify-between">
-        <Button variant="ghost" onClick={onEdit}>
+      <CardHeader className="p-4">
+        <CardTitle>{template.title}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        <p>{template.prompt.slice(0, 150)} ...</p>
+        <div className="mt-2">
+          {template.tags
+            .filter((t) => !!t.trim())
+            .map((tag, i) => (
+              <Badge variant="secondary" key={i} className="rounded">
+                {tag.trim()}
+              </Badge>
+            ))}
+        </div>
+      </CardContent>
+      <CardFooter className="p-4 mt-4 md:mt-auto flex">
+        <Button
+          variant="ghost"
+          className="text-muted-foreground"
+          disabled={isDefault || isSelected}
+          onClick={onDelete}
+        >
+          <Trash />
+        </Button>
+        <Button
+          variant="ghost"
+          className="ml-auto mr-2 text-muted-foreground"
+          onClick={onEdit}
+        >
           Edit
         </Button>
 
-        <Button variant="secondary" disabled={isSelected} onClick={onSelect}>
+        <Button variant="default" disabled={isSelected} onClick={onSelect}>
           {isSelected ? "Selected" : "Select"}
         </Button>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }
 
@@ -285,7 +309,6 @@ function TemplateForm({
         className="flex flex-col flex-grow overflow-y-hidden"
         onSubmit={(e) => {
           e.preventDefault();
-          console.log("submitedd");
           const { title, prompt, tags } = Object.fromEntries(
             new FormData(e.currentTarget).entries()
           ) as { title: string; prompt: string; tags: string };

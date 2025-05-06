@@ -209,12 +209,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => navigate({ to: "/" })}
-              className="group-[[data-state=expanded]]:bg-inherit"
+              className="bg-secondary group-[[data-state=expanded]]:bg-inherit"
+              asChild
             >
-              <Brain className="data group-[[data-state=expanded]]:hidden" />
-
-              <img src="/Daydreams.svg" className="w-18" />
+              <Link to="/" className="size-8">
+                <Brain className="data group-[[data-state=expanded]]:hidden"></Brain>
+                <img src="/Daydreams-white.svg" className="h-6 text-white" />
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

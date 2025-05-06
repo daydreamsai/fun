@@ -68,10 +68,12 @@ export class HttpClient {
 
     if (!response.ok) {
       const errorBody = await response.text();
+
       this.logger.error(
         "gigaverse-http-client",
         `HTTP error ${response.status}: ${errorBody}`
       );
+
       throw new Error(`GET ${endpoint} failed -> ${response.status}`);
     }
 

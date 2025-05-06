@@ -73,7 +73,7 @@ export const WalletConnect: FC = () => {
       }
     };
 
-    handleWalletAuth();
+    if (connected && publicKey && !user) handleWalletAuth();
   }, [connected, publicKey, wallet, login, user]);
 
   if (!connected || !publicKey) {

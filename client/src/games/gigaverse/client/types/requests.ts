@@ -19,9 +19,9 @@ export interface StartRunPayload {
   };
 }
 
-export interface ActionPayload {
+export interface ActionPayload<T = any> {
   action: string;
-  actionToken: string | number;
+  actionToken?: string | number;
   dungeonId: number;
-  data: any;
+  data: T;
 }
