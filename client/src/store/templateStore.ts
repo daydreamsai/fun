@@ -7,6 +7,7 @@ export type Template = {
   tags: string[];
   section: string;
   prompt: string;
+  isDefault?: boolean;
 };
 
 interface TemplateState {

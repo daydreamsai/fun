@@ -1,4 +1,4 @@
-import { AlertCircle, ScrollText, Plus, Trash } from "lucide-react";
+import { AlertCircle, ScrollText, Plus, Trash, GitFork } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,6 +18,14 @@ import { Input } from "../ui/input";
 import { Template, useTemplateStore } from "@/store/templateStore";
 
 import { randomUUIDv7 } from "@daydreamsai/core";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
 
 // import { lightTheme } from "@uiw/react-json-view/";
 interface TemplateEditorDialogProps {
@@ -107,11 +115,13 @@ export function TemplateEditorDialog({
                         const isSelected =
                           selected[templateKey] &&
                           selected[templateKey][section] === template.id;
-
                         return (
                           <TemplateCard
                             template={template}
                             isSelected={isSelected}
+                            isDefault={
+                              sections[section].default.id === template.id
+                            }
                             onEdit={() => {
                               setState({ page: "edit", id: template.id });
                             }}
@@ -192,38 +202,43 @@ function TemplateCard({
   onSelect,
   onEdit,
   onDelete,
+  isDefault,
 }: {
   template: Template;
   isSelected: boolean;
   onEdit: () => void;
   onSelect: () => void;
   onDelete: () => void;
+  isDefault: boolean;
 }) {
   return (
-    <div
+    <Card
       key={template.id}
       className={cn(
-        "md:aspect-square border p-4 rounded flex flex-col hover:border-primary/50",
+        "md:aspect-square rounded flex flex-col",
         isSelected ? "border-primary" : "border-border"
       )}
     >
-      <div className="flex items-center justify-between">
-        <div className="font-medium text-lg">{template.title}</div>
-        <div className="flex gap-1">{isSelected && <Badge>active</Badge>}</div>
-      </div>
-      <div className="mt-2">{template.prompt.slice(0, 150)}...</div>
-      <div className="flex mt-4 gap-2">
-        {template.tags.map((tag, i) => (
-          <Badge variant="secondary" key={i}>
-            {tag.trim()}
-          </Badge>
-        ))}
-      </div>
-      <div className="mt-4 md:mt-auto flex">
+      <CardHeader className="p-4">
+        <CardTitle>{template.title}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        <p>{template.prompt.slice(0, 150)} ...</p>
+        <div className="mt-2">
+          {template.tags
+            .filter((t) => !!t.trim())
+            .map((tag, i) => (
+              <Badge variant="secondary" key={i} className="rounded">
+                {tag.trim()}
+              </Badge>
+            ))}
+        </div>
+      </CardContent>
+      <CardFooter className="p-4 mt-4 md:mt-auto flex">
         <Button
           variant="ghost"
           className="text-muted-foreground"
-          disabled={isSelected}
+          disabled={isDefault || isSelected}
           onClick={onDelete}
         >
           <Trash />
@@ -236,15 +251,11 @@ function TemplateCard({
           Edit
         </Button>
 
-        <Button
-          variant={isSelected ? "ghost" : "secondary"}
-          disabled={isSelected}
-          onClick={onSelect}
-        >
+        <Button variant="default" disabled={isSelected} onClick={onSelect}>
           {isSelected ? "Selected" : "Select"}
         </Button>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }
 

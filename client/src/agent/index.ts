@@ -1,5 +1,6 @@
 import {
-  AnyAgent,
+  LogLevel,
+  Logger,
   type MemoryStore,
   createContainer,
   createDreams,
@@ -16,7 +17,6 @@ import { useSettingsStore } from "@/store/settingsStore";
 // import { useUserStore } from "@/store/userStore";
 
 import { openDB, type IDBPDatabase } from "idb";
-import { giga } from "@/games/gigaverse/context";
 import { Cache } from "./utils/cache";
 
 // Get settings directly from the store
@@ -188,7 +188,7 @@ const cacheService = service({
 
 const memoryMigrator = service({
   async boot(container) {
-    const currentMemoryVersion = 1;
+    const currentMemoryVersion = 2;
     const store = container.resolve<MemoryStore>("memory");
     const version = await store.get<number>("version");
 
@@ -214,19 +214,8 @@ export function createAgent() {
     apiKey: settings.openrouterKey,
   });
 
-  const currentMemoryVersion = 1;
-
-  const memoryMigrator = service({
-    async boot() {
-      const version = await memoryStorage.get<number>("version");
-      if (version !== currentMemoryVersion) {
-        await memoryStorage.clear();
-      }
-      await memoryStorage.set("version", currentMemoryVersion);
-    },
-  });
-
   return createDreams({
+    logger: new Logger({ level: LogLevel.DEBUG }),
     container,
     model: openrouter(settings.model || "deepseek/deepseek-r1"),
     memory: createMemory(

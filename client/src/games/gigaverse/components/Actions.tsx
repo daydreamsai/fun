@@ -52,15 +52,23 @@ function AttackAction({
 }: {
   call: ActionCall;
   result?: ActionResult<{
+    success: boolean;
+    message: string;
     result: DungeonData;
     gameItemBalanceChanges?: GameItemBalanceChange[];
   }>;
   gameData?: GameData;
 }) {
-  const run = result?.data.result.run;
+  if (!result) return null;
+
+  if (!result.data.success) {
+    return <div>{result.data.message}</div>;
+  }
+
+  const run = result?.data.result?.run;
   const lastMove = run?.players[1].lastMove;
 
-  return (
+  return run ? (
     <div className="flex flex-col">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -97,7 +105,7 @@ function AttackAction({
             <div>New items</div>
             <div className="flex gap-2">
               {result?.data.gameItemBalanceChanges.map((item, i) => {
-                const itemData = gameData.offchain.items.entities.find(
+                const itemData = gameData.offchain.gameItems.find(
                   (i) => parseInt(i.docId) === item.id
                 );
                 return (
@@ -114,7 +122,10 @@ function AttackAction({
           </div>
         )}
     </div>
-  );
+  ) : null;
+  // (
+  //   <div>{JSON.stringify({ result })}</div>
+  // );
 }
 
 const lootIndexes: Record<string, number> = {
@@ -150,9 +161,9 @@ export function GigaverseAction({
                   {call.data.action.replace("_", " ")}
                 </span>
                 <span>
-                  {result?.data?.lootOptions
+                  {result?.data?.previousLootOptions
                     ? `- ${
-                        result?.data?.lootOptions?.[
+                        result?.data?.previousLootOptions?.[
                           lootIndexes[call.data.action]
                         ]?.boonTypeString
                       }`

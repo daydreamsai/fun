@@ -1,4 +1,12 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  ErrorComponent,
+  ErrorComponentProps,
+  Link,
+  redirect,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { v7 as randomUUIDv7 } from "uuid";
 import { useAutoScroll } from "@/hooks/use-auto-scroll";
@@ -26,29 +34,33 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  ErrorBoundary,
+  ErrorBoundaryProps,
+  FallbackProps,
+} from "react-error-boundary";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
-function GigaverSidebarWrapper({ chatId }: { chatId: string }) {
-  return (
-    <Sidebar
-      collapsible="none"
-      className={cn("w-96 border-l min-h-svh max-h-svh shrink-0 h-full")}
-      side="right"
-    >
-      <SidebarContent className="bg-sidebar">
-        <GigaverseSidebar args={{ id: chatId }} />
-      </SidebarContent>
-    </Sidebar>
-  );
-}
+import { zodValidator } from "@tanstack/zod-adapter";
+import { z } from "zod";
+
+const searchParams = z.object({
+  sidebar: z
+    .enum(["overview", "skills", "inventory", "roms"])
+    .optional()
+    .default("overview"),
+});
 
 export const Route = createFileRoute("/games/gigaverse/$chatId")({
+  validateSearch: zodValidator(searchParams),
   component: RouteComponent,
   context({ params }) {
     return {
       sidebar: <GigaverSidebarWrapper chatId={params.chatId} />,
     };
   },
-  loader({ params }: { params: { chatId: string } }) {
+  loader({ params, context }) {
     // Check if user has required API keys
     const hasOpenRouterKey = hasApiKey("openrouterKey");
     const hasGigaverseToken = hasApiKey("gigaverseToken");
@@ -71,6 +83,63 @@ export const Route = createFileRoute("/games/gigaverse/$chatId")({
     }
   },
 });
+
+function GigaverSidebarWrapper({ chatId }: { chatId: string }) {
+  return (
+    <Sidebar
+      collapsible="none"
+      className={cn("w-96 border-l min-h-svh max-h-svh md:shrink-0 h-full")}
+      side="right"
+    >
+      <SidebarContent className="bg-sidebar">
+        <ErrorBoundary
+          fallbackRender={({ error, resetErrorBoundary }) => (
+            <GigaverseSidebarErrorComponent
+              chatId={chatId}
+              error={error}
+              resetErrorBoundary={resetErrorBoundary}
+            />
+          )}
+        >
+          <GigaverseSidebar args={{ id: chatId }} />
+        </ErrorBoundary>
+      </SidebarContent>
+    </Sidebar>
+  );
+}
+
+function GigaverseSidebarErrorComponent({
+  chatId,
+  error,
+  resetErrorBoundary,
+}: FallbackProps & {
+  chatId: string;
+}) {
+  // throw new Error("failed");
+  const router = useRouter();
+  const { agent } = useAgentStore();
+  const contextId = agent.getContextId({
+    context: gigaverseContext,
+    args: { id: chatId },
+  });
+
+  return (
+    <div className="p-2">
+      <div>Gigaverse Sidebar failed to load.</div>
+      <Button
+        onClick={async () => {
+          await agent.deleteContext(contextId);
+          await router.invalidate();
+
+          resetErrorBoundary();
+        }}
+      >
+        Reset Memory
+      </Button>
+      <ErrorComponent error={error} />
+    </div>
+  );
+}
 
 function RouteComponent() {
   const { chatId } = Route.useParams();
@@ -162,7 +231,6 @@ function RouteComponent() {
         }}
         onOpenChange={setShowTemplateEditor}
       />
-
       {/* API Key Notification */}
       {missingKeys.length > 0 && missingKeys.length < 2 && (
         <div className="bg-amber-100 dark:bg-amber-900 p-3 text-amber-800 dark:text-amber-200 text-sm flex justify-between items-center">
@@ -227,7 +295,7 @@ function RouteComponent() {
         </Tooltip>
         <MessageInput
           isLoading={send.isPending}
-          disabled={missingKeys.length === 2}
+          disabled={ctxState.error !== null || missingKeys.length > 0}
           onSubmit={handleSubmitMessage}
           abortControllerRef={abortControllerRef}
           placeholderText={

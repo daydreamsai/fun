@@ -11,10 +11,10 @@ import {
   DungeonData,
 } from "./game";
 
-export interface BaseResponse {
+export interface BaseResponse<Data extends any = DungeonData> {
   success: boolean;
   message: string;
-  data?: DungeonData;
+  data?: Data;
   actionToken?: string | number;
   gameItemBalanceChanges?: GameItemBalanceChange[];
 }
@@ -26,6 +26,7 @@ export interface ClaimEnergyResponse {
 export interface GetUserRomsResponse {
   entities: RomEntity[];
 }
+
 export interface RomEntity {
   _id: string;
   docId: string;
@@ -202,8 +203,73 @@ export interface EnergyEntity {
   ENERGY_CID: number;
   TIMESTAMP_CID: number;
   __v: number;
+  parsedData: {
+    energy: number;
+    energyValue: number;
+    maxEnergy: number;
+    regenPerSecond: number;
+    regenPerHour: number;
+    secondsSinceLastUpdate: number;
+    isPlayerJuiced: boolean;
+  };
 }
 
 export interface GetEnergyResponse {
   entities: EnergyEntity[];
+}
+
+export interface GetGigaJuiceResponse {
+  juiceData: JuiceData;
+  purchases: any[]; // Assuming purchases is an array of any type based on the empty array
+  referrals: any[]; // Assuming referrals is an array of any type based on the empty array
+  listings: Listing[];
+}
+
+export interface JuiceData {
+  isJuiced: boolean;
+  juicedSeconds: number;
+}
+
+export interface Listing {
+  _id: string;
+  docId: string;
+  tableName: string;
+  ETH_MINT_PRICE_CID: number;
+  createdAt: string;
+  updatedAt: string;
+  TIME_BETWEEN_CID: number;
+  NAME_CID: string;
+  LOOT_ID_CID_array: number[];
+  LOOT_AMOUNT_CID_array: number[];
+  START_TIMESTAMP_CID: number;
+  END_TIMESTAMP_CID: number;
+  OFFERING_NAME: string;
+}
+
+export interface GetTodayResponse {
+  dayProgressEntities: DayProgressEntity[];
+  dungeonDataEntities: DungeonDataEntity[];
+}
+
+export interface DayProgressEntity {
+  _id: string;
+  docId: string;
+  UINT256_CID: number;
+  ID_CID: string;
+  TIMESTAMP_CID: number;
+  PLAYER_CID: string;
+  DOC_TYPE_CID: string;
+  CONSUMABLES_CID: any[]; // Assuming CONSUMABLES_CID is an array of any type based on the empty array
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface DungeonDataEntity {
+  ID_CID: number;
+  NAME_CID: string;
+  ENERGY_CID: number;
+  UINT256_CID: number;
+  CHECKPOINT_CID: number;
+  juicedMaxRunsPerDay: number;
 }

@@ -11,7 +11,12 @@ import {
 } from "@daydreamsai/core";
 import { string, z } from "zod";
 import { useSettingsStore } from "@/store/settingsStore";
-import { GameClient, OffchainItems } from "./client/GameClient";
+import {
+  GameClient,
+  GetAccountResponse,
+  GetStaticResponse,
+  OffchainItems,
+} from "./client/GameClient";
 import { useTemplateStore } from "@/store/templateStore";
 import {
   BaseResponse,
@@ -20,8 +25,14 @@ import {
   GetAllSkillsResponse,
   GetBalancesResponse,
   GetConsumablesResponse,
+  GetFactionResponse,
   GetNoobsResponse,
   GetSkillsProgressResponse,
+  GetUserMeResponse,
+  GetUsernamesResponse,
+  GetGigaJuiceResponse,
+  GetTodayResponse,
+  GetEnergyResponse,
 } from "./client/types/responses";
 import { jsonPath } from "@/lib/jsonPath";
 import { Player } from "./client/types/game";
@@ -79,7 +90,8 @@ export type ItemBalance = {
 };
 
 export type GigaverseState = {
-  energy: number;
+  energy: GetEnergyResponse;
+  juice: GetGigaJuiceResponse;
   consumables: ItemBalance[];
   balances: ItemBalance[];
   dungeon: GigaverseDungeonState | undefined;
@@ -87,15 +99,14 @@ export type GigaverseState = {
 
 export type GameData = {
   items: GetAllGameItemsResponse;
-  enemies: GetAllEnemiesResponse;
   skills: GetAllSkillsResponse;
-  offchain: {
-    items: { entities: OffchainItems[] };
-  };
+  offchain: GetStaticResponse;
   player: {
-    noobs: GetNoobsResponse;
-    skills: GetSkillsProgressResponse[];
+    account: GetAccountResponse;
+    faction: GetFactionResponse;
+    skills: GetSkillsProgressResponse;
   };
+  today: GetTodayResponse;
 };
 
 export type GigaverseContext = typeof gigaverseContext;
@@ -144,7 +155,7 @@ function parseItems(
     const { docId, NAME_CID } = data.items.entities.find(
       (item) => item.docId === entity.ID_CID
     )!;
-    const { DESCRIPTION_CID, TYPE_CID } = data.offchain.items.entities.find(
+    const { DESCRIPTION_CID, TYPE_CID } = data.offchain.gameItems.find(
       (item) => item.docId === entity.ID_CID
     )!;
 
@@ -166,20 +177,19 @@ async function fetchGigaverseState(
   address: string
 ): Promise<GigaverseState> {
   const energy = await client.getEnergy(address);
+  const juice = await client.getJuice(address);
   const consumables = parseItems(await client.getConsumables(address), data);
   const balances = parseItems(await client.getUserBalances(address), data);
   const dungeon = parseDungeonState(await client.fetchDungeonState());
 
   return {
     energy,
+    juice,
     dungeon,
     consumables,
     balances,
   };
 }
-
-function renderSections(sections: Record<string, any>, data: any) {}
-
 // Context for the agent
 export const gigaverseContext = context({
   type: "gigaverse",
@@ -197,43 +207,39 @@ export const gigaverseContext = context({
 
     const cache = agent.container.resolve<Cache>("cache");
 
-    const { items, enemies, skills, offchain } = await cache.get(
-      "gigaverse.data",
+    const { items, skills, offchain } = await cache.get(
+      "gigaverse.data:v2",
       async () => {
         const items = await client.getAllGameItems();
-        const enemies = await client.getAllEnemies();
         const skills = await client.getAllSkills();
-
-        const offchain = {
-          items: await client.getAllItemsOffchain(),
-        };
+        const offchain = await client.getStatic();
 
         return {
           items,
-          enemies,
           skills,
           offchain,
         };
       }
     );
 
-    const noobs = await client.getNoobs(address);
+    const today = await client.getToday();
 
-    const playerSkills: GetSkillsProgressResponse[] = [];
-
-    for (const noob of noobs.entities) {
-      playerSkills.push(await client.getHeroSkillsProgress(noob.docId));
-    }
+    const account = await client.getAccount(address);
+    // const usernames = await client.getUsernames(address);
+    const faction = await client.getFaction(address);
+    const playerSkills: GetSkillsProgressResponse =
+      await client.getHeroSkillsProgress(account.noob.docId);
 
     const game: GameData = {
       items,
-      enemies,
       skills,
       offchain,
       player: {
-        noobs,
+        account,
+        faction,
         skills: playerSkills,
       },
+      today,
     };
 
     return {
@@ -303,7 +309,7 @@ export const gigaverseContext = context({
       },
       {
         tag: "enemies",
-        children: game.enemies.entities.map((enemy) => ({
+        children: game.offchain.enemies.map((enemy) => ({
           name: enemy.NAME_CID,
           room: parseInt(enemy.ID_CID),
           stats: enemy.MOVE_STATS_CID_array,
@@ -313,8 +319,8 @@ export const gigaverseContext = context({
 
     const hero = xml("hero", undefined, [
       {
-        id: parseInt(game.player.noobs.entities[0].docId),
-        skills: game.player.skills[0].entities.map((skillTree) => ({
+        id: parseInt(game.player.account.noob.docId),
+        skills: game.player.skills.entities.map((skillTree) => ({
           id: skillTree.SKILL_CID,
           level: skillTree.LEVEL_CID,
           statsUpgrades: skillTree.LEVEL_CID_array,
@@ -322,10 +328,24 @@ export const gigaverseContext = context({
       },
     ]);
 
+    console.log({ memory });
+
     const inventory = xml(
       "inventory",
       undefined,
-      [...memory.balances, ...memory.consumables].filter((t) => t.balance > 0)
+      [
+        ...memory.balances,
+        // ...memory.consumables
+      ].filter((t) => t.balance > 0 && t.item.type !== "Consumable")
+    );
+
+    const consumables = xml(
+      "consumables",
+      undefined,
+      [
+        ...memory.balances,
+        // ...memory.consumables
+      ].filter((t) => t.balance > 0 && t.item.type === "Consumable")
     );
 
     // Use the template from the store
@@ -338,6 +358,7 @@ export const gigaverseContext = context({
         formatXml(gameData),
         formatXml(hero),
         formatXml(inventory),
+        formatXml(consumables),
         memory.dungeon ? render(dungeonSection, sectionsVariables) : null,
       ]
         .filter((t) => !!t)
@@ -368,7 +389,7 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
         "loot_three",
       ]),
     },
-    async handler({ action }, { memory, options }, _agent) {
+    async handler({ action }, { memory, options, call }, _agent) {
       try {
         const actionToken = options.actionToken ?? "";
         const currentTime = Date.now();
@@ -406,7 +427,7 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
             success: true,
             message: response.message,
             result: response.data,
-            lootOptions: oldState.lootOptions,
+            previousLootOptions: oldState.lootOptions,
           };
         }
 
@@ -464,20 +485,23 @@ Enemy Shield: ${state.enemy.shield.current}
   - DungeonId: 3
   - Costs: 40 Energy
   - Skill tree: Dungetron Underhaul
-  - Requeriments: 
+  - Requirements: 
     - 150 Giga Shards (itemId: 3)
-`,
+
+# Consumables
+Consumables selected will be brought into battle.
+You can only select items from <consumables>.
+You can select one consumable, to use more you need special gear.
+Important: 
+All items brought into battle that are unsed will be lost upon death.
+Dont use any other type of item, only use consumables. If you are not sure dont use it.
+    `,
     schema: {
       dungeonId: z
         .number()
         .default(1)
         .describe("The ID of the dungeon to start."),
-      consumables: z
-        .number()
-        .array()
-        .describe(
-          "The ID of the consumables to use during the dungeon, all items will be lost after the run even if not used"
-        ),
+      consumables: z.number().array().describe("The IDs of the consumables"),
     },
     async handler(data, ctx) {
       try {
@@ -555,32 +579,48 @@ Enemy Shield: ${state.enemy.shield.current}
   // }),
   action({
     name: "gigaverse.levelup",
-    instructions: ``,
     schema: {
       skillId: z.number(),
       statId: z.number(),
     },
-    async handler({ skillId, statId }, { options }) {
-      debugger;
+    async handler({ skillId, statId }, { options: { client, game } }) {
+      const noobId = parseInt(game.player.account.noob.docId);
 
-      await options.client.levelUp({
-        noobId: parseInt(options.game.player.noobs.entities[0].docId),
+      const response = await client.levelUp({
+        noobId,
         skillId,
         statId,
       });
+
+      if (!response.success) {
+        return {
+          success: false,
+          result: response.data,
+          message: response.message,
+        };
+      }
+
+      const skills = await client.getHeroSkillsProgress(noobId);
+      game.player.skills = skills;
+
+      return {
+        success: true,
+        result: skills,
+        message: response.message,
+      };
     },
   }),
-  action({
-    enabled: () => false,
-    name: "gigaverse.marketplace.listings",
-    schema: {
-      itemId: z.number(),
-    },
-    async handler() {
-      // https://gigaverse.io/api/marketplace/eth/player/0xBfe67820C7aA9bC167fb2ED2EdDE0dABdF1d3c20
-      // https://gigaverse.io/api/marketplace/item/listing/item/151
-    },
-  }),
+  // action({
+  //   enabled: () => false,
+  //   name: "gigaverse.marketplace.listings",
+  //   schema: {
+  //     itemId: z.number(),
+  //   },
+  //   async handler() {
+  //     // https://gigaverse.io/api/marketplace/eth/player/0xBfe67820C7aA9bC167fb2ED2EdDE0dABdF1d3c20
+  //     // https://gigaverse.io/api/marketplace/item/listing/item/151
+  //   },
+  // }),
 ]);
 
 // Create the Gigaverse agent with UI integration
