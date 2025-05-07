@@ -28,7 +28,6 @@ export const signMessage = async (
     if (!wallet.signMessage) {
       throw new Error("Wallet does not support message signing");
     }
-
     // Convert message to Uint8Array for signing
     const messageBytes = new TextEncoder().encode(message);
 
@@ -38,7 +37,7 @@ export const signMessage = async (
     // Convert signature to base58 (standard format for Solana signatures)
     return bs58.encode(signature);
   } catch (error) {
-    console.error("Error signing message:", error);
+    console.log("Error signing message:", error);
     return null;
   }
 };
@@ -76,7 +75,7 @@ export const authenticateWithWallet = async (
       timestamp,
     };
   } catch (error) {
-    console.error("Authentication error:", error);
+    console.log("Authentication error:", error);
     return null;
   }
 };
