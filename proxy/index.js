@@ -75,7 +75,7 @@ proxyConfigs.forEach((config) => {
     req.url = newUrl;
 
     // Proxy the request to the target
-    proxy.web(req, res, { target: config.target });
+    proxy.web(req, res, { target: config.target, secure: false });
   });
 });
 
