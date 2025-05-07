@@ -26,7 +26,7 @@ export function useContextState<TContext extends AnyContext>({
     queryFn: async () => {
       return await agent.getContext(ref);
     },
-    retry(failureCount, error) {
+    retry(_failureCount, error) {
       console.log({ error });
       return false;
     },

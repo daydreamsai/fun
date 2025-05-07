@@ -21,7 +21,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAgentStore } from "@/store/agentStore";
@@ -202,7 +202,6 @@ function ChatHistoryList() {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const navigate = useNavigate();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="py-3">

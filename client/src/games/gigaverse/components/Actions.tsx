@@ -109,7 +109,7 @@ function AttackAction({
                   (i) => parseInt(i.docId) === item.id
                 );
                 return (
-                  <div className="text-center flex flex-col">
+                  <div className="text-center flex flex-col" key={i}>
                     <img
                       src={itemData?.IMG_URL_CID}
                       className="size-12 mb-2"

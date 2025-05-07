@@ -5,8 +5,6 @@ import {
   formatXml,
   formatValue,
   XMLElement,
-  service,
-  AnyAgent,
   xml,
 } from "@daydreamsai/core";
 import { string, z } from "zod";
@@ -15,21 +13,16 @@ import {
   GameClient,
   GetAccountResponse,
   GetStaticResponse,
-  OffchainItems,
 } from "./client/GameClient";
 import { useTemplateStore } from "@/store/templateStore";
 import {
   BaseResponse,
-  GetAllEnemiesResponse,
   GetAllGameItemsResponse,
   GetAllSkillsResponse,
   GetBalancesResponse,
   GetConsumablesResponse,
   GetFactionResponse,
-  GetNoobsResponse,
   GetSkillsProgressResponse,
-  GetUserMeResponse,
-  GetUsernamesResponse,
   GetGigaJuiceResponse,
   GetTodayResponse,
   GetEnergyResponse,
@@ -40,12 +33,10 @@ import {
   defaultInstructions,
   defaultRules,
   dungeonSection,
-  playerSection,
   template,
 } from "./prompts";
 import { ActionPayload } from "./client/types/requests";
 import { Cache } from "@/agent/utils/cache";
-import docs from "./docs/main.md?raw";
 
 // Get the token directly from the store for better reactivity
 export const getGigaToken = () => useSettingsStore.getState().gigaverseToken;
@@ -389,7 +380,7 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
         "loot_three",
       ]),
     },
-    async handler({ action }, { memory, options, call }, _agent) {
+    async handler({ action }, { memory, options }, _agent) {
       try {
         const actionToken = options.actionToken ?? "";
         const currentTime = Date.now();

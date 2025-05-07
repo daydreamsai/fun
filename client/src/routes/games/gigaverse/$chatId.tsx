@@ -1,10 +1,8 @@
 import {
   createFileRoute,
   ErrorComponent,
-  ErrorComponentProps,
   Link,
   redirect,
-  useNavigate,
   useRouter,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -34,13 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  ErrorBoundary,
-  ErrorBoundaryProps,
-  FallbackProps,
-} from "react-error-boundary";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -60,7 +52,7 @@ export const Route = createFileRoute("/games/gigaverse/$chatId")({
       sidebar: <GigaverSidebarWrapper chatId={params.chatId} />,
     };
   },
-  loader({ params, context }) {
+  loader({ params }) {
     // Check if user has required API keys
     const hasOpenRouterKey = hasApiKey("openrouterKey");
     const hasGigaverseToken = hasApiKey("gigaverseToken");
@@ -93,7 +85,7 @@ function GigaverSidebarWrapper({ chatId }: { chatId: string }) {
     >
       <SidebarContent className="bg-sidebar">
         <ErrorBoundary
-          fallbackRender={({ error, resetErrorBoundary }) => (
+          fallbackRender={({ error, resetErrorBoundary }: any) => (
             <GigaverseSidebarErrorComponent
               chatId={chatId}
               error={error}

@@ -1,4 +1,4 @@
-import { AlertCircle, ScrollText, Plus, Trash, GitFork } from "lucide-react";
+import { AlertCircle, ScrollText, Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -21,7 +21,6 @@ import { randomUUIDv7 } from "@daydreamsai/core";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,

@@ -5,7 +5,7 @@ import "./index.css";
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { useSettingsStore } from "./store/settingsStore";
 
 // Initialize settings store before creating the agent

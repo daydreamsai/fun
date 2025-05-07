@@ -1,13 +1,11 @@
 import { ContextState } from "@daydreamsai/core";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, RefreshCcw } from "lucide-react";
-import { MAX_ENERGY, MAX_JUICE } from "../client/GameClient";
+
 import { GameData, GigaverseContext, GigaverseDungeonState } from "../context";
 import { Player } from "../client/types/game";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+
 import {
-  GetGigaJuiceResponse,
   GetTodayResponse,
   SkillsProgressEntity,
 } from "../client/types/responses";
@@ -24,88 +22,88 @@ function perc(current: number, max: number) {
   return current && max ? (current / max) * 100 : 0;
 }
 
-const chests = {
-  entities: [
-    {
-      docId: "Recipe#700000",
-      ID_CID: "700000",
-      NAME_CID: "Noob Chest",
-      FACTION_CID_array: [],
-      GEAR_TYPE_CID: 0,
-      DURABILITY_CID: 0,
-      TIER_CID: 0,
-      UINT256_CID: 0,
-      INPUT_NAMES_CID_array: [],
-      INPUT_ID_CID_array: [],
-      INPUT_AMOUNT_CID_array: [],
-      LOOT_ID_CID_array: [2, 21],
-      LOOT_AMOUNT_CID_array: [30, 1],
-      LOOT_FULFILLER_ID_CID_array: [
-        "75502504502920090138965878018173592913898371762662353957054979645271527284958",
-        "75502504502920090138965878018173592913898371762662353957054979645271527284958",
-      ],
-      TIME_BETWEEN_CID: 0,
-      TAG_CID_array: ["node"],
-      SUCCESS_RATE_CID: 100,
-      COOLDOWN_CID: 604800,
-      MAX_COMPLETIONS_CID: 0,
-      ENERGY_CID: 0,
-    },
-    {
-      docId: "Recipe#700001",
-      ID_CID: "700001",
-      NAME_CID: "Blue Pot 1",
-      FACTION_CID_array: [],
-      GEAR_TYPE_CID: 5,
-      DURABILITY_CID: 2,
-      TIER_CID: 1,
-      UINT256_CID: 4,
-      INPUT_NAMES_CID_array: [],
-      INPUT_ID_CID_array: [],
-      INPUT_AMOUNT_CID_array: [],
-      LOOT_ID_CID_array: [60],
-      LOOT_AMOUNT_CID_array: [1],
-      LOOT_FULFILLER_ID_CID_array: [
-        "53627656127806277773141899801706887938266705126509836268160347079208875429400",
-      ],
-      TIME_BETWEEN_CID: 0,
-      TAG_CID_array: ["node"],
-      SUCCESS_RATE_CID: 100,
-      COOLDOWN_CID: 259200,
-      MAX_COMPLETIONS_CID: 0,
-      ENERGY_CID: 5,
-    },
-    {
-      docId: "Recipe#700002",
-      ID_CID: "700002",
-      NAME_CID: "Tan Pot 1",
-      FACTION_CID_array: [],
-      GEAR_TYPE_CID: 5,
-      DURABILITY_CID: 2,
-      TIER_CID: 2,
-      UINT256_CID: 2,
-      INPUT_NAMES_CID_array: [],
-      INPUT_ID_CID_array: [],
-      INPUT_AMOUNT_CID_array: [],
-      LOOT_ID_CID_array: [61],
-      LOOT_AMOUNT_CID_array: [1],
-      LOOT_FULFILLER_ID_CID_array: [
-        "53627656127806277773141899801706887938266705126509836268160347079208875429400",
-      ],
-      TIME_BETWEEN_CID: 0,
-      TAG_CID_array: ["node"],
-      SUCCESS_RATE_CID: 100,
-      COOLDOWN_CID: 86400,
-      MAX_COMPLETIONS_CID: 0,
-      ENERGY_CID: 5,
-    },
-  ],
-};
+// const chests = {
+//   entities: [
+//     {
+//       docId: "Recipe#700000",
+//       ID_CID: "700000",
+//       NAME_CID: "Noob Chest",
+//       FACTION_CID_array: [],
+//       GEAR_TYPE_CID: 0,
+//       DURABILITY_CID: 0,
+//       TIER_CID: 0,
+//       UINT256_CID: 0,
+//       INPUT_NAMES_CID_array: [],
+//       INPUT_ID_CID_array: [],
+//       INPUT_AMOUNT_CID_array: [],
+//       LOOT_ID_CID_array: [2, 21],
+//       LOOT_AMOUNT_CID_array: [30, 1],
+//       LOOT_FULFILLER_ID_CID_array: [
+//         "75502504502920090138965878018173592913898371762662353957054979645271527284958",
+//         "75502504502920090138965878018173592913898371762662353957054979645271527284958",
+//       ],
+//       TIME_BETWEEN_CID: 0,
+//       TAG_CID_array: ["node"],
+//       SUCCESS_RATE_CID: 100,
+//       COOLDOWN_CID: 604800,
+//       MAX_COMPLETIONS_CID: 0,
+//       ENERGY_CID: 0,
+//     },
+//     {
+//       docId: "Recipe#700001",
+//       ID_CID: "700001",
+//       NAME_CID: "Blue Pot 1",
+//       FACTION_CID_array: [],
+//       GEAR_TYPE_CID: 5,
+//       DURABILITY_CID: 2,
+//       TIER_CID: 1,
+//       UINT256_CID: 4,
+//       INPUT_NAMES_CID_array: [],
+//       INPUT_ID_CID_array: [],
+//       INPUT_AMOUNT_CID_array: [],
+//       LOOT_ID_CID_array: [60],
+//       LOOT_AMOUNT_CID_array: [1],
+//       LOOT_FULFILLER_ID_CID_array: [
+//         "53627656127806277773141899801706887938266705126509836268160347079208875429400",
+//       ],
+//       TIME_BETWEEN_CID: 0,
+//       TAG_CID_array: ["node"],
+//       SUCCESS_RATE_CID: 100,
+//       COOLDOWN_CID: 259200,
+//       MAX_COMPLETIONS_CID: 0,
+//       ENERGY_CID: 5,
+//     },
+//     {
+//       docId: "Recipe#700002",
+//       ID_CID: "700002",
+//       NAME_CID: "Tan Pot 1",
+//       FACTION_CID_array: [],
+//       GEAR_TYPE_CID: 5,
+//       DURABILITY_CID: 2,
+//       TIER_CID: 2,
+//       UINT256_CID: 2,
+//       INPUT_NAMES_CID_array: [],
+//       INPUT_ID_CID_array: [],
+//       INPUT_AMOUNT_CID_array: [],
+//       LOOT_ID_CID_array: [61],
+//       LOOT_AMOUNT_CID_array: [1],
+//       LOOT_FULFILLER_ID_CID_array: [
+//         "53627656127806277773141899801706887938266705126509836268160347079208875429400",
+//       ],
+//       TIME_BETWEEN_CID: 0,
+//       TAG_CID_array: ["node"],
+//       SUCCESS_RATE_CID: 100,
+//       COOLDOWN_CID: 86400,
+//       MAX_COMPLETIONS_CID: 0,
+//       ENERGY_CID: 5,
+//     },
+//   ],
+// };
 
-export function OverviewTab({ state, refresh }: OverviewTabProps) {
+export function OverviewTab({ state }: OverviewTabProps) {
   if (!state) return null;
 
-  const { dungeon, juice } = state.memory;
+  const { dungeon } = state.memory;
   const { game } = state.options;
   const { player } = game;
 
@@ -195,39 +193,39 @@ export function OverviewTab({ state, refresh }: OverviewTabProps) {
   );
 }
 
-function ChestAndPots() {
-  return (
-    <div>
-      <div className="bg-secondary mb-2 flex justify-center relative items-center">
-        <h4 className="text-secondary-foreground uppercase text-center">
-          Chests & Pots
-        </h4>
-        {/* <Button variant="ghost" size="icon" className="">
-            <ChevronDown />
-          </Button> */}
-      </div>
-      <div className="flex flex-col gap-2">
-        {chests.entities.map((chest) => (
-          <div key={chest.docId} className="flex gap-2 text-sm items-center">
-            <div>
-              <div>{chest.NAME_CID}</div>
-              <div className="flex gap-2 text-xs text-muted-foreground">
-                <div>Tier: {chest.TIER_CID}</div>
-                <div>Energy: {chest.ENERGY_CID}</div>
-              </div>
-            </div>
-            {/* <div>{chest.COOLDOWN_CID}</div> */}
-            <div className="ml-auto">
-              <Button className="" size="sm" variant="outline" disabled>
-                Collect
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+// function ChestAndPots() {
+//   return (
+//     <div>
+//       <div className="bg-secondary mb-2 flex justify-center relative items-center">
+//         <h4 className="text-secondary-foreground uppercase text-center">
+//           Chests & Pots
+//         </h4>
+//         {/* <Button variant="ghost" size="icon" className="">
+//             <ChevronDown />
+//           </Button> */}
+//       </div>
+//       <div className="flex flex-col gap-2">
+//         {chests.entities.map((chest) => (
+//           <div key={chest.docId} className="flex gap-2 text-sm items-center">
+//             <div>
+//               <div>{chest.NAME_CID}</div>
+//               <div className="flex gap-2 text-xs text-muted-foreground">
+//                 <div>Tier: {chest.TIER_CID}</div>
+//                 <div>Energy: {chest.ENERGY_CID}</div>
+//               </div>
+//             </div>
+//             {/* <div>{chest.COOLDOWN_CID}</div> */}
+//             <div className="ml-auto">
+//               <Button className="" size="sm" variant="outline" disabled>
+//                 Collect
+//               </Button>
+//             </div>
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// }
 
 const skillByDungeon: Record<number, number> = {
   1: 1,
@@ -344,51 +342,51 @@ function Dungeons({
   );
 }
 
-function JuiceStats({ juice }: { juice: GetGigaJuiceResponse }) {
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-1">
-        <span className="text-sm font-medium uppercase">Juice</span>
-        <span className="text-sm text-center">
-          {0} / {MAX_JUICE}
-        </span>
-      </div>
-      <div className="w-full bg-gray-200 h-2.5 dark:bg-gray-700">
-        <div
-          className="bg-green-500 h-2.5 animate-pulse"
-          style={{
-            width: `${Math.min(100, perc(0, 480))}%`,
-          }}
-        ></div>
-      </div>
-      <div className="grid grid-cols-2 gap-2 mt-4">
-        {juice.listings
-          ?.slice()
-          .sort((a, b) => (a.TIME_BETWEEN_CID > b.TIME_BETWEEN_CID ? 1 : -1))
-          .map((listing) => (
-            <div
-              key={listing.docId}
-              className="border aspect-square text-center p-4 flex flex-col"
-            >
-              <div>{listing.NAME_CID}</div>
-              <div className="mt-2">
-                {listing.TIME_BETWEEN_CID / (24 * 60 * 60)} days
-              </div>
-              <div className="mt-auto flex flex-col">
-                <Badge
-                  variant="secondary"
-                  className="rounded-none text-center justify-center"
-                >
-                  {listing.ETH_MINT_PRICE_CID / 1e18} ETH
-                </Badge>
-                <Button>Get Juiced</Button>
-              </div>
-            </div>
-          ))}
-      </div>
-    </div>
-  );
-}
+// function JuiceStats({ juice }: { juice: GetGigaJuiceResponse }) {
+//   return (
+//     <div>
+//       <div className="flex justify-between items-center mb-1">
+//         <span className="text-sm font-medium uppercase">Juice</span>
+//         <span className="text-sm text-center">
+//           {0} / {MAX_JUICE}
+//         </span>
+//       </div>
+//       <div className="w-full bg-gray-200 h-2.5 dark:bg-gray-700">
+//         <div
+//           className="bg-green-500 h-2.5 animate-pulse"
+//           style={{
+//             width: `${Math.min(100, perc(0, 480))}%`,
+//           }}
+//         ></div>
+//       </div>
+//       <div className="grid grid-cols-2 gap-2 mt-4">
+//         {juice.listings
+//           ?.slice()
+//           .sort((a, b) => (a.TIME_BETWEEN_CID > b.TIME_BETWEEN_CID ? 1 : -1))
+//           .map((listing) => (
+//             <div
+//               key={listing.docId}
+//               className="border aspect-square text-center p-4 flex flex-col"
+//             >
+//               <div>{listing.NAME_CID}</div>
+//               <div className="mt-2">
+//                 {listing.TIME_BETWEEN_CID / (24 * 60 * 60)} days
+//               </div>
+//               <div className="mt-auto flex flex-col">
+//                 <Badge
+//                   variant="secondary"
+//                   className="rounded-none text-center justify-center"
+//                 >
+//                   {listing.ETH_MINT_PRICE_CID / 1e18} ETH
+//                 </Badge>
+//                 <Button>Get Juiced</Button>
+//               </div>
+//             </div>
+//           ))}
+//       </div>
+//     </div>
+//   );
+// }
 
 function DungeoState({
   state,
