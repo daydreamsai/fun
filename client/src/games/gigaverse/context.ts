@@ -50,7 +50,7 @@ export const getApiBaseUrl = () => {
     return "/gigaverse-api";
   }
 
-  return "https://fun-production-bc1b.up.railway.app/gigaverse";
+  return "https://proxy-production-0fee.up.railway.app/api";
 };
 
 // Define an interface for the state (template removed)

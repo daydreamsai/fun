@@ -22,24 +22,6 @@ const proxyPort = 8000; // The port the Express proxy server will listen on
 
 app.use(cors());
 
-app.use((req, res, next) => {
-  // Set CORS headers
-  res.header("Access-Control-Allow-Origin", "*"); // Allow all origins for now
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  res.header("Access-Control-Allow-Credentials", "true");
-
-  // Handle preflight OPTIONS requests immediately
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-
-  next();
-});
-
 // Create a proxy server instance
 const proxy = httpProxy.createProxyServer({});
 
@@ -95,7 +77,7 @@ proxyConfigs.forEach((config) => {
     // Proxy the request to the target
     proxy.web(req, res, {
       target: config.target,
-      secure: false,
+      secure: true,
       withCredentials: true,
     });
   });
