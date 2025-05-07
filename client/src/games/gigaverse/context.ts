@@ -46,11 +46,11 @@ export const getAbstractAddress = () =>
 // Add a helper function to get the API base URL
 export const getApiBaseUrl = () => {
   // In development, use the Vite proxy
-  if (import.meta.env.DEV) {
-    return "/gigaverse-api";
-  }
+  // if (import.meta.env.DEV) {
+  //   return "/gigaverse-api";
+  // }
 
-  return "https://fun-production-bc1b.up.railway.app/gigaverse";
+  return "http://localhost:8000/gigaverse";
 };
 
 // Define an interface for the state (template removed)
