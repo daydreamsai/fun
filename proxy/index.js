@@ -12,7 +12,7 @@ const app = express();
 const proxyConfigs = [
   {
     pathPrefix: "/gigaverse",
-    target: "https://gigaverse.io/api/", // The origin where your API server is running
+    target: "https://gigaverse.io/api", // The origin where your API server is running
   },
 ];
 
