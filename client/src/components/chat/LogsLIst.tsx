@@ -8,6 +8,7 @@ import {
 import { Button } from "../ui/button";
 import { ReactNode } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { ErrorBoundary } from "react-error-boundary";
 
 export function LogContainer({
   className,
@@ -142,7 +143,7 @@ export function LogsList({
   };
 
   return (
-    <div className="flex flex-col gap-4 max-w-[80%] min-w-[40%]">
+    <div className="flex flex-col gap-4 md:max-w-3xl min-w-[40%]">
       {filteredMessages.map((log) => {
         const Component = allComponents[log.ref] as React.FC<{
           log: AnyRef;
@@ -150,7 +151,19 @@ export function LogsList({
         }>;
 
         return Component ? (
-          <Component key={log.id} log={log} getLog={getLog} />
+          <ErrorBoundary
+            fallbackRender={() => {
+              console.log({ log });
+              return (
+                <LogContainer>
+                  <div>Error</div>
+                  <div>{JSON.stringify(log)}</div>
+                </LogContainer>
+              );
+            }}
+          >
+            <Component key={log.id} log={log} getLog={getLog} />
+          </ErrorBoundary>
         ) : null;
       })}
     </div>

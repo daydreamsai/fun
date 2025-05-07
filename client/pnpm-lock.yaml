@@ -116,6 +116,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.119.0
         version: 1.119.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/zod-adapter':
+        specifier: ^1.120.2
+        version: 1.120.2(@tanstack/react-router@1.119.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.3)
       '@tavily/core':
         specifier: ^0.3.7
         version: 0.3.7
@@ -126,8 +129,11 @@ importers:
         specifier: ^4.23.12
         version: 4.23.12(@codemirror/language@6.11.0)(@codemirror/state@6.5.2)(@codemirror/view@6.36.7)
       '@uiw/react-codemirror':
-        specifier: ^4.23.12
+        specifier: ^4.23.11
         version: 4.23.12(@babel/runtime@7.27.1)(@codemirror/autocomplete@6.18.6)(@codemirror/language@6.11.0)(@codemirror/lint@6.8.5)(@codemirror/search@6.5.10)(@codemirror/state@6.5.2)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.36.7)(codemirror@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@uiw/react-json-view':
+        specifier: ^2.0.0-alpha.32
+        version: 2.0.0-alpha.32(@babel/runtime@7.27.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       bs58:
         specifier: ^6.0.0
         version: 6.0.0
@@ -155,6 +161,9 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      react-error-boundary:
+        specifier: ^6.0.0
+        version: 6.0.0(react@18.3.1)
       sonner:
         specifier: ^2.0.3
         version: 2.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2923,6 +2932,13 @@ packages:
     resolution: {integrity: sha512-XLUh1Py3AftcERrxkxC5Y5m5mfllRH3YR6YVlyjFgI2Tc2Ssy2NKmQFQIafoxfW459UJ8Dn81nWKETEIJifE4g==}
     engines: {node: '>=12'}
 
+  '@tanstack/zod-adapter@1.120.2':
+    resolution: {integrity: sha512-tjKcTi765vVCtZgi1qXl8rOxzDykFUoHixC/7punztyNMxC5j4C0n+MHMee0DAHUHWWB3i4Z1TKBOHgdB+exAw==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      '@tanstack/react-router': '>=1.43.2'
+      zod: ^3.23.8
+
   '@tavily/core@0.3.7':
     resolution: {integrity: sha512-WnEeWfXGajam+uyWMf7qtEAKnitYWy9Bb6OFPtCEeT1GyXMqvpUd+4itssGnDt6RLFHv23erlt6MyPXKMD8CPA==}
 
@@ -3286,6 +3302,13 @@ packages:
       codemirror: '>=6.0.0'
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
+
+  '@uiw/react-json-view@2.0.0-alpha.32':
+    resolution: {integrity: sha512-pGWaJLsc9vO0vOLHmffpKz5L5bOJLX+lfeLC32hXJfd6FSDjLD8LwSUyRLyFeYHezA8iFafvF2Vwm5+jADRrCw==}
+    peerDependencies:
+      '@babel/runtime': '>=7.10.0'
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
 
   '@vitejs/plugin-react@4.4.1':
     resolution: {integrity: sha512-IpEm5ZmeXAP/osiBXVVP5KjFMzbWOonMs0NaQQl+xYnUAcq4oHUBsF2+p4MgKWG4YMmFYJU8A6sxRPuowllm6w==}
@@ -5805,6 +5828,11 @@ packages:
     resolution: {integrity: sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==}
     peerDependencies:
       react: ^18.3.1
+
+  react-error-boundary@6.0.0:
+    resolution: {integrity: sha512-gdlJjD7NWr0IfkPlaREN2d9uUZUlksrfOx7SX62VRerwXbMY6ftGCIZua1VG1aXFNOimhISsTq+Owp725b9SiA==}
+    peerDependencies:
+      react: '>=16.13.1'
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -10904,6 +10932,11 @@ snapshots:
 
   '@tanstack/virtual-file-routes@1.115.0': {}
 
+  '@tanstack/zod-adapter@1.120.2(@tanstack/react-router@1.119.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.3)':
+    dependencies:
+      '@tanstack/react-router': 1.119.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      zod: 3.24.3
+
   '@tavily/core@0.3.7':
     dependencies:
       axios: 1.9.0
@@ -11478,6 +11511,12 @@ snapshots:
       - '@codemirror/language'
       - '@codemirror/lint'
       - '@codemirror/search'
+
+  '@uiw/react-json-view@2.0.0-alpha.32(@babel/runtime@7.27.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.27.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   '@vitejs/plugin-react@4.4.1(vite@6.3.4(@types/node@22.15.3)(jiti@1.21.7)(terser@5.39.0)(tsx@4.19.4)(yaml@2.7.1))':
     dependencies:
@@ -15213,6 +15252,11 @@ snapshots:
       loose-envify: 1.4.0
       react: 18.3.1
       scheduler: 0.23.2
+
+  react-error-boundary@6.0.0(react@18.3.1):
+    dependencies:
+      '@babel/runtime': 7.27.1
+      react: 18.3.1
 
   react-is@16.13.1: {}
 

@@ -20,19 +20,9 @@ export const TOKEN_GATE_CONFIG = {
  * @param walletAddress The public key of the wallet to check
  * @returns Promise resolving to a boolean indicating if the wallet meets the token requirement
  */
-export async function checkTokenBalance(
-  walletAddress: string
-): Promise<boolean> {
+export async function getTokenBalance(walletAddress: string): Promise<number> {
   try {
-    if (!walletAddress) return false;
-
-    // Validate token mint address is set
-    if (TOKEN_GATE_CONFIG.TOKEN_MINT_ADDRESS === "YOUR_TOKEN_MINT_ADDRESS") {
-      console.error(
-        "Token mint address not configured. Please set TOKEN_MINT_ADDRESS in tokenGate.ts"
-      );
-      return false;
-    }
+    if (!walletAddress) return 0;
 
     const connection = new Connection(TOKEN_GATE_CONFIG.RPC_ENDPOINT);
     const walletPublicKey = new PublicKey(walletAddress);
@@ -54,7 +44,7 @@ export async function checkTokenBalance(
 
     if (!tokenAccount) {
       console.log("No token account found for this wallet");
-      return false;
+      return 0;
     }
 
     // Get the token balance
@@ -65,10 +55,10 @@ export async function checkTokenBalance(
     console.log(`Token balance: ${tokenBalance}`);
 
     // Check if the balance meets the requirement
-    return tokenBalance >= TOKEN_GATE_CONFIG.REQUIRED_BALANCE;
+    return tokenBalance;
   } catch (error) {
     console.error("Error checking token balance:", error);
-    return false;
+    return 0;
   }
 }
 
@@ -79,32 +69,26 @@ export async function checkTokenBalance(
  */
 export async function checkAccess(
   walletAddress: string | null
-): Promise<{ hasAccess: boolean; message: string }> {
+): Promise<{ hasAccess: boolean; message: string; tokenBalance?: number }> {
   if (!walletAddress) {
     return {
       hasAccess: false,
-      message: "Please connect your wallet to access this site.",
+      message: "Please connect your wallet.",
     };
   }
 
-  // Validate token mint address is set
-  if (TOKEN_GATE_CONFIG.TOKEN_MINT_ADDRESS === "YOUR_TOKEN_MINT_ADDRESS") {
-    return {
-      hasAccess: false,
-      message: "Token configuration error. Please contact the administrator.",
-    };
-  }
+  const tokenBalance = await getTokenBalance(walletAddress);
 
-  const hasRequiredBalance = await checkTokenBalance(walletAddress);
-
-  if (!hasRequiredBalance) {
+  if (tokenBalance < TOKEN_GATE_CONFIG.REQUIRED_BALANCE) {
     return {
+      tokenBalance,
       hasAccess: false,
-      message: `You need at least ${TOKEN_GATE_CONFIG.REQUIRED_BALANCE} tokens to access this site.`,
+      message: `You need at least ${TOKEN_GATE_CONFIG.REQUIRED_BALANCE} tokens.`,
     };
   }
 
   return {
+    tokenBalance,
     hasAccess: true,
     message: "Access granted.",
   };

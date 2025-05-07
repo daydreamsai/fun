@@ -5,17 +5,38 @@ import {
   formatXml,
   formatValue,
   XMLElement,
+  xml,
 } from "@daydreamsai/core";
-
 import { string, z } from "zod";
-
 import { useSettingsStore } from "@/store/settingsStore";
-import { GameClient } from "./client/GameClient";
-// Import the template store
+import {
+  GameClient,
+  GetAccountResponse,
+  GetStaticResponse,
+} from "./client/GameClient";
 import { useTemplateStore } from "@/store/templateStore";
-import { BaseResponse } from "./client/types/responses";
+import {
+  BaseResponse,
+  GetAllGameItemsResponse,
+  GetAllSkillsResponse,
+  GetBalancesResponse,
+  GetConsumablesResponse,
+  GetFactionResponse,
+  GetSkillsProgressResponse,
+  GetGigaJuiceResponse,
+  GetTodayResponse,
+  GetEnergyResponse,
+} from "./client/types/responses";
 import { jsonPath } from "@/lib/jsonPath";
 import { Player } from "./client/types/game";
+import {
+  defaultInstructions,
+  defaultRules,
+  dungeonSection,
+  template,
+} from "./prompts";
+import { ActionPayload } from "./client/types/requests";
+import { Cache } from "@/agent/utils/cache";
 
 // Get the token directly from the store for better reactivity
 export const getGigaToken = () => useSettingsStore.getState().gigaverseToken;
@@ -39,6 +60,8 @@ export interface GigaverseDungeonState {
   currentEnemy: number;
 
   player: Player;
+  items: number[];
+
   enemy: Player;
 
   lootPhase: boolean;
@@ -47,161 +70,39 @@ export interface GigaverseDungeonState {
   lastBattleResult: string | null;
 }
 
-export type GigaverseState =
-  | { energy: number; currentDungeon: null }
-  | ({ energy: number } & GigaverseDungeonState);
+export type ItemBalance = {
+  item: {
+    id: number;
+    name: string;
+    description: string;
+    type: string;
+  };
+  balance: number;
+};
 
-export const gigaverseVariables: string[] = [
-  "energy",
+export type GigaverseState = {
+  energy: GetEnergyResponse;
+  juice: GetGigaJuiceResponse;
+  consumables: ItemBalance[];
+  balances: ItemBalance[];
+  dungeon: GigaverseDungeonState | undefined;
+};
 
-  "currentDungeon",
-  "currentRoom",
-  "currentEnemy",
-
-  "player.lastMove",
-  "player.health.current",
-  "player.health.currentMax",
-  "player.shield.current",
-  "player.shield.currentMax",
-
-  "player.rock.currentATK",
-  "player.rock.currentDEF",
-  "player.rock.currentCharges",
-
-  "player.paper.currentATK",
-  "player.paper.currentDEF",
-  "player.paper.currentCharges",
-
-  "player.scissor.currentATK",
-  "player.scissor.currentDEF",
-  "player.scissor.currentCharges",
-
-  "enemy.lastMove",
-  "enemy.health.current",
-  "enemy.health.currentMax",
-  "enemy.shield.current",
-  "enemy.shield.currentMax",
-
-  "enemy.rock.currentATK",
-  "enemy.rock.currentDEF",
-  "enemy.rock.currentCharges",
-
-  "enemy.paper.currentATK",
-  "enemy.paper.currentDEF",
-  "enemy.paper.currentCharges",
-
-  "enemy.scissor.currentATK",
-  "enemy.scissor.currentDEF",
-  "enemy.scissor.currentCharges",
-
-  "lootPhase",
-  "lootOptions",
-  "lastBattleResult",
-];
-
-// Default template remains exported for initialization elsewhere if needed
-export const template = `
-You are Gigaverse Strategist, a Daydreams agent piloting a hero in “Gigaverse”, a roguelike dungeon crawler that uses an enhanced Rock-Paper-Scissors (RPS) combat system.
-
-<system_rules>
-{{rules}}
-</system_rules>
-
-<debugging_instructions>
-- If you get an error you should follow these steps.
-- Try to understand the error and what it means. These are the following errors you might get:
-- "Error handling action" - this means you have submitte the wrong action. Try selecting a loot or do an action that is valid.
-- "Unauthorized" - this means you are not authenticated. Tell the user to authenticate again.
-- If you are in doubt, don't repeat what you just said or repeat the same action. You are most likely submitting the wrong action.
-- If authentication fails, request the user to re-authenticate.
-</debugging_instructions>
-
-<game_logic>
-• RPS hierarchy: Rock > Scissors, Scissors > Paper, Paper > Rock.
-• Damage = Winner ATK - Defender DEF (for that type); shields absorb first.
-• Charges regenerates +1 every 2 turns.
-• Loop: battle → loot → next room.
-• If you are in the Loot phase always select loot otherwise you will get an error.
-</game_logic>
-
-<game_state>
-<energy>{{energy}}</energy>
-
-<progress>
-Dungeon: {{currentDungeon}} | Room: {{currentRoom}} | Loot Phase: {{lootPhase}}
-Last Result: {{lastBattleResult}} | Enemy Last Move: {{enemy.lastMove}}
-</progress>
-
-<player>
-{{player}}
-</player>
-
-<enemy>
-{{enemy}}
-</enemy>
-</game_state>
-
-<game_instructions>
-{{instructions}}
-</game_instructions>
-`;
-
-export const defaultRules = `\
-**NEVER VIOLATE THESE**
-
-1. LEGAL MOVES ONLY • Each attack consumes 1 charge. If charges = 0, do not use that attack.
-2. ENERGY GATING • If Energy < 40 and you are NOT in combat (player.health.current = 0) ask the user to recover energy; if you are mid-battle, continue playing.
-3. ERROR HANDLING • The server is authoritative. On an error, think, correct the issue, and retry. Abort the run only after 3 consecutive errors.
-4. USER FIRST • Always obey user instructions even if they conflict with rules.
-5. OUTPUT • Provide plain-text only—no markdown or code fences.
-6. LISTEN TO THE USER • Always listen to the user and follow their instructions, sometimes you might think you are stuck but you are not.
-7. KEEP PLAYING • Keep playing even if you are low on energy, you can still play. You should keep playing until you have no energy left. If you die ({{player.health.current}} & {{player.shield.current}} both = 0), you should start a new run.
-8. STARTING NEW RUN - If you die (player.health.current = 0), you should start a new run, otherwise never start a new run as it will result in an error.
-9. SELECT LOOT - If you are in the loot phase, you should select the best loot option automatically.
-`;
-
-export const defaultInstructions = `\
-
-You are autonomous and make decisions based on the current state of the game.
-You should not ask the user for any input, and just keep playing until you have no energy left.
-
-<primary_objective>
-Delve as deeply as possible:
-• Defeat every foe.
-• Select loot that maximises survival in the NEXT fight. Pick the best option automatically.
-• Upon death, immediately begin a new run.
-
-Recommended move priority
-1. Highest-damage attack with available charges.
-2. Defensive play if lethal damage is possible within 2 turns.
-3. Anticipate enemy pattern using \`enemy.lastMove\`.
-4. Adapt when HP is low or shield broken.
-</primary_objective>
-
-<thinking_instructions>
-Create a <battle_planning> block include:
-1. List every legal move and predict its outcome.
-2. Weigh pros & cons.
-3. Choose the optimal move and outline a two-turn plan.
-</thinking_instructions>
-
-<output_format>
-Respond with EXACTLY three labelled lines—nothing more, nothing less:
-
-Decision: <chosen move, e.g. “Attack-Rock” or “Take Loot #2”>
-Explanation: <1-3 concise sentences of reasoning>
-Next Steps: <brief plan for the next turns or loot phase>
-
-<example>  
-Decision: Attack-Scissors  
-Explanation: Scissors deals highest damage and counters enemy's last Paper, breaking their shield.  
-Next Steps: If enemy survives, finish with Rock; else enter loot phase and prioritise +Rock Charges.
-</example>  
-</output_format>`;
+export type GameData = {
+  items: GetAllGameItemsResponse;
+  skills: GetAllSkillsResponse;
+  offchain: GetStaticResponse;
+  player: {
+    account: GetAccountResponse;
+    faction: GetFactionResponse;
+    skills: GetSkillsProgressResponse;
+  };
+  today: GetTodayResponse;
+};
 
 export type GigaverseContext = typeof gigaverseContext;
 
-function getGigavereStateFromResponse(
+function parseDungeonState(
   response: BaseResponse
 ): GigaverseDungeonState | undefined {
   if (!response.data?.run || !response.data?.entity) return undefined;
@@ -225,6 +126,9 @@ function getGigavereStateFromResponse(
     currentEnemy: response.data.entity.ENEMY_CID,
 
     player,
+
+    items: response.data.entity.GAME_ITEM_ID_CID_array,
+
     enemy,
 
     lastBattleResult,
@@ -234,21 +138,49 @@ function getGigavereStateFromResponse(
   };
 }
 
+function parseItems(
+  consumables: GetConsumablesResponse | GetBalancesResponse,
+  data: GameData
+): ItemBalance[] {
+  return consumables.entities.map((entity) => {
+    const { docId, NAME_CID } = data.items.entities.find(
+      (item) => item.docId === entity.ID_CID
+    )!;
+    const { DESCRIPTION_CID, TYPE_CID } = data.offchain.gameItems.find(
+      (item) => item.docId === entity.ID_CID
+    )!;
+
+    return {
+      item: {
+        id: parseInt(docId),
+        name: NAME_CID,
+        description: DESCRIPTION_CID,
+        type: TYPE_CID,
+      },
+      balance: entity.BALANCE_CID,
+    };
+  });
+}
+
 async function fetchGigaverseState(
-  client: GameClient
+  client: GameClient,
+  data: GameData,
+  address: string
 ): Promise<GigaverseState> {
-  const energy = await client.getEnergy(getAbstractAddress());
-
-  const state = getGigavereStateFromResponse(await client.fetchDungeonState());
-
-  if (!state) return { energy, currentDungeon: null };
+  const energy = await client.getEnergy(address);
+  const juice = await client.getJuice(address);
+  const consumables = parseItems(await client.getConsumables(address), data);
+  const balances = parseItems(await client.getUserBalances(address), data);
+  const dungeon = parseDungeonState(await client.fetchDungeonState());
 
   return {
     energy,
-    ...state,
+    juice,
+    dungeon,
+    consumables,
+    balances,
   };
 }
-
 // Context for the agent
 export const gigaverseContext = context({
   type: "gigaverse",
@@ -259,43 +191,170 @@ export const gigaverseContext = context({
   maxSteps: 100,
   maxWorkingMemorySize: 20,
 
-  setup(_, __, agent) {
-    const actionToken = getGigaToken();
-    const client = new GameClient(getApiBaseUrl(), actionToken, agent.logger);
-    return { actionToken, client };
+  async setup(_, __, agent) {
+    const authToken = getGigaToken();
+    const address = getAbstractAddress();
+    const client = new GameClient(getApiBaseUrl(), authToken, agent.logger);
+
+    const cache = agent.container.resolve<Cache>("cache");
+
+    const { items, skills, offchain } = await cache.get(
+      "gigaverse.data:v2",
+      async () => {
+        const items = await client.getAllGameItems();
+        const skills = await client.getAllSkills();
+        const offchain = await client.getStatic();
+
+        return {
+          items,
+          skills,
+          offchain,
+        };
+      }
+    );
+
+    const today = await client.getToday();
+
+    const account = await client.getAccount(address);
+    // const usernames = await client.getUsernames(address);
+    const faction = await client.getFaction(address);
+    const playerSkills: GetSkillsProgressResponse =
+      await client.getHeroSkillsProgress(account.noob.docId);
+
+    const game: GameData = {
+      items,
+      skills,
+      offchain,
+      player: {
+        account,
+        faction,
+        skills: playerSkills,
+      },
+      today,
+    };
+
+    return {
+      address,
+      client,
+      game,
+      actionToken: "",
+    };
   },
 
   async create({ options }): Promise<GigaverseState> {
-    const memory = await fetchGigaverseState(options.client);
+    const memory = await fetchGigaverseState(
+      options.client,
+      options.game,
+      options.address
+    );
     return memory;
   },
 
   async loader(state, _agent) {
-    state.memory = await fetchGigaverseState(state.options.client);
+    state.memory = await fetchGigaverseState(
+      state.options.client,
+      state.options.game,
+      state.options.address
+    );
   },
 
-  render({ memory }) {
+  render({ memory, options: { game } }) {
     const { selected, templates } = useTemplateStore.getState();
 
     // Get the current template from the Zustand store
-    const rules = selected.gigaverse?.rules
+    const rulesTemplate = selected.gigaverse?.rules
       ? templates.gigaverse.find((t) => t.id === selected.gigaverse?.rules)
           ?.prompt
       : defaultRules;
 
-    const instructions = selected.gigaverse?.instructions
+    const instructionsTemplate = selected.gigaverse?.instructions
       ? templates.gigaverse.find(
           (t) => t.id === selected.gigaverse?.instructions
         )?.prompt
       : defaultInstructions;
+
+    const sectionsVariables = {
+      energy: memory.energy,
+      ...memory.dungeon,
+    };
+
+    const rules = rulesTemplate ? render(rulesTemplate, sectionsVariables) : "";
+    const instructions = instructionsTemplate
+      ? render(instructionsTemplate, sectionsVariables)
+      : "";
+
+    const gameData = xml("game_data", undefined, [
+      {
+        tag: "skills",
+        children: game.skills.entities.map((skill) => ({
+          id: parseInt(skill.docId),
+          name: skill.NAME_CID,
+          stats: skill.stats.map((stat) => ({
+            id: stat.id,
+            key: stat.increaseKey,
+            name: stat.name,
+            description: stat.desc,
+            upgradeAmount: stat.increaseValue,
+          })),
+        })),
+      },
+      {
+        tag: "enemies",
+        children: game.offchain.enemies.map((enemy) => ({
+          name: enemy.NAME_CID,
+          room: parseInt(enemy.ID_CID),
+          stats: enemy.MOVE_STATS_CID_array,
+        })),
+      },
+    ]);
+
+    const hero = xml("hero", undefined, [
+      {
+        id: parseInt(game.player.account.noob.docId),
+        skills: game.player.skills.entities.map((skillTree) => ({
+          id: skillTree.SKILL_CID,
+          level: skillTree.LEVEL_CID,
+          statsUpgrades: skillTree.LEVEL_CID_array,
+        })),
+      },
+    ]);
+
+    console.log({ memory });
+
+    const inventory = xml(
+      "inventory",
+      undefined,
+      [
+        ...memory.balances,
+        // ...memory.consumables
+      ].filter((t) => t.balance > 0 && t.item.type !== "Consumable")
+    );
+
+    const consumables = xml(
+      "consumables",
+      undefined,
+      [
+        ...memory.balances,
+        // ...memory.consumables
+      ].filter((t) => t.balance > 0 && t.item.type === "Consumable")
+    );
+
     // Use the template from the store
     const prompt = render(template, {
       ...memory,
-      rules,
-      instructions,
-    });
+      rules: render(rules ?? "", sectionsVariables),
+      instructions: render(instructions ?? "", sectionsVariables),
 
-    // console.log(prompt);
+      state: [
+        formatXml(gameData),
+        formatXml(hero),
+        formatXml(inventory),
+        formatXml(consumables),
+        memory.dungeon ? render(dungeonSection, sectionsVariables) : null,
+      ]
+        .filter((t) => !!t)
+        .join("\n"),
+    });
 
     return prompt;
   },
@@ -306,42 +365,29 @@ export const gigaverseContext = context({
   action({
     name: "gigaverse.attackInDungeon",
     description:
-      "Attack in the dungeon. Use this when you are in the dungeon and you want to attack an enemy.",
-    schema: z
-      .object({
-        action: z
-          .enum([
-            "rock",
-            "paper",
-            "scissor",
-            "loot_one",
-            "loot_two",
-            "loot_three",
-          ])
-          .describe("The attack move to make"),
-        dungeonId: z
-          .number()
-          .default(0)
-          .describe("The ID of the dungeon. It is always 0."),
-      })
-      .describe(
-        "You use this to make an action in a dungeon. If the lootPhase == true then you can select the Loot option, which will then take you to the next phase. If the lootPhase == false then you can select the Rock, Paper, Scissors option."
-      ),
-
-    async handler(args, { memory, options }, _agent) {
-      const { client } = options;
-
-      if (!memory.currentDungeon) throw new Error("");
-
+      "Attack in the dungeon. Use this when you are in the dungeon and you want to attack an enemy or you want to collect loot.",
+    instructions: `\
+Use this to make an action in a dungeon. 
+If the lootPhase == true then you can select the Loot option, which will then take you to the next phase. 
+If the lootPhase == false then you can select the Rock, Paper, Scissors option.`,
+    schema: {
+      action: z.enum([
+        "rock",
+        "paper",
+        "scissor",
+        "loot_one",
+        "loot_two",
+        "loot_three",
+      ]),
+    },
+    async handler({ action }, { memory, options }, _agent) {
       try {
-        const { action, dungeonId } = args;
-
         const actionToken = options.actionToken ?? "";
         const currentTime = Date.now();
         const threeMinutesInMs = 3 * 60 * 1000;
 
-        const payload = {
-          action: action,
+        const payload: ActionPayload = {
+          action,
           actionToken:
             currentTime - parseInt(actionToken) > threeMinutesInMs
               ? ""
@@ -351,10 +397,10 @@ export const gigaverseContext = context({
             itemId: 0,
             index: 0,
           },
-          dungeonId: dungeonId,
+          dungeonId: 0,
         };
 
-        const response = await client.playMove(payload);
+        const response = await options.client.playMove(payload);
 
         if (!response.success) {
           throw new Error(
@@ -362,26 +408,35 @@ export const gigaverseContext = context({
           );
         }
 
-        const state = getGigavereStateFromResponse(response)!;
-
-        Object.assign(memory, state);
-
+        const oldState = memory.dungeon!;
+        const state = parseDungeonState(response)!;
+        memory.dungeon = state;
         options.actionToken = response.actionToken?.toString() ?? "";
+
+        if (action.startsWith("loot")) {
+          return {
+            success: true,
+            message: response.message,
+            result: response.data,
+            previousLootOptions: oldState.lootOptions,
+          };
+        }
 
         return {
           success: true,
           result: response.data,
+          gameItemBalanceChanges: response.gameItemBalanceChanges,
           message: `\
-Successfully performed ${action} attack in dungeon ${dungeonId}
+Successfully performed ${action} attack
 
-Enemy Move: ${memory.enemy.lastMove}
-Battle Result: ${memory.lastBattleResult}
+Enemy Move: ${state.enemy.lastMove}
+Battle Result: ${state.lastBattleResult}
 
-Player Health: ${memory.player.health.current}
-Player Shield: ${memory.player.shield.current}
+Player Health: ${state.player.health.current}
+Player Shield: ${state.player.shield.current}
 
-Enemy Health: ${memory.enemy.health.current}
-Enemy Shield: ${memory.enemy.shield.current}
+Enemy Health: ${state.enemy.health.current}
+Enemy Shield: ${state.enemy.shield.current}
 `,
         };
       } catch (error: unknown) {
@@ -406,22 +461,49 @@ Enemy Shield: ${memory.enemy.shield.current}
     name: "gigaverse.startNewRun",
     description:
       "Start a new dungeon run. Use this when the player dies or wants to start a new run from outside the dungeon.",
-    schema: z.object({
+    instructions: `\
+# Dungeons
+
+## Gigatron 5000
+ - DungeonId: 1
+ - Costs: 40 Energy
+ - Skill tree: Dungetron 5000
+## Gigus Mode
+  - DungeonId: 2
+  - Costs: 200 Energy
+  - Skill tree: Dungetron 5000
+## Underhaul
+  - DungeonId: 3
+  - Costs: 40 Energy
+  - Skill tree: Dungetron Underhaul
+  - Requirements: 
+    - 150 Giga Shards (itemId: 3)
+
+# Consumables
+Consumables selected will be brought into battle.
+You can only select items from <consumables>.
+You can select one consumable, to use more you need special gear.
+Important: 
+All items brought into battle that are unsed will be lost upon death.
+Dont use any other type of item, only use consumables. If you are not sure dont use it.
+    `,
+    schema: {
       dungeonId: z
         .number()
         .default(1)
-        .describe("The ID of the dungeon to start. It should always be 1"),
-    }),
+        .describe("The ID of the dungeon to start."),
+      consumables: z.number().array().describe("The IDs of the consumables"),
+    },
     async handler(data, ctx) {
       try {
-        const { dungeonId } = data;
+        const { dungeonId, consumables } = data;
 
         const payload = {
           action: "start_run",
           actionToken: ctx.options.actionToken,
-          dungeonId: 1, // hardcode for now
+          dungeonId,
           data: {
-            consumables: [],
+            consumables,
             itemId: 0,
             index: 0,
           },
@@ -435,12 +517,9 @@ Enemy Shield: ${memory.enemy.shield.current}
           );
         }
 
-        const state = getGigavereStateFromResponse(response);
+        const state = parseDungeonState(response);
 
-        if (state) {
-          Object.assign(ctx.memory, state);
-        }
-
+        ctx.memory.dungeon = state;
         ctx.options.actionToken = response.actionToken?.toString() ?? "";
 
         return {
@@ -464,13 +543,75 @@ Enemy Shield: ${memory.enemy.shield.current}
     },
   }),
   action({
-    enabled: () => false,
-    name: "gigaverse.levelup",
-    schema: {},
-    async handler() {
-      // https://gigaverse.io/api/game/skill/levelup
+    name: "gigaverse.useItem",
+    description: "use item in the dungeon",
+    instructions:
+      "You can only use consumables you started the dungeon with. Id's are available in the <dungeon_player_items>",
+    schema: {
+      index: z.number().describe("the index from `<dungeon_player_items>`"),
+      itemId: z.number(),
+    },
+    async handler({ index, itemId }, { options }) {
+      const response = await options.client.useItem({
+        dungeonId: 0,
+        data: { index, itemId },
+      });
+
+      return {
+        success: true,
+        result: response.data,
+        message: response.message,
+      };
     },
   }),
+  // action({
+  //   enabled: () => false,
+  //   name: "gigaverse.",
+  // }),
+  action({
+    name: "gigaverse.levelup",
+    schema: {
+      skillId: z.number(),
+      statId: z.number(),
+    },
+    async handler({ skillId, statId }, { options: { client, game } }) {
+      const noobId = parseInt(game.player.account.noob.docId);
+
+      const response = await client.levelUp({
+        noobId,
+        skillId,
+        statId,
+      });
+
+      if (!response.success) {
+        return {
+          success: false,
+          result: response.data,
+          message: response.message,
+        };
+      }
+
+      const skills = await client.getHeroSkillsProgress(noobId);
+      game.player.skills = skills;
+
+      return {
+        success: true,
+        result: skills,
+        message: response.message,
+      };
+    },
+  }),
+  // action({
+  //   enabled: () => false,
+  //   name: "gigaverse.marketplace.listings",
+  //   schema: {
+  //     itemId: z.number(),
+  //   },
+  //   async handler() {
+  //     // https://gigaverse.io/api/marketplace/eth/player/0xBfe67820C7aA9bC167fb2ED2EdDE0dABdF1d3c20
+  //     // https://gigaverse.io/api/marketplace/item/listing/item/151
+  //   },
+  // }),
 ]);
 
 // Create the Gigaverse agent with UI integration
@@ -486,7 +627,6 @@ export function render<Template extends string>(str: Template, data: any) {
     .trim()
     .replace(/\{\{([a-zA-Z0-9_.]+)\}\}/g, (_match, key: string) => {
       const res = jsonPath(data, key);
-
       if (!res) return "";
       const [value] = res;
       if (typeof value === "object") {

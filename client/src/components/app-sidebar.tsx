@@ -21,7 +21,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAgentStore } from "@/store/agentStore";
@@ -202,19 +202,19 @@ function ChatHistoryList() {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const navigate = useNavigate();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="py-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => navigate({ to: "/" })}
-              className="group-[[data-state=expanded]]:bg-inherit"
+              className="bg-secondary group-[[data-state=expanded]]:bg-inherit"
+              asChild
             >
-              <Brain className="data group-[[data-state=expanded]]:hidden" />
-
-              <img src="/Daydreams.svg" className="w-18" />
+              <Link to="/" className="size-8">
+                <Brain className="data group-[[data-state=expanded]]:hidden"></Brain>
+                <img src="/Daydreams-white.svg" className="h-6 text-white" />
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

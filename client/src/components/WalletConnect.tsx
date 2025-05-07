@@ -38,43 +38,43 @@ export const WalletConnect: FC = () => {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
+  const needsAuth = connected && publicKey && !user;
+
   // Handle wallet connection with mandatory signature verification
   useEffect(() => {
     const handleWalletAuth = async () => {
-      if (connected && publicKey && !user) {
-        setIsAuthenticating(true);
-        setAuthError(null);
+      setIsAuthenticating(true);
+      setAuthError(null);
 
-        try {
-          // Require signature-based authentication
-          const authData = await authenticateWithWallet(wallet);
+      try {
+        // Require signature-based authentication
+        const authData = await authenticateWithWallet(wallet);
 
-          if (authData) {
-            // Login with signature
-            await login(authData.address, authData.signature, authData.message);
-            toast.success("Wallet verified successfully");
-          } else {
-            // Show error if signature fails
-            const errorMsg = "Signature verification failed. Please try again.";
-            setAuthError(errorMsg);
-            toast.error(errorMsg);
-          }
-        } catch (error) {
-          const errorMsg =
-            error instanceof Error
-              ? error.message
-              : "Failed to authenticate with wallet";
-          console.error("Authentication error:", error);
+        if (authData) {
+          // Login with signature
+          await login(authData.address, authData.signature, authData.message);
+          toast.success("Wallet verified successfully");
+        } else {
+          // Show error if signature fails
+          const errorMsg = "Signature verification failed. Please try again.";
           setAuthError(errorMsg);
           toast.error(errorMsg);
-        } finally {
-          setIsAuthenticating(false);
         }
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error
+            ? error.message
+            : "Failed to authenticate with wallet";
+        console.error("Authentication error:", error);
+        setAuthError(errorMsg);
+        toast.error(errorMsg);
+      } finally {
+        setIsAuthenticating(false);
       }
     };
 
-    handleWalletAuth();
-  }, [connected, publicKey, wallet, login, user]);
+    if (!isAuthenticating && needsAuth && !authError) handleWalletAuth();
+  }, [connected, login, needsAuth, authError]);
 
   if (!connected || !publicKey) {
     return (
@@ -108,8 +108,6 @@ export const WalletConnect: FC = () => {
           size="sm"
           onClick={() => {
             setAuthError(null);
-            // Force re-authentication
-            disconnect();
           }}
         >
           Retry
