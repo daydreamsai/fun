@@ -1,5 +1,6 @@
 const express = require("express");
 const httpProxy = require("http-proxy");
+const cors = require("cors");
 const app = express();
 
 // --- Configuration ---
@@ -18,6 +19,8 @@ const proxyConfigs = [
 const proxyPort = 8000; // The port the Express proxy server will listen on
 
 // --- Proxy Implementation ---
+
+app.use(cors());
 
 // Create a proxy server instance
 const proxy = httpProxy.createProxyServer({});
