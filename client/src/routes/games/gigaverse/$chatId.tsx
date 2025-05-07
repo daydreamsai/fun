@@ -249,7 +249,7 @@ function RouteComponent() {
         ref={messagesContainerRef}
         style={{
           scrollBehavior: "smooth",
-          scrollPaddingBottom: "250px", // Adjust as needed based on MessageInput height
+          scrollPaddingBottom: "250px",
         }}
       >
         <LogsList
