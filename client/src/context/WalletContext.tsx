@@ -19,7 +19,6 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import { AbstractWalletProvider } from "@abstract-foundation/agw-react";
 import { abstract } from "viem/chains"; // Use abstract for mainnet
 
-
 interface WalletContextProviderProps {
   children: ReactNode;
 }
@@ -47,7 +46,9 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <AbstractWalletProvider chain={abstract}>{children}</AbstractWalletProvider>
+          <AbstractWalletProvider chain={abstract}>
+            {children}
+          </AbstractWalletProvider>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

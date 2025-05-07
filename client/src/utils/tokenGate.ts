@@ -73,7 +73,7 @@ export async function checkAccess(
   if (!walletAddress) {
     return {
       hasAccess: false,
-      message: "Please connect your wallet to access this site.",
+      message: "Please connect your wallet.",
     };
   }
 
@@ -83,7 +83,7 @@ export async function checkAccess(
     return {
       tokenBalance,
       hasAccess: false,
-      message: `You need at least ${TOKEN_GATE_CONFIG.REQUIRED_BALANCE} tokens to access this site.`,
+      message: `You need at least ${TOKEN_GATE_CONFIG.REQUIRED_BALANCE} tokens.`,
     };
   }
 
