@@ -46,6 +46,8 @@ const root = ReactDOM.createRoot(rootElement, {
   },
 });
 
+console.log(process.env.VITE_FUN_API_URL);
+
 try {
   root.render(
     <StrictMode>

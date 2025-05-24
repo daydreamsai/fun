@@ -1027,6 +1027,15 @@ app.post<
   }
 });
 
+app.get("/api", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.get("*", (req, res) => {
+  console.log(req.path);
+  res.status(200).send("OK");
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

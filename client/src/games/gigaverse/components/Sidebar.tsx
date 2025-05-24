@@ -104,11 +104,6 @@ export function GigaverseSidebar({
   //   );
   // }
 
-  console.log(
-    gigaverseState.data && gigaverseContext.render
-      ? gigaverseContext.render(gigaverseState.data)
-      : ""
-  );
   return (
     <div>
       <div className="flex">

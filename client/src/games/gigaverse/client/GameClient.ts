@@ -130,19 +130,6 @@ export class GameClient {
     };
 
     const response = await this.httpClient.post<BaseResponse>(endpoint, body);
-    if (response.actionToken) {
-      this.setActionToken(response.actionToken);
-      this.logger.info(
-        "gigaverse-http-client",
-        `Updated action token: ${response.actionToken}`
-      );
-    }
-    if (response.gameItemBalanceChanges?.length) {
-      this.logger.info(
-        "gigaverse-http-client",
-        `gameItemBalanceChanges: ${JSON.stringify(response.gameItemBalanceChanges)}`
-      );
-    }
     return response;
   }
 
@@ -158,29 +145,15 @@ export class GameClient {
     );
     const endpoint = "/game/dungeon/action";
 
-    const finalToken = payload.actionToken ?? this.currentActionToken ?? "";
-
     const body = {
       action: "use_item",
-      actionToken: finalToken,
+      actionToken: payload.actionToken,
       dungeonId: payload.dungeonId,
       data: payload.data,
     };
 
     const response = await this.httpClient.post<BaseResponse>(endpoint, body);
-    if (response.actionToken) {
-      this.setActionToken(response.actionToken);
-      this.logger.info(
-        "gigaverse-http-client",
-        `Updated action token: ${response.actionToken}`
-      );
-    }
-    if (response.gameItemBalanceChanges?.length) {
-      this.logger.info(
-        "gigaverse-http-client",
-        `gameItemBalanceChanges: ${JSON.stringify(response.gameItemBalanceChanges)}`
-      );
-    }
+
     return response;
   }
 

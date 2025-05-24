@@ -46,11 +46,11 @@ export const getAbstractAddress = () =>
 // Add a helper function to get the API base URL
 export const getApiBaseUrl = () => {
   // In development, use the Vite proxy
-  if (import.meta.env.DEV) {
-    return "/gigaverse-api";
-  }
+  return "/gigaverse-api";
+  // if (import.meta.env.DEV) {
+  // }
 
-  return "https://proxy-production-0fee.up.railway.app/api";
+  // return "https://proxy-production-0fee.up.railway.app/api";
 };
 
 // Define an interface for the state (template removed)
@@ -169,16 +169,16 @@ async function fetchGigaverseState(
 ): Promise<GigaverseState> {
   const energy = await client.getEnergy(address);
   const juice = await client.getJuice(address);
-  const consumables = parseItems(await client.getConsumables(address), data);
-  const balances = parseItems(await client.getUserBalances(address), data);
+  // const consumables = parseItems(await client.getConsumables(address), data);
+  // const balances = parseItems(await client.getUserBalances(address), data);
   const dungeon = parseDungeonState(await client.fetchDungeonState());
 
   return {
     energy,
     juice,
     dungeon,
-    consumables,
-    balances,
+    consumables: [],
+    balances: [],
   };
 }
 // Context for the agent
@@ -237,7 +237,7 @@ export const gigaverseContext = context({
       address,
       client,
       game,
-      actionToken: "",
+      actionToken: "" as string | number,
     };
   },
 
@@ -319,25 +319,23 @@ export const gigaverseContext = context({
       },
     ]);
 
-    console.log({ memory });
+    // const inventory = xml(
+    //   "inventory",
+    //   undefined,
+    //   [
+    //     ...memory.balances,
+    //     // ...memory.consumables
+    //   ].filter((t) => t.balance > 0 && t.item.type !== "Consumable")
+    // );
 
-    const inventory = xml(
-      "inventory",
-      undefined,
-      [
-        ...memory.balances,
-        // ...memory.consumables
-      ].filter((t) => t.balance > 0 && t.item.type !== "Consumable")
-    );
-
-    const consumables = xml(
-      "consumables",
-      undefined,
-      [
-        ...memory.balances,
-        // ...memory.consumables
-      ].filter((t) => t.balance > 0 && t.item.type === "Consumable")
-    );
+    // const consumables = xml(
+    //   "consumables",
+    //   undefined,
+    //   [
+    //     ...memory.balances,
+    //     // ...memory.consumables
+    //   ].filter((t) => t.balance > 0 && t.item.type === "Consumable")
+    // );
 
     // Use the template from the store
     const prompt = render(template, {
@@ -348,8 +346,8 @@ export const gigaverseContext = context({
       state: [
         formatXml(gameData),
         formatXml(hero),
-        formatXml(inventory),
-        formatXml(consumables),
+        // formatXml(inventory),
+        // formatXml(consumables),
         memory.dungeon ? render(dungeonSection, sectionsVariables) : null,
       ]
         .filter((t) => !!t)
@@ -383,15 +381,29 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
     async handler({ action }, { memory, options }, _agent) {
       try {
         const actionToken = options.actionToken ?? "";
+
+        const enemyHealth = memory.dungeon?.enemy.health?.current ?? 0;
+
+        if (action.startsWith("loot_") && enemyHealth > 0) {
+          return {
+            success: false,
+            error: "Enemy is still alive you are not in the loot phase yet.",
+          };
+        }
+
+        if (memory.dungeon?.lootPhase && !action.startsWith("loot_")) {
+          return {
+            success: false,
+            error: "You are in loot phase you must pick a loot action",
+          };
+        }
+
         const currentTime = Date.now();
         const threeMinutesInMs = 3 * 60 * 1000;
 
         const payload: ActionPayload = {
           action,
-          actionToken:
-            currentTime - parseInt(actionToken) > threeMinutesInMs
-              ? ""
-              : actionToken,
+          actionToken,
           data: {
             consumables: [],
             itemId: 0,
@@ -401,6 +413,10 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
         };
 
         const response = await options.client.playMove(payload);
+
+        if (response.actionToken) {
+          options.actionToken = response.actionToken;
+        }
 
         if (!response.success) {
           throw new Error(
@@ -444,8 +460,6 @@ Enemy Shield: ${state.enemy.shield.current}
           error instanceof Error ? error.message : String(error);
         console.error("Error performing attack action:", error);
 
-        options.actionToken = "";
-
         return {
           success: false,
           error: errorMessage,
@@ -479,37 +493,51 @@ Enemy Shield: ${state.enemy.shield.current}
   - Requirements: 
     - 150 Giga Shards (itemId: 3)
 
-# Consumables
-Consumables selected will be brought into battle.
-You can only select items from <consumables>.
-You can select one consumable, to use more you need special gear.
-Important: 
-All items brought into battle that are unsed will be lost upon death.
-Dont use any other type of item, only use consumables. If you are not sure dont use it.
     `,
+    // # Consumables
+    // Consumables selected will be brought into battle.
+    // You can only select items from <consumables>.
+    // You can select one consumable, to use more you need special gear.
+    // Important:
+    // All items brought into battle that are unsed will be lost upon death.
+    // Dont use any other type of item, only use consumables. If you are not sure dont use it.
     schema: {
       dungeonId: z
         .number()
         .default(1)
         .describe("The ID of the dungeon to start."),
-      consumables: z.number().array().describe("The IDs of the consumables"),
+      // consumables: z.number().array().describe("The IDs of the consumables"),
     },
     async handler(data, ctx) {
+      // if (
+      //   action.startsWith("loot_") &&
+      //   ctx.memory.energy.entities[0].parsedData.energy > 0
+      // ) {
+      //   return {
+      //     success: false,
+      //     error: "Enemy is still alive you are not in the loot phase yet.",
+      //   };
+      // }
+
       try {
-        const { dungeonId, consumables } = data;
+        const { dungeonId } = data;
 
         const payload = {
           action: "start_run",
           actionToken: ctx.options.actionToken,
           dungeonId,
           data: {
-            consumables,
+            consumables: [],
             itemId: 0,
             index: 0,
           },
         };
 
         const response = await ctx.options.client.startRun(payload);
+
+        if (response.actionToken) {
+          ctx.options.actionToken = response.actionToken;
+        }
 
         if (!response.success) {
           throw new Error(
@@ -537,12 +565,14 @@ Dont use any other type of item, only use consumables. If you are not sure dont 
         return {
           success: false,
           error: errorMessage,
-          message: "Failed to start a new dungeon run",
+          message:
+            "Failed to start a new dungeon run, check your energy levels and dungeon energy requirements",
         };
       }
     },
   }),
   action({
+    enabled: () => false,
     name: "gigaverse.useItem",
     description: "use item in the dungeon",
     instructions:
@@ -557,6 +587,10 @@ Dont use any other type of item, only use consumables. If you are not sure dont 
         data: { index, itemId },
       });
 
+      if (response.actionToken) {
+        options.actionToken = response.actionToken;
+      }
+
       return {
         success: true,
         result: response.data,
@@ -569,6 +603,7 @@ Dont use any other type of item, only use consumables. If you are not sure dont 
   //   name: "gigaverse.",
   // }),
   action({
+    enabled: () => false,
     name: "gigaverse.levelup",
     schema: {
       skillId: z.number(),

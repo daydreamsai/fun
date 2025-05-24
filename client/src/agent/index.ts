@@ -121,8 +121,6 @@ export const browserStorage = (): MemoryStore => {
       try {
         // 1. Delete from IndexedDB
         await idbDelete(key);
-
-        console.log("Deleted from IndexedDB", key);
         // 2. Delete from in-memory cache
         await memoryStore.delete(key);
       } catch (error) {

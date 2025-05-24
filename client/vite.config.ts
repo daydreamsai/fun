@@ -22,6 +22,7 @@ export default defineConfig({
     },
   },
   server: {
+    port: 7575,
     proxy: {
       "/gigaverse-api": {
         target: "https://gigaverse.io",

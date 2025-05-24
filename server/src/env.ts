@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { z } from "zod";
 
 const envSchema = z.object({
-  PORT: z.coerce.number().default(3001),
+  PORT: z.coerce.number().default(3000),
   STRIPE_SECRET_KEY: z.string(),
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
@@ -12,8 +12,5 @@ const envSchema = z.object({
   JWT_SECRET: z.string().default("your-secret-key"),
 });
 
-// Load environment variables
-dotenv.config();
-
 // Validate environment variables
-export const env = envSchema.parse(process.env);
+export const env = envSchema.parse(Bun.env);
