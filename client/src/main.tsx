@@ -36,6 +36,7 @@ declare module "@tanstack/react-router" {
   }
 }
 
+console.log(import.meta.env);
 // Render the app
 const rootElement = document.getElementById("root")!;
 
@@ -45,8 +46,6 @@ const root = ReactDOM.createRoot(rootElement, {
     console.log(error, errorInfo);
   },
 });
-
-console.log(process.env.VITE_FUN_API_URL);
 
 try {
   root.render(

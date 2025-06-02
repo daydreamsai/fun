@@ -148,6 +148,10 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
     verifyAccess();
   }, [connected, publicKey, user]);
 
+  if (import.meta.env.DEV === true) {
+    return children;
+  }
+
   // Show loading state during any wallet interaction
   if (isChecking || connecting || isAuthenticating) {
     return (

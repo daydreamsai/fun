@@ -191,10 +191,24 @@ export const gigaverseContext = context({
   maxSteps: 100,
   maxWorkingMemorySize: 20,
 
-  async setup(_, __, agent) {
-    const authToken = getGigaToken();
-    const address = getAbstractAddress();
-    const client = new GameClient(getApiBaseUrl(), authToken, agent.logger);
+  async setup(_, settings, agent) {
+    const {
+      gigaverseToken,
+      abstractAddress: address,
+      maxSteps,
+      maxWorkingMemorySize,
+    } = useSettingsStore.getState();
+
+    console.log({ maxSteps, maxWorkingMemorySize });
+
+    settings.maxSteps = maxSteps;
+    settings.maxWorkingMemorySize = maxWorkingMemorySize;
+
+    const client = new GameClient(
+      getApiBaseUrl(),
+      gigaverseToken,
+      agent.logger
+    );
 
     const cache = agent.container.resolve<Cache>("cache");
 
@@ -251,6 +265,11 @@ export const gigaverseContext = context({
   },
 
   async loader(state, _agent) {
+    const { maxSteps, maxWorkingMemorySize } = useSettingsStore.getState();
+
+    state.settings.maxSteps ??= maxSteps;
+    state.settings.maxWorkingMemorySize ??= maxWorkingMemorySize;
+
     state.memory = await fetchGigaverseState(
       state.options.client,
       state.options.game,
@@ -395,6 +414,22 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
           return {
             success: false,
             error: "You are in loot phase you must pick a loot action",
+          };
+        }
+
+        function isAction(
+          actionName: typeof action
+        ): actionName is "rock" | "paper" | "scissor" {
+          return actionName.startsWith("loot_");
+        }
+
+        if (
+          isAction(action) &&
+          memory.dungeon?.player[action].currentCharges === -1
+        ) {
+          return {
+            success: false,
+            error: "You dont have charges for this move",
           };
         }
 

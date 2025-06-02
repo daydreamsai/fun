@@ -21,6 +21,8 @@ export interface UserSettings {
   showThoughtMessages: boolean;
   showSystemMessages: boolean;
   showHelpWindow: boolean;
+  maxSteps?: number;
+  maxWorkingMemorySize?: number;
 }
 
 interface SettingsState extends UserSettings {
@@ -47,6 +49,8 @@ const DEFAULT_SETTINGS: UserSettings = {
   showThoughtMessages: true,
   showSystemMessages: true,
   showHelpWindow: true,
+  maxSteps: 100,
+  maxWorkingMemorySize: 20,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -128,7 +132,7 @@ export function clearUserSettings(): void {
 /**
  * Get the value of a specific setting
  */
-export function getApiKey(key: keyof UserSettings): string | boolean {
+export function getApiKey(key: keyof UserSettings) {
   const settings = getUserSettings();
   return settings ? settings[key] : "";
 }
