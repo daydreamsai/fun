@@ -1,9 +1,10 @@
 #!/bin/bash
 
 API_URL=""
+RELEASE="dev"
 
 echo ${API_URL}
 
-docker build --platform linux/amd64 --build-arg API_URL="${API_URL}" -t dreams-play-client:latest .
-docker tag dreams-play-client:latest europe-southwest1-docker.pkg.dev/daydreams-cloud/dreams-fun/play-client:latest
-docker push europe-southwest1-docker.pkg.dev/daydreams-cloud/dreams-fun/play-client:latest
+docker build --platform linux/amd64 --build-arg API_URL="${API_URL}" -t dreams-play-client:${RELEASE} .
+docker tag dreams-play-client:${RELEASE} europe-southwest1-docker.pkg.dev/daydreams-cloud/dreams-fun/play-client:${RELEASE}
+docker push europe-southwest1-docker.pkg.dev/daydreams-cloud/dreams-fun/play-client:${RELEASE}

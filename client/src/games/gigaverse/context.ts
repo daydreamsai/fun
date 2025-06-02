@@ -420,7 +420,7 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
         function isAction(
           actionName: typeof action
         ): actionName is "rock" | "paper" | "scissor" {
-          return actionName.startsWith("loot_");
+          return !actionName.startsWith("loot_");
         }
 
         if (

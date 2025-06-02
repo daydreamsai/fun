@@ -161,7 +161,7 @@ function RouteComponent() {
               <CardHeader>
                 <CardTitle>API Settings</CardTitle>
                 <CardDescription>
-                  Manage your API keys and preferences
+                  Manage your API keys and preferences.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
