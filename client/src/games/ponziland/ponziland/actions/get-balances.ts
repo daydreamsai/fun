@@ -1,9 +1,10 @@
-import { action, type Agent } from "@daydreamsai/core";
-import { StarknetChain } from "@daydreamsai/defai";
+import { action } from "@daydreamsai/core";
+
+import type { Agent } from "@daydreamsai/core";
 import { z } from "zod";
 import { get_balances_str } from "../utils/querys";
 
-export const get_balances = (chain: StarknetChain) =>
+export const get_balances = () =>
   action({
     name: "get-balances",
     description:

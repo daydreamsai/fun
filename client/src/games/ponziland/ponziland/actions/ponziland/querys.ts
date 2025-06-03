@@ -1,21 +1,21 @@
 import { action } from "@daydreamsai/core";
-import { StarknetChain } from "@daydreamsai/defai";
-import { type ActionCall, type Agent } from "@daydreamsai/core";
+
+import type { Agent } from "@daydreamsai/core";
 import { z } from "zod";
+
 import { CONTEXT } from "../../contexts/ponziland-context";
 import {
   get_auctions_str,
-  get_balances_str,
   get_claims_str,
   get_lands_str,
   get_neighbors_str,
-  get_nukeable_lands_str,
-  get_auction_yield_str,
   get_all_lands_str,
+  get_auction_yield_str,
+  get_prices_str,
 } from "../../utils/querys";
-import { env } from "../../../env";
+import { useSettingsStore } from "@/store/settingsStore";
 
-export const get_auctions = (chain: StarknetChain) =>
+export const get_auctions = () =>
   action({
     name: "get-auctions",
     description: "Get all of the active auctions",
@@ -30,14 +30,27 @@ export const get_auctions = (chain: StarknetChain) =>
     },
   });
 
-export const get_owned_lands = (chain: StarknetChain) =>
+export const get_prices = () =>
+  action({
+    name: "get-prices",
+    description: "Get the current prices of all tokens in ponziland",
+    schema: z.object({}),
+    async handler(data: {}, ctx: any, agent: Agent) {
+      let prices = await get_prices_str();
+
+      return prices;
+    },
+  });
+
+export const get_owned_lands = () =>
   action({
     name: "get-owned-lands",
     description:
       "Get all of your lands in ponziland. Remember this expects no arguments. The content for this action should always be {}",
     schema: z.object({}),
     async handler(data: {}, ctx: any, agent: Agent) {
-      let address = env.STARKNET_ADDRESS!;
+      const { cartridgeAccount } = useSettingsStore.getState();
+      let address = cartridgeAccount?.address!;
       //todo
       let lands = await get_lands_str(address);
 
@@ -51,7 +64,7 @@ export const get_owned_lands = (chain: StarknetChain) =>
     },
   });
 
-export const get_claims = (chain: StarknetChain) =>
+export const get_claims = () =>
   action({
     name: "get-claims",
     description:
@@ -65,7 +78,7 @@ export const get_claims = (chain: StarknetChain) =>
     },
   });
 
-export const get_neighbors = (chain: StarknetChain) =>
+export const get_neighbors = () =>
   action({
     name: "get-neighbors",
     description:
@@ -87,7 +100,7 @@ export const get_neighbors = (chain: StarknetChain) =>
     },
   });
 
-export const get_all_lands = (chain: StarknetChain) =>
+export const get_all_lands = () =>
   action({
     name: "get-all-lands",
     description: "Get all of the lands in ponziland",
@@ -101,7 +114,7 @@ export const get_all_lands = (chain: StarknetChain) =>
     },
   });
 
-export const get_context = (chain: StarknetChain) =>
+export const get_context = () =>
   action({
     name: "get-context",
     description:
@@ -114,7 +127,7 @@ export const get_context = (chain: StarknetChain) =>
     },
   });
 
-export const get_auction_yield = (chain: StarknetChain) =>
+export const get_auction_yield = () =>
   action({
     name: "get-auction-yield",
     description:
@@ -127,7 +140,7 @@ export const get_auction_yield = (chain: StarknetChain) =>
     },
   });
 
-export const get_player_lands = (chain: StarknetChain) =>
+export const get_player_lands = () =>
   action({
     name: "get-player-lands",
     description:
@@ -139,3 +152,17 @@ export const get_player_lands = (chain: StarknetChain) =>
       return res;
     },
   });
+
+// export const get_prices_str = async () => {
+//   let tokens = await getAllTokensFromAPI();
+
+//   let prices = tokens
+//     .map((token) => {
+//       return `
+//       ${token.symbol}: ${token.ratio} estark
+//       `;
+//     })
+//     .join("\n");
+
+//   return prices;
+// };

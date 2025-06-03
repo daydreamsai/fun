@@ -37,6 +37,7 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { PonziLandSidebar } from "@/games/ponziland/components/Sidebar";
+import { ponzilandContext } from "@/games/ponziland/ponziland/ponziland";
 
 const searchParams = z.object({
   sidebar: z
@@ -156,13 +157,13 @@ function RouteComponent() {
 
   const { logs } = useLogs({
     agent: agent,
-    context: gigaverseContext,
+    context: ponzilandContext,
     args: { id: chatId },
   });
 
   const { send, abortControllerRef } = useSend({
     agent: agent,
-    context: gigaverseContext,
+    context: ponzilandContext,
     args: { id: chatId },
   });
 
@@ -185,7 +186,7 @@ function RouteComponent() {
 
   const ctxState = useContextState({
     agent,
-    context: gigaverseContext,
+    context: ponzilandContext,
     args: { id: chatId },
   });
 

@@ -1,14 +1,14 @@
-import { action, type ActionSchema } from "@daydreamsai/core";
-import { StarknetChain } from "@daydreamsai/defai";
+import { action } from "@daydreamsai/core";
+
 import type { Agent } from "@daydreamsai/core";
 import { z } from "zod";
-import { get_balances_str } from "../utils/querys";
+
 import { executeSwap as executeAvnuSwap, fetchQuotes } from "@avnu/avnu-sdk";
 
-import { env } from "../../env";
 import { getAllTokensFromAPI } from "../utils/ponziland_api";
+import { useSettingsStore } from "@/store/settingsStore";
 
-export const swap = (chain: StarknetChain) =>
+export const swap = () =>
   action({
     name: "swap",
     description:
@@ -27,6 +27,7 @@ export const swap = (chain: StarknetChain) =>
       ctx: any,
       agent: Agent
     ) {
+      const { cartridgeAccount } = useSettingsStore.getState();
       let tokens = await getAllTokensFromAPI();
 
       if (data.selling_address == data.buying_address) {
@@ -67,9 +68,10 @@ export const swap = (chain: StarknetChain) =>
 
         console.log("Fetching quotes with params:", quoteParams);
 
+        let baseUrl = "https://api.avnu.fi";
         // Fetch quotes from AVNU
         const quotes = await fetch(
-          `https://sepolia.api.avnu.fi/swap/v2/quotes?sellTokenAddress=${quoteParams.sellTokenAddress}&buyTokenAddress=${quoteParams.buyTokenAddress}&sellAmount=${quoteParams.sellAmount}`
+          `${baseUrl}/swap/v2/quotes?sellTokenAddress=${quoteParams.sellTokenAddress}&buyTokenAddress=${quoteParams.buyTokenAddress}&sellAmount=${quoteParams.sellAmount}`
         );
 
         let res = await quotes.json();
@@ -85,17 +87,17 @@ export const swap = (chain: StarknetChain) =>
 
         // Execute the swap using AVNU SDK with the chain's account
         const swapResult = await executeAvnuSwap(
-          chain.account,
+          cartridgeAccount!,
           bestQuote,
           {},
-          { baseUrl: "https://sepolia.api.avnu.fi" }
+          { baseUrl: baseUrl }
         );
 
         console.log("Swap executed successfully:", swapResult);
 
         const result = {
           success: true,
-          transaction_hash: swapResult.transaction_hash,
+          transaction_hash: swapResult.transactionHash,
           sell_token: token_selling.symbol,
           buy_token: token_buying.symbol,
           sell_amount: data.amount,

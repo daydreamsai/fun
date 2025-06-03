@@ -1,3 +1,4 @@
+import { Account, AccountInterface } from "starknet";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -23,6 +24,7 @@ export interface UserSettings {
   showHelpWindow: boolean;
   maxSteps?: number;
   maxWorkingMemorySize?: number;
+  cartridgeAccount?: Account | AccountInterface | null;
 }
 
 interface SettingsState extends UserSettings {
@@ -37,6 +39,7 @@ interface SettingsState extends UserSettings {
   setShowHelpWindow: (show: boolean) => void;
   setApiKey: (key: keyof UserSettings, value: string | boolean) => void;
   clearSettings: () => void;
+  setCartridgeAccount: (account: Account | AccountInterface | null) => void;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -51,6 +54,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   showHelpWindow: true,
   maxSteps: 100,
   maxWorkingMemorySize: 20,
+  cartridgeAccount: null,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -69,6 +73,7 @@ export const useSettingsStore = create<SettingsState>()(
       setShowSystemMessages: (showSystemMessages) =>
         set({ showSystemMessages }),
       setShowHelpWindow: (showHelpWindow) => set({ showHelpWindow }),
+      setCartridgeAccount: (account) => set({ cartridgeAccount: account }),
 
       setApiKey: (key, value) => {
         if (key === "model" && typeof value === "string") {
