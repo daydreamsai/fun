@@ -1,7 +1,7 @@
 #!/bin/bash
 
 API_URL=""
-RELEASE="latest"
+RELEASE="dev"
 
 echo ${API_URL}
 
