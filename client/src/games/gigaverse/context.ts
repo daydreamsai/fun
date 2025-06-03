@@ -400,7 +400,6 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
     async handler({ action }, { memory, options }, _agent) {
       try {
         const actionToken = options.actionToken ?? "";
-
         const enemyHealth = memory.dungeon?.enemy.health?.current ?? 0;
 
         if (action.startsWith("loot_") && enemyHealth > 0) {
@@ -425,7 +424,7 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
 
         if (
           isAction(action) &&
-          memory.dungeon?.player[action].currentCharges === -1
+          memory.dungeon?.player[action].currentCharges! <= 0
         ) {
           return {
             success: false,
