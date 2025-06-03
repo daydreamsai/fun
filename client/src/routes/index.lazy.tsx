@@ -186,32 +186,60 @@ function Index() {
                 </motion.div>
               ))
             ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="col-span-full text-center py-16 border "
-              >
-                <h3 className="text-xl font-medium mb-2">
-                  No game sessions yet
-                </h3>
-                <p className="mb-6">Start your first Gigaverse adventure!</p>
+              <div className="flex gap-4 w-full">
                 <motion.div
-                  whileHover="hover"
-                  whileTap="tap"
-                  variants={buttonVariants}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="col-span-full text-center py-16 border w-full"
                 >
-                  <Button asChild variant="outline">
-                    <Link
-                      to="/games/gigaverse/$chatId"
-                      params={{ chatId: `gigaverse-1` }}
-                    >
-                      <PlusCircle size={20} className="mr-2" />
-                      <span>Start New Game</span>
-                    </Link>
-                  </Button>
+                  <h3 className="text-xl font-medium mb-2">
+                    No game sessions yet
+                  </h3>
+                  <p className="mb-6">Start your first Gigaverse adventure!</p>
+                  <motion.div
+                    whileHover="hover"
+                    whileTap="tap"
+                    variants={buttonVariants}
+                  >
+                    <Button asChild variant="outline">
+                      <Link
+                        to="/games/gigaverse/$chatId"
+                        params={{ chatId: `gigaverse-1` }}
+                      >
+                        <PlusCircle size={20} className="mr-2" />
+                        <span>Start New Game</span>
+                      </Link>
+                    </Button>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="col-span-full text-center py-16 border w-full"
+                >
+                  <h3 className="text-xl font-medium mb-2">
+                    No game sessions yet
+                  </h3>
+                  <p className="mb-6">Start your first Gigaverse adventure!</p>
+                  <motion.div
+                    whileHover="hover"
+                    whileTap="tap"
+                    variants={buttonVariants}
+                  >
+                    <Button asChild variant="outline">
+                      <Link
+                        to="/games/ponziland/$chatId"
+                        params={{ chatId: `ponziland-1` }}
+                      >
+                        <PlusCircle size={20} className="mr-2" />
+                        <span>Start New Game</span>
+                      </Link>
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              </div>
             )}
           </motion.div>
         </motion.section>

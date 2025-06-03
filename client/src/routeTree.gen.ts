@@ -14,6 +14,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as ChatsChatIdImport } from './routes/chats/$chatId'
+import { Route as GamesPonzilandChatIdImport } from './routes/games/ponziland/$chatId'
 import { Route as GamesGigaverseChatIdImport } from './routes/games/gigaverse/$chatId'
 
 // Create Virtual Routes
@@ -54,6 +55,12 @@ const IndexLazyRoute = IndexLazyImport.update({
 const ChatsChatIdRoute = ChatsChatIdImport.update({
   id: '/chats/$chatId',
   path: '/chats/$chatId',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const GamesPonzilandChatIdRoute = GamesPonzilandChatIdImport.update({
+  id: '/games/ponziland/$chatId',
+  path: '/games/ponziland/$chatId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -109,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesGigaverseChatIdImport
       parentRoute: typeof rootRoute
     }
+    '/games/ponziland/$chatId': {
+      id: '/games/ponziland/$chatId'
+      path: '/games/ponziland/$chatId'
+      fullPath: '/games/ponziland/$chatId'
+      preLoaderRoute: typeof GamesPonzilandChatIdImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -121,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsLazyRoute
   '/chats/$chatId': typeof ChatsChatIdRoute
   '/games/gigaverse/$chatId': typeof GamesGigaverseChatIdRoute
+  '/games/ponziland/$chatId': typeof GamesPonzilandChatIdRoute
 }
 
 export interface FileRoutesByTo {
@@ -130,6 +145,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsLazyRoute
   '/chats/$chatId': typeof ChatsChatIdRoute
   '/games/gigaverse/$chatId': typeof GamesGigaverseChatIdRoute
+  '/games/ponziland/$chatId': typeof GamesPonzilandChatIdRoute
 }
 
 export interface FileRoutesById {
@@ -140,6 +156,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsLazyRoute
   '/chats/$chatId': typeof ChatsChatIdRoute
   '/games/gigaverse/$chatId': typeof GamesGigaverseChatIdRoute
+  '/games/ponziland/$chatId': typeof GamesPonzilandChatIdRoute
 }
 
 export interface FileRouteTypes {
@@ -151,6 +168,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/chats/$chatId'
     | '/games/gigaverse/$chatId'
+    | '/games/ponziland/$chatId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -159,6 +177,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/chats/$chatId'
     | '/games/gigaverse/$chatId'
+    | '/games/ponziland/$chatId'
   id:
     | '__root__'
     | '/'
@@ -167,6 +186,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/chats/$chatId'
     | '/games/gigaverse/$chatId'
+    | '/games/ponziland/$chatId'
   fileRoutesById: FileRoutesById
 }
 
@@ -177,6 +197,7 @@ export interface RootRouteChildren {
   SettingsLazyRoute: typeof SettingsLazyRoute
   ChatsChatIdRoute: typeof ChatsChatIdRoute
   GamesGigaverseChatIdRoute: typeof GamesGigaverseChatIdRoute
+  GamesPonzilandChatIdRoute: typeof GamesPonzilandChatIdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -186,6 +207,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsLazyRoute: SettingsLazyRoute,
   ChatsChatIdRoute: ChatsChatIdRoute,
   GamesGigaverseChatIdRoute: GamesGigaverseChatIdRoute,
+  GamesPonzilandChatIdRoute: GamesPonzilandChatIdRoute,
 }
 
 export const routeTree = rootRoute
@@ -203,7 +225,8 @@ export const routeTree = rootRoute
         "/profile",
         "/settings",
         "/chats/$chatId",
-        "/games/gigaverse/$chatId"
+        "/games/gigaverse/$chatId",
+        "/games/ponziland/$chatId"
       ]
     },
     "/": {
@@ -223,6 +246,9 @@ export const routeTree = rootRoute
     },
     "/games/gigaverse/$chatId": {
       "filePath": "games/gigaverse/$chatId.tsx"
+    },
+    "/games/ponziland/$chatId": {
+      "filePath": "games/ponziland/$chatId.tsx"
     }
   }
 }
