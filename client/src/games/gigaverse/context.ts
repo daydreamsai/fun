@@ -601,16 +601,6 @@ Enemy Shield: ${state.enemy.shield.current}
       // consumables: z.number().array().describe("The IDs of the consumables"),
     },
     async handler(data, ctx) {
-      // if (
-      //   action.startsWith("loot_") &&
-      //   ctx.memory.energy.entities[0].parsedData.energy > 0
-      // ) {
-      //   return {
-      //     success: false,
-      //     error: "Enemy is still alive you are not in the loot phase yet.",
-      //   };
-      // }
-
       try {
         const { dungeonId } = data;
 
@@ -640,8 +630,10 @@ Enemy Shield: ${state.enemy.shield.current}
         const state = parseDungeonState(response);
 
         ctx.memory.dungeon = state;
+        ctx.memory.energy = await ctx.options.client.getEnergy(
+          ctx.options.address
+        );
         ctx.memory.lastUpdate = Date.now();
-        ctx.options.actionToken = response.actionToken?.toString() ?? "";
 
         return {
           success: true,
@@ -653,6 +645,11 @@ Enemy Shield: ${state.enemy.shield.current}
           error instanceof Error ? error.message : String(error);
         console.error("Error starting new run:", error);
 
+        ctx.memory = await fetchGigaverseState(
+          ctx.options.client,
+          ctx.options.game,
+          ctx.options.address
+        );
         ctx.options.actionToken = "";
 
         return {
