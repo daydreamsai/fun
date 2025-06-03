@@ -16,22 +16,7 @@ export function useUser() {
     fetchUser,
   } = useUserStore();
 
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Only handle logout on wallet disconnect, don't auto-login
-  useEffect(() => {
-    const handleWalletConnection = async () => {
-      // Only handle wallet disconnection
-      if (!connected && currentUser) {
-        logout();
-      }
-
-      // Mark as initialized regardless
-      setIsInitialized(true);
-    };
-
-    handleWalletConnection();
-  }, [connected, currentUser, logout]);
+  const [isInitialized, setIsInitialized] = useState(true);
 
   return {
     user: currentUser,

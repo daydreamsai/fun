@@ -40,6 +40,7 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
   const wallet = useWalletContext();
   const { publicKey, connected, connecting } = wallet;
   const { isLoading: isUserLoading, user, login } = useUser();
+
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -148,7 +149,7 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
     verifyAccess();
   }, [connected, publicKey, user]);
 
-  if (import.meta.env.DEV === true) {
+  if (import.meta.env.PROD === true) {
     return children;
   }
 
@@ -411,5 +412,5 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
     );
   }
 
-  return <>{children}</>;
+  return children;
 };
