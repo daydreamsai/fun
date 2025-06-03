@@ -24,6 +24,12 @@ export default defineConfig({
   server: {
     port: 7575,
     proxy: {
+      "/ponzi-api": {
+        target: "https://api.ponzi.land",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ponzi-api/, "/price"),
+        secure: true,
+      },
       "/gigaverse-api": {
         target: "https://gigaverse.io",
         changeOrigin: true,
