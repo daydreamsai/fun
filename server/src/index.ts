@@ -56,6 +56,11 @@ const corsOptions = {
   credentials: true, // in case you need to send cookies / auth headers
 };
 
+app.use((req, res, next) => {
+  console.log(req.path);
+  next();
+});
+
 app.use(cors(corsOptions));
 // Enable pre‑flight across‑the‑board so every route handles OPTIONS correctly
 app.options("*", cors(corsOptions));
@@ -1029,11 +1034,6 @@ app.post<
 
 app.get("/api", (req, res) => {
   res.json({ status: "ok" });
-});
-
-app.get("*", (req, res) => {
-  console.log(req.path);
-  res.status(200).send("OK");
 });
 
 // Start the server

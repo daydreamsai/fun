@@ -86,6 +86,7 @@ export type GigaverseState = {
   consumables: ItemBalance[];
   balances: ItemBalance[];
   dungeon: GigaverseDungeonState | undefined;
+  lastUpdate?: number;
 };
 
 export type GameData = {
@@ -165,13 +166,16 @@ function parseItems(
 async function fetchGigaverseState(
   client: GameClient,
   data: GameData,
-  address: string
+  address: string,
+  fetchDungeon: boolean = true
 ): Promise<GigaverseState> {
   const energy = await client.getEnergy(address);
   const juice = await client.getJuice(address);
   // const consumables = parseItems(await client.getConsumables(address), data);
   // const balances = parseItems(await client.getUserBalances(address), data);
-  const dungeon = parseDungeonState(await client.fetchDungeonState());
+  const dungeon = fetchDungeon
+    ? parseDungeonState(await client.fetchDungeonState())
+    : undefined;
 
   return {
     energy,
@@ -179,7 +183,16 @@ async function fetchGigaverseState(
     dungeon,
     consumables: [],
     balances: [],
+    lastUpdate: Date.now(),
   };
+}
+
+async function fetchDungeonState(
+  client: GameClient
+): Promise<GigaverseState["dungeon"]> {
+  const dungeon = parseDungeonState(await client.fetchDungeonState());
+
+  return dungeon;
 }
 // Context for the agent
 export const gigaverseContext = context({
@@ -259,7 +272,8 @@ export const gigaverseContext = context({
     const memory = await fetchGigaverseState(
       options.client,
       options.game,
-      options.address
+      options.address,
+      true
     );
     return memory;
   },
@@ -270,11 +284,42 @@ export const gigaverseContext = context({
     state.settings.maxSteps ??= maxSteps;
     state.settings.maxWorkingMemorySize ??= maxWorkingMemorySize;
 
-    state.memory = await fetchGigaverseState(
-      state.options.client,
-      state.options.game,
-      state.options.address
-    );
+    if (
+      state.memory.dungeon &&
+      state.memory.lastUpdate &&
+      Date.now() - state.memory.lastUpdate < 10 * 1000
+    ) {
+      console.log("using cache");
+      return;
+    } else {
+      console.log("skipping cache");
+    }
+
+    const dungeon = await fetchDungeonState(state.options.client);
+
+    if (dungeon) {
+      state.memory.dungeon = dungeon;
+      if (dungeon.player.health.current === 0) {
+        state.memory.energy = await state.options.client.getEnergy(
+          state.options.address
+        );
+      }
+    } else {
+      state.memory = await fetchGigaverseState(
+        state.options.client,
+        state.options.game,
+        state.options.address,
+        false
+      );
+    }
+  },
+
+  shouldContinue(ctx) {
+    if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
+      console.log("forcing continue...");
+      return true;
+    }
+    return false;
   },
 
   render({ memory, options: { game } }) {
@@ -400,7 +445,6 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
     async handler({ action }, { memory, options }, _agent) {
       try {
         const actionToken = options.actionToken ?? "";
-
         const enemyHealth = memory.dungeon?.enemy.health?.current ?? 0;
 
         if (action.startsWith("loot_") && enemyHealth > 0) {
@@ -425,7 +469,7 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
 
         if (
           isAction(action) &&
-          memory.dungeon?.player[action].currentCharges === -1
+          memory.dungeon?.player[action].currentCharges! <= 0
         ) {
           return {
             success: false,
@@ -447,7 +491,19 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
           dungeonId: 0,
         };
 
-        const response = await options.client.playMove(payload);
+        let response = await options.client.playMove(payload);
+
+        if (
+          !response.success &&
+          response.message.includes("Error: Invalid action token") &&
+          response.actionToken
+        ) {
+          console.log("retrying with new action token...");
+          response = await options.client.playMove({
+            ...payload,
+            actionToken: response.actionToken,
+          });
+        }
 
         if (response.actionToken) {
           options.actionToken = response.actionToken;
@@ -455,14 +511,15 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
 
         if (!response.success) {
           throw new Error(
-            `Attack action failed with status ${response.success}`
+            `Attack action failed with message: ${response.message}`
           );
         }
 
         const oldState = memory.dungeon!;
         const state = parseDungeonState(response)!;
+
         memory.dungeon = state;
-        options.actionToken = response.actionToken?.toString() ?? "";
+        memory.lastUpdate = Date.now();
 
         if (action.startsWith("loot")) {
           return {
@@ -544,16 +601,6 @@ Enemy Shield: ${state.enemy.shield.current}
       // consumables: z.number().array().describe("The IDs of the consumables"),
     },
     async handler(data, ctx) {
-      // if (
-      //   action.startsWith("loot_") &&
-      //   ctx.memory.energy.entities[0].parsedData.energy > 0
-      // ) {
-      //   return {
-      //     success: false,
-      //     error: "Enemy is still alive you are not in the loot phase yet.",
-      //   };
-      // }
-
       try {
         const { dungeonId } = data;
 
@@ -583,7 +630,10 @@ Enemy Shield: ${state.enemy.shield.current}
         const state = parseDungeonState(response);
 
         ctx.memory.dungeon = state;
-        ctx.options.actionToken = response.actionToken?.toString() ?? "";
+        ctx.memory.energy = await ctx.options.client.getEnergy(
+          ctx.options.address
+        );
+        ctx.memory.lastUpdate = Date.now();
 
         return {
           success: true,
@@ -595,6 +645,11 @@ Enemy Shield: ${state.enemy.shield.current}
           error instanceof Error ? error.message : String(error);
         console.error("Error starting new run:", error);
 
+        ctx.memory = await fetchGigaverseState(
+          ctx.options.client,
+          ctx.options.game,
+          ctx.options.address
+        );
         ctx.options.actionToken = "";
 
         return {
