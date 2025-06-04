@@ -37,7 +37,7 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { PonziLandSidebar } from "@/games/ponziland/components/Sidebar";
-import { ponzilandContext } from "@/games/ponziland/ponziland/ponziland";
+import { ponzilandContext } from "@/games/ponziland/ponziland";
 
 const searchParams = z.object({
   sidebar: z

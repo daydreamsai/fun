@@ -27,7 +27,7 @@ export default defineConfig({
       "/ponzi-api": {
         target: "https://api.ponzi.land",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ponzi-api/, "/price"),
+        rewrite: (path) => path.replace(/^\/ponzi-api/, "/"),
         secure: true,
       },
       "/gigaverse-api": {

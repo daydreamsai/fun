@@ -1,10 +1,10 @@
 import { type GetTransactionReceiptResponse } from "starknet";
-import { getAllTokensFromAPI } from "./ponziland_api";
-import { type TokenPrice } from "./ponziland_api";
+import { type TokenPrice } from "../client/ponziland_api";
 
 // Function to decode token transfer events
 export async function decodeTokenTransferEvents(
-  tx: GetTransactionReceiptResponse
+  tx: GetTransactionReceiptResponse,
+  tokens: TokenPrice[]
 ) {
   try {
     // Get transaction receipt
@@ -63,9 +63,6 @@ export async function decodeTokenTransferEvents(
 
       tokenTotals[tokenAddress] += amount;
     }
-    // Get all token data
-    const tokens = await getAllTokensFromAPI();
-
     // Format the results
     const results = Object.entries(tokenTotals).map(
       ([tokenAddress, amount]) => {

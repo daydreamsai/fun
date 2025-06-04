@@ -21,6 +21,7 @@
     "@codemirror/stream-parser": "^0.19.9",
     "@daydreamsai/chromadb": "^0.3.6",
     "@daydreamsai/core": "^0.3.6",
+    "@daydreamsai/defai": "^0.3.7",
     "@lezer/json": "^1.0.3",
     "@openrouter/ai-sdk-provider": "^0.4.5",
     "@radix-ui/react-accordion": "^1.2.8",
