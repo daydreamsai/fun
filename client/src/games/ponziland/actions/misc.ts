@@ -64,7 +64,11 @@ export const increase_stake = action({
   async handler(data, ctx) {
     const tokenAmounts: { [tokenAddress: string]: bigint } = {};
     const ponziland_address = manifest.contracts[0].address;
-    const { lands } = await get_lands(ctx.options.address, ctx.options);
+    const { lands } = await get_lands(
+      ctx.options.address,
+      ctx.memory.tokens,
+      ctx.options
+    );
 
     let calls = [];
     // First pass: collect all increase_stake calls and track token amounts
@@ -116,7 +120,7 @@ export const increase_stake = action({
     // Prepend approve calls to the beginning of the calls array
     calls = [...approveCalls, ...calls];
 
-    const res = await ctx.options.chain.write(calls);
+    const res = await ctx.options.account.execute(calls);
     console.log("res", res);
 
     const str =
@@ -162,7 +166,7 @@ export const increase_price = action({
 
     calls.push(increase_price_call);
 
-    const res = await ctx.options.chain.write(calls);
+    const res = await ctx.options.account.execute(calls);
 
     return {
       res,

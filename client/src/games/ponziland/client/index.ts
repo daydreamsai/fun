@@ -1,9 +1,9 @@
-import { StarknetChain } from "@daydreamsai/defai";
 import { useSettingsStore } from "@/store/settingsStore";
 import { manifest, ponziland_address, view_manifest } from "../constants";
 import { Contract, RpcProvider } from "starknet";
 import { ponziland_abi } from "../configs/ponziland_abi";
 import { view_abi } from "../configs/view_abi";
+
 export * from "./querys";
 
 export type ClientsContext = Pick<
@@ -24,8 +24,6 @@ export function createClientsContext() {
     provider
   ).typedv2(ponziland_abi);
 
-  let starknetChain: StarknetChain;
-
   const viewContract = new Contract(
     view_manifest.contracts[0].abi,
     view_manifest.contracts[0].address,
@@ -36,7 +34,6 @@ export function createClientsContext() {
     provider,
     account: cartridgeAccount,
     address: cartridgeAccount?.address,
-    chain: starknetChain!,
     ponziLandContract,
     viewContract,
   };
