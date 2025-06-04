@@ -6,6 +6,7 @@ import "./index.css";
 import { routeTree } from "./routeTree.gen";
 
 import { QueryClient } from "@tanstack/react-query";
+import { StarknetProvider } from "./hooks/starknet-provider";
 //
 // Initialize settings store before creating the agent
 // This ensures the store is hydrated from localStorage before agent creation
@@ -49,9 +50,9 @@ const root = ReactDOM.createRoot(rootElement, {
 try {
   root.render(
     <StrictMode>
-      {/* <StarknetProvider> */}
-      <RouterProvider router={router} />
-      {/* </StarknetProvider> */}
+      <StarknetProvider>
+        <RouterProvider router={router} />
+      </StarknetProvider>
     </StrictMode>
   );
 } catch (error) {

@@ -9,8 +9,7 @@ import {
 } from "@starknet-react/core";
 import { constants } from "starknet";
 import { toSessionPolicies } from "@cartridge/controller";
-
-import policies from "../games/ponziland/policies.json";
+import policies from "../games/ponziland/configs/policies.json";
 
 const nonLocalController = new ControllerConnector({
   chains: [
@@ -28,15 +27,17 @@ const nonLocalController = new ControllerConnector({
   namespace: "ponziland",
 });
 
-export function StarknetProvider({ children }: { children: React.ReactNode }) {
-  const rpc = useCallback(() => {
+const provider = jsonRpcProvider({
+  rpc: () => {
     return { nodeUrl: import.meta.env.VITE_PUBLIC_NODE_URL };
-  }, []);
+  },
+});
 
+export function StarknetProvider({ children }: { children: React.ReactNode }) {
   return (
     <StarknetConfig
-      chains={[mainnet, sepolia]}
-      provider={jsonRpcProvider({ rpc })}
+      chains={[mainnet]}
+      provider={provider}
       connectors={[nonLocalController as unknown as Connector]}
       explorer={voyager}
     >

@@ -1,20 +1,15 @@
 import { http } from "@daydreamsai/core";
-import { CairoCustomEnum, Contract, RpcProvider, type Abi } from "starknet";
+import { CairoCustomEnum, Contract } from "starknet";
 import { auction_query, land_query } from "./gql_querys";
 import { getAllTokensFromAPI, type TokenPrice } from "./ponziland_api";
 import { getTokenData, formatTokenAmount } from "../utils/utils";
 import { ponziland_address, TORII_URL } from "../constants";
+import { ClientsContext } from ".";
 
 const client = <T>(query: string, variables?: any) =>
   http
     .graphql<{ data: T }>(TORII_URL + "/graphql", query, variables)
     .then((res) => res.data);
-
-export type ClientsContext = {
-  provider: RpcProvider;
-  ponziLandContract: Contract;
-  viewContract: Contract;
-};
 
 export const get_balances = async (
   address: string,
@@ -128,20 +123,31 @@ export const get_lands = async (owner: string, ctx: ClientsContext) => {
 
 export const get_claims = async (
   owner: string,
-  { ponziLandContract, viewContract, provider }: ClientsContext
+  { ponziLandContract }: ClientsContext
 ) => {
-  const lands = await client(land_query, { where: { owner } }).then(
-    (res: any) =>
-      res?.ponziLandLandModels?.edges?.map((edge: any) => edge?.node)
+  const lands = await client<{
+    ponziLandLandModels: { edges: { node: LandModel }[] };
+  }>(land_query, { where: { owner } }).then((res) =>
+    res?.ponziLandLandModels?.edges?.map((edge) => edge?.node)
   );
 
   const land_claims = await Promise.all(
-    lands.map((land: any) => {
-      return ponziLandContract.call("get_next_claim_info", [land.location]);
+    lands.map(async (land) => {
+      const res = (await ponziLandContract.call("get_next_claim_info", [
+        land.location,
+      ])) as {
+        amount: bigint;
+        can_be_nuked: boolean;
+        land_location: bigint;
+        token_address: bigint;
+      }[];
+
+      return res.map((r) => ({
+        ...r,
+        token_address: "0x" + BigInt(r.token_address).toString(16),
+      }));
     })
   );
-
-  console.log("land_claims", land_claims);
 
   // const tokens = await getAllTokensFromAPI();
 
@@ -166,7 +172,7 @@ export const get_claims = async (
   //   .join("\n\n");
 
   // console.log("claims", claims);
-  return { land_claims };
+  return land_claims.flat();
 };
 
 export type Auction = {
@@ -189,11 +195,7 @@ export type AuctionModel = {
   decay_rate: number;
 };
 
-export const get_auctions = async ({
-  ponziLandContract,
-  viewContract,
-  provider,
-}: ClientsContext) => {
+export const get_auctions = async ({ provider }: ClientsContext) => {
   const auctions: Auction[] = await client<{
     ponziLandAuctionModels: { edges: { node: AuctionModel }[] };
   }>(auction_query, {}).then((res) => {
@@ -230,7 +232,7 @@ export const get_auctions = async ({
 export const get_neighbors = async (
   location: number,
   address: string,
-  { ponziLandContract, viewContract, provider }: ClientsContext
+  { viewContract }: ClientsContext
 ) => {
   const neighbors: Array<CairoCustomEnum> =
     await viewContract.get_neighbors(location);
@@ -289,24 +291,27 @@ export const get_all_lands = async (address: string) => {
 
 export const get_auction_yield = async (
   location: number,
-  { ponziLandContract, viewContract, provider }: ClientsContext
+  tokens: TokenPrice[],
+  { viewContract }: ClientsContext
 ) => {
   const neighbors = await viewContract.get_neighbors(location);
-  const tokens = await getAllTokensFromAPI();
   let income = BigInt(0);
 
   const neighbor_tax_rates = await Promise.all(
-    neighbors.map(async (neighbor: any) => {
+    neighbors.map(async (neighbor) => {
       if (neighbor.activeVariant() == "Land") {
         const value = neighbor.unwrap();
-        return await viewContract.get_tax_rate_per_neighbor(value.location);
+        return (await viewContract.get_tax_rate_per_neighbor(
+          value.location
+        )) as bigint;
       }
+      return 0n;
     })
   );
 
   let detailed_income = "";
 
-  neighbors.forEach((neighbor: any, index: number) => {
+  neighbors.forEach((neighbor, index) => {
     if (neighbor.activeVariant() == "Land") {
       const value = neighbor.unwrap();
       console.log("value", value);
@@ -349,18 +354,22 @@ export const get_auction_yield = async (
 
 export const get_unowned_land_yield = async (
   location: number,
-  { ponziLandContract, viewContract, provider }: ClientsContext
+  tokens: TokenPrice[],
+  { viewContract }: ClientsContext
 ) => {
-  const neighbors = await viewContract.get_neighbors(location);
-  const tokens = await getAllTokensFromAPI();
   let income = BigInt(0);
 
+  const neighbors = await viewContract.get_neighbors(location);
   const neighbor_tax_rates = await Promise.all(
-    neighbors.map(async (neighbor: any) => {
+    neighbors.map(async (neighbor) => {
       if (neighbor.activeVariant() == "Land") {
         const value = neighbor.unwrap();
-        return await viewContract.get_tax_rate_per_neighbor(value.location);
+        return (await viewContract.get_tax_rate_per_neighbor(
+          value.location
+        )) as bigint;
       }
+
+      return 0n;
     })
   );
 
@@ -432,9 +441,11 @@ export const get_player_lands = async (owner: string) => {
 export const calculateLandYield = async (
   land: Land,
   tokens: TokenPrice[],
-  { ponziLandContract, viewContract, provider }: ClientsContext
+  { viewContract }: ClientsContext
 ) => {
   const token = getTokenData(land.token_used, tokens);
+
+  console.log({ token });
 
   if (!token) {
     throw new Error("Token data not found");
@@ -457,47 +468,40 @@ export const calculateLandYield = async (
   let income = BigInt(0);
 
   const neighbor_tax_rates = await Promise.all(
-    neighbors.map(async (neighbor: any) => {
+    neighbors.map(async (neighbor) => {
       if (neighbor.activeVariant() == "Land") {
         const value = neighbor.unwrap();
-        return await viewContract.get_tax_rate_per_neighbor(value.location);
+        return (await viewContract.get_tax_rate_per_neighbor(
+          value.location
+        )) as bigint;
       }
+      return 0n;
     })
   );
 
-  // let detailed_income = "";
+  console.log({ neighbor_tax_rates });
 
-  // console.log("tax_rate", tax_rate);
-  // neighbors.forEach((neighbor: any, index: number) => {
-  //   if (neighbor.activeVariant() == "Land") {
-  //     const value = neighbor.unwrap();
-  //     console.log("value", value);
-  //     const neighbor_yield = neighbor_tax_rates[index];
-  //     const neighbor_token = getTokenData(value.token_used, tokens);
+  console.log("tax_rate", tax_rate);
+  for (const [index, neighbor] of neighbors.entries()) {
+    if (neighbor.activeVariant() !== "Land") continue;
+    const value = neighbor.unwrap();
+    const neighbor_yield = neighbor_tax_rates[index];
+    const neighbor_token = getTokenData(value.token_used, tokens);
+    if (!neighbor_token) continue;
+    // Yield is in estark
+    if (!neighbor_token.ratio) {
+      income += BigInt(neighbor_yield);
+    } else {
+      const adjusted_yield = Math.floor(
+        Number(neighbor_yield) / neighbor_token.ratio
+      );
+      income += BigInt(adjusted_yield);
+    }
+  }
 
-  //     if (!neighbor_token) {
-  //       console.log("No token?");
-  //     } else {
-  //       // Yield is in estark
-  //       if (!neighbor_token.ratio) {
-  //         income += BigInt(neighbor_yield);
-  //         detailed_income += `
-  //         Location: ${value.location} - Yield: ${formatTokenAmount(BigInt(neighbor_yield))} estark
-  //         `;
-  //       } else {
-  //         const adjusted_yield = Math.floor(
-  //           Number(neighbor_yield) / neighbor_token.ratio
-  //         );
-  //         income += BigInt(adjusted_yield);
-  //         detailed_income += `
-  //         Location: ${value.location} - Yield: ${formatTokenAmount(BigInt(neighbor_yield))} ${neighbor_token.symbol} (${formatTokenAmount(BigInt(adjusted_yield))} estark)
-  //         `;
-  //       }
-  //     }
-  //   }
-  // });
+  console.log({ income });
 
-  // console.log("income", income);
+  return income;
 
   // if (tax_rate == 0) {
   //   return 0;

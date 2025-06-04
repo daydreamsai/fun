@@ -1,13 +1,21 @@
-import { context, render } from "@daydreamsai/core";
-import { z } from "zod";
-import * as client from "./client/querys";
-import { bid } from "./actions/bid";
-import { buy } from "./actions/buy";
-import { increase_price, level_up, increase_stake } from "./actions/misc";
-import { swap } from "./actions/swap";
-import { RpcProvider } from "starknet";
-import { useSettingsStore } from "@/store/settingsStore";
-import docs from "./docs/main.md?raw";
+import { ponzilandContext } from "./context";
+import {
+  bid,
+  buy,
+  increase_price,
+  increase_stake,
+  level_up,
+  swap,
+} from "./actions";
+
+export const ponziland = ponzilandContext.setActions([
+  bid,
+  buy,
+  increase_price,
+  increase_stake,
+  level_up,
+  swap,
+]);
 
 // export const provider = new RpcProvider({
 //   nodeUrl: import.meta.env.VITE_PUBLIC_NODE_URL!,

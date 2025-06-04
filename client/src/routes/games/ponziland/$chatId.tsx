@@ -15,17 +15,7 @@ import { HelpWindow, MessageInput } from "@/components/chat";
 import { useContextState, useLogs, useSend } from "@/hooks/agent";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { gigaverseContext } from "@/games/gigaverse/context";
-import {
-  defaultInstructions,
-  defaultRules,
-  gigaverseVariables,
-} from "@/games/gigaverse/prompts";
-import { GigaverseSidebar } from "@/games/gigaverse/components/Sidebar";
-import { GigaverseAction } from "@/games/gigaverse/components/Actions";
-import { ActionResult } from "@daydreamsai/core";
 import { LogsList } from "@/components/chat/LogsLIst";
-import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
 import { ScrollText } from "lucide-react";
 import {
   Tooltip,
@@ -33,21 +23,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
-
-import { zodValidator } from "@tanstack/zod-adapter";
-import { z } from "zod";
 import { PonziLandSidebar } from "@/games/ponziland/components/Sidebar";
-import { ponzilandContext } from "@/games/ponziland/ponziland";
-
-const searchParams = z.object({
-  sidebar: z
-    .enum(["overview", "skills", "inventory", "roms"])
-    .optional()
-    .default("overview"),
-});
+import { ponziland } from "@/games/ponziland/ponziland";
 
 export const Route = createFileRoute("/games/ponziland/$chatId")({
-  validateSearch: zodValidator(searchParams),
   component: RouteComponent,
   context({ params }) {
     return {
@@ -87,7 +66,7 @@ function PonziLandSidebarWrapper({ chatId }: { chatId: string }) {
       <SidebarContent className="bg-sidebar">
         <ErrorBoundary
           fallbackRender={({ error, resetErrorBoundary }: any) => (
-            <GigaverseSidebarErrorComponent
+            <SidebarErrorComponent
               chatId={chatId}
               error={error}
               resetErrorBoundary={resetErrorBoundary}
@@ -101,7 +80,7 @@ function PonziLandSidebarWrapper({ chatId }: { chatId: string }) {
   );
 }
 
-function GigaverseSidebarErrorComponent({
+function SidebarErrorComponent({
   chatId,
   error,
   resetErrorBoundary,
@@ -112,18 +91,17 @@ function GigaverseSidebarErrorComponent({
   const router = useRouter();
   const { agent } = useAgentStore();
   const contextId = agent.getContextId({
-    context: gigaverseContext,
+    context: ponziland,
     args: { id: chatId },
   });
 
   return (
     <div className="p-2">
-      <div>Gigaverse Sidebar failed to load.</div>
+      <div>Game Sidebar failed to load.</div>
       <Button
         onClick={async () => {
           await agent.deleteContext(contextId);
           await router.invalidate();
-
           resetErrorBoundary();
         }}
       >
@@ -136,7 +114,6 @@ function GigaverseSidebarErrorComponent({
 
 function RouteComponent() {
   const { chatId } = Route.useParams();
-
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [missingKeys, setMissingKeys] = useState<string[]>([]);
   const agent = useAgentStore((state) => state.agent);
@@ -157,13 +134,13 @@ function RouteComponent() {
 
   const { logs } = useLogs({
     agent: agent,
-    context: ponzilandContext,
+    context: ponziland,
     args: { id: chatId },
   });
 
   const { send, abortControllerRef } = useSend({
     agent: agent,
-    context: ponzilandContext,
+    context: ponziland,
     args: { id: chatId },
   });
 
@@ -186,42 +163,13 @@ function RouteComponent() {
 
   const ctxState = useContextState({
     agent,
-    context: ponzilandContext,
+    context: ponziland,
     args: { id: chatId },
   });
 
   return (
     <>
       <HelpWindow open={showHelpWindow} onOpenChange={setShowHelpWindow} />
-      <TemplateEditorDialog
-        open={showTemplateEditor}
-        title="Gigaverse Instructions"
-        variables={gigaverseVariables}
-        templateKey="gigaverse"
-        sections={{
-          instructions: {
-            label: "Gigaverse Strategy",
-            default: {
-              id: "gigaverse-instructions-default",
-              title: "Default",
-              section: "instructions",
-              prompt: defaultInstructions,
-              tags: ["default"],
-            },
-          },
-          rules: {
-            label: "Gigaverse Rules",
-            default: {
-              id: "gigaverse-rules-default",
-              title: "Default",
-              section: "rules",
-              prompt: defaultRules,
-              tags: ["default"],
-            },
-          },
-        }}
-        onOpenChange={setShowTemplateEditor}
-      />
       {/* API Key Notification */}
       {missingKeys.length > 0 && missingKeys.length < 2 && (
         <div className="bg-amber-100 dark:bg-amber-900 p-3 text-amber-800 dark:text-amber-200 text-sm flex justify-between items-center">
@@ -245,26 +193,16 @@ function RouteComponent() {
       >
         <LogsList
           logs={logs}
-          components={{
-            action_call: ({ log, getLog }) => {
-              const result = getLog<ActionResult>(
-                (t) => t.ref === "action_result" && t.callId === log.id
-              );
-
-              if (log.name.startsWith("gigaverse")) {
-                return (
-                  <GigaverseAction
-                    key={log.id}
-                    call={log}
-                    result={result}
-                    gameData={ctxState.data?.options.game}
-                  />
-                );
-              }
-
-              return null;
-            },
-          }}
+          components={
+            {
+              // action_call: ({ log, getLog }) => {
+              //   const result = getLog<ActionResult>(
+              //     (t) => t.ref === "action_result" && t.callId === log.id
+              //   );
+              //   return null;
+              // },
+            }
+          }
         />
       </div>
 

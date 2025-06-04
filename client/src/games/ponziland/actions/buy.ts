@@ -16,7 +16,7 @@ export const buy = action({
     token_for_sale: z
       .string()
       .describe(
-        "Contract address of the token to be used for the purchase. This should be a token in your walconst that you have enough of."
+        "Contract address of the token to be used for the purchase. This should be a token in your wallet that you have enough of."
       ),
     sell_price: z
       .string()

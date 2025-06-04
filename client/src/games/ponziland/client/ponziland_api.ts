@@ -1,5 +1,4 @@
 import { http } from "@daydreamsai/core";
-import { PoolKey } from "../../../types";
 
 export interface TokenPrice {
   symbol: string;
@@ -22,7 +21,7 @@ export async function getAllTokensFromAPI(): Promise<TokenPrice[]> {
 
 export async function getLiquidityPoolFromAPI(
   tokenAddress: string
-): Promise<PoolKey | null> {
+): Promise<any | null> {
   try {
     const response = await fetch("/ponzi-api");
     const tokens: TokenPrice[] = await response.json();
