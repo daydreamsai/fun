@@ -21,9 +21,9 @@ const nonLocalController = new ControllerConnector({
     import.meta.env.VITE_PUBLIC_CHAIN === "mainnet"
       ? constants.StarknetChainId.SN_MAIN
       : constants.StarknetChainId.SN_SEPOLIA,
-  preset: "ponziland",
+  preset: "ponziland-tourney-2",
   policies: toSessionPolicies(policies.chains["SN_MAIN"].policies),
-  slot: "ponziland",
+  slot: "ponziland-tourney-2",
   namespace: "ponziland",
 });
 
