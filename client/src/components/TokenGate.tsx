@@ -149,7 +149,7 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
     verifyAccess();
   }, [connected, publicKey, user]);
 
-  if (import.meta.env.PROD === true) {
+  if (import.meta.env.PROD !== true) {
     return children;
   }
 
