@@ -102,6 +102,11 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: "user-settings",
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => {
+        // Exclude cartridgeAccount from persistence to avoid circular structure errors
+        const { cartridgeAccount, ...persistedState } = state;
+        return persistedState;
+      },
     }
   )
 );
@@ -150,7 +155,11 @@ export function getApiKey(key: keyof UserSettings) {
 export function hasApiKey(
   key: keyof Pick<
     UserSettings,
-    "openaiKey" | "openrouterKey" | "anthropicKey" | "gigaverseToken"
+    | "openaiKey"
+    | "openrouterKey"
+    | "anthropicKey"
+    | "gigaverseToken"
+    | "cartridgeAccount"
   >
 ): boolean {
   const value = getApiKey(key);

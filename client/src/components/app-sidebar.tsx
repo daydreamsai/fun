@@ -144,7 +144,9 @@ function ChatHistoryList() {
       try {
         const contexts = await agent.getContexts();
         console.log("contexts", contexts);
-        return contexts.filter((ctx) => ctx.type === "gigaverse");
+        return contexts.filter(
+          (ctx) => ctx.type === "gigaverse" || ctx.type === "ponziland"
+        );
       } catch (error) {
         console.error("Error fetching contexts:", error);
         return [];
@@ -191,8 +193,19 @@ function ChatHistoryList() {
       {chats?.data.map((chat: any) => (
         <SidebarMenuSubItem key={chat.key}>
           <SidebarMenuSubButton asChild>
-            <Link to={"/games/gigaverse/$chatId"} params={{ chatId: chat.key }}>
-              <div className="font-medium truncate">{chat.key}</div>
+            <Link
+              to={
+                chat.type === "gigaverse"
+                  ? "/games/gigaverse/$chatId"
+                  : "/games/ponziland/$chatId"
+              }
+              params={{ chatId: chat.key }}
+            >
+              <div className="font-medium truncate">
+                {chat.type === "ponziland" && "🏦 "}
+                {chat.type === "gigaverse" && "🌌 "}
+                {chat.key}
+              </div>
             </Link>
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>

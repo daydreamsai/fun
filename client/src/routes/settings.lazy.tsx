@@ -30,6 +30,7 @@ import { useAccount } from "wagmi";
 import { useAbstractClient } from "@abstract-foundation/agw-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfile } from "@/components/UserProfile";
+import { useStarknetLogin } from "@/hooks/starknet-provider";
 
 export const Route = createLazyFileRoute("/settings")({
   component: RouteComponent,
@@ -51,6 +52,8 @@ function RouteComponent() {
     anthropicKey: false,
     gigaverseToken: false,
   });
+
+  const { mutate: loginStarknet } = useStarknetLogin();
 
   // Check if token exists on mount and when token changes
   useEffect(() => {
@@ -295,6 +298,19 @@ function RouteComponent() {
                       </Button>
                     )}
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cartridgeAccount">
+                    Cartridge Controller Account
+                  </Label>
+                  <div className="flex items-center justify-between gap-2 p-2 bg-muted rounded-md">
+                    {settings.cartridgeAccount?.address}
+                  </div>
+                  {!settings.cartridgeAccount?.address && (
+                    <Button onClick={() => loginStarknet()}>
+                      Connect with Starknet
+                    </Button>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="maxSteps">Agent Max Steps</Label>

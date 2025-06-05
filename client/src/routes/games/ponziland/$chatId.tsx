@@ -36,9 +36,10 @@ export const Route = createFileRoute("/games/ponziland/$chatId")({
   loader({ params }) {
     // Check if user has required API keys
     const hasOpenRouterKey = hasApiKey("openrouterKey");
+    const hasCartridgeAccount = hasApiKey("cartridgeAccount");
 
     // If neither key is available, redirect to settings
-    if (!hasOpenRouterKey) {
+    if (!hasOpenRouterKey && !hasCartridgeAccount) {
       throw redirect({
         to: "/settings",
       });

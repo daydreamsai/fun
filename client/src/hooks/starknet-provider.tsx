@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { ControllerConnector } from "@cartridge/connector";
 import { sepolia, mainnet } from "@starknet-react/chains";
 import {
@@ -6,10 +6,14 @@ import {
   voyager,
   jsonRpcProvider,
   Connector,
+  useConnect,
+  useAccount,
 } from "@starknet-react/core";
-import { constants } from "starknet";
+import { Account, AccountInterface, constants } from "starknet";
 import { toSessionPolicies } from "@cartridge/controller";
+import { useSettingsStore } from "@/store/settingsStore";
 import policies from "../games/ponziland/configs/policies.json";
+import { useMutation } from "@tanstack/react-query";
 
 const nonLocalController = new ControllerConnector({
   chains: [
@@ -21,9 +25,9 @@ const nonLocalController = new ControllerConnector({
     import.meta.env.VITE_PUBLIC_CHAIN === "mainnet"
       ? constants.StarknetChainId.SN_MAIN
       : constants.StarknetChainId.SN_SEPOLIA,
-  preset: "ponziland-tourney-2",
+  preset: "ponziland",
   policies: toSessionPolicies(policies.chains["SN_MAIN"].policies),
-  slot: "ponziland-tourney-2",
+  slot: "ponziland",
   namespace: "ponziland",
 });
 
@@ -40,8 +44,38 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
       provider={provider}
       connectors={[nonLocalController as unknown as Connector]}
       explorer={voyager}
+      autoConnect={true}
     >
       {children}
     </StarknetConfig>
   );
+}
+
+export function useStarknetLogin() {
+  const settings = useSettingsStore();
+  const { connect, connectors } = useConnect();
+  const { account } = useAccount();
+
+  // Check if account is already connected on mount and update store
+  useEffect(() => {
+    if (account && !settings.cartridgeAccount) {
+      settings.setCartridgeAccount(account as Account | AccountInterface);
+    }
+  }, [account, settings]);
+
+  return useMutation({
+    mutationKey: ["starknet:auth"],
+    mutationFn: async () => {
+      try {
+        connect({ connector: connectors[0] });
+      } catch (error) {
+        console.error(error);
+      }
+
+      return account;
+    },
+    onSuccess(account) {
+      settings.setCartridgeAccount(account as Account | AccountInterface);
+    },
+  });
 }

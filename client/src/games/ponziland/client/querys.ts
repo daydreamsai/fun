@@ -58,6 +58,8 @@ export const get_lands = async (
 ) => {
   const { ponziLandContract } = ctx;
 
+  owner = owner.toUpperCase();
+
   const lands: Land[] = await client<{
     ponziLandLandModels: { edges: { node: LandModel }[] };
   }>(land_query, { where: { owner } }).then((res) =>

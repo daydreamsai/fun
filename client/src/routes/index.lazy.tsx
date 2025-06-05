@@ -61,7 +61,8 @@ export const Route = createLazyFileRoute("/")({
 function Index() {
   const agent = useAgentStore((state) => state.agent);
 
-  const [chats, setChats] = useState([]);
+  const [gigaverseChats, setGigaverseChats] = useState([]);
+  const [ponzilandChats, setPonzilandChats] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -71,7 +72,12 @@ function Index() {
       try {
         const contexts = await agent.getContexts();
 
-        setChats(contexts.filter((ctx) => ctx.type === "gigaverse") as any);
+        setGigaverseChats(
+          contexts.filter((ctx) => ctx.type === "gigaverse") as any
+        );
+        setPonzilandChats(
+          contexts.filter((ctx) => ctx.type === "ponziland") as any
+        );
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching chats:", error);
@@ -96,12 +102,6 @@ function Index() {
 
   // Upcoming games to tease
   const upcomingGames = [
-    {
-      id: "ponzi",
-      name: "Ponzi Land",
-      description: "A ponzi game onchain",
-      image: "/ponzi.jpeg",
-    },
     {
       id: "eternum",
       name: "Eternum",
@@ -141,6 +141,7 @@ function Index() {
             </motion.p>
           </motion.h1>
         </div>
+
         {/* Gigaverse Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -156,8 +157,8 @@ function Index() {
             animate="visible"
             className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}
           >
-            {chats?.length > 0 ? (
-              chats.map((chat: any, index: number) => (
+            {gigaverseChats?.length > 0 ? (
+              gigaverseChats.map((chat: any, index: number) => (
                 <motion.div
                   key={chat.key}
                   variants={itemVariants}
@@ -169,13 +170,12 @@ function Index() {
                     params={{ chatId: chat.key }}
                     className="block bg-background border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
                   >
-                    {/* Image space */}
-                    <div className="h-48  relative overflow-hidden">
+                    <div className="h-48 relative overflow-hidden">
                       <motion.img
                         whileHover={{ scale: 1.05 }}
                         transition={{ duration: 0.3 }}
                         src="/giga.jpeg"
-                        alt="Game Preview"
+                        alt="Gigaverse Preview"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -186,63 +186,111 @@ function Index() {
                 </motion.div>
               ))
             ) : (
-              <div className="flex gap-4 w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="col-span-full text-center py-16 border"
+              >
+                <h3 className="text-xl font-medium mb-2">
+                  No game sessions yet
+                </h3>
+                <p className="mb-6">Start your first Gigaverse adventure!</p>
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="col-span-full text-center py-16 border w-full"
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={buttonVariants}
                 >
-                  <h3 className="text-xl font-medium mb-2">
-                    No game sessions yet
-                  </h3>
-                  <p className="mb-6">Start your first Gigaverse adventure!</p>
-                  <motion.div
-                    whileHover="hover"
-                    whileTap="tap"
-                    variants={buttonVariants}
-                  >
-                    <Button asChild variant="outline">
-                      <Link
-                        to="/games/gigaverse/$chatId"
-                        params={{ chatId: `gigaverse-1` }}
-                      >
-                        <PlusCircle size={20} className="mr-2" />
-                        <span>Start New Game</span>
-                      </Link>
-                    </Button>
-                  </motion.div>
+                  <Button asChild variant="outline">
+                    <Link
+                      to="/games/gigaverse/$chatId"
+                      params={{ chatId: `gigaverse-1` }}
+                    >
+                      <PlusCircle size={20} className="mr-2" />
+                      <span>Start New Game</span>
+                    </Link>
+                  </Button>
                 </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="col-span-full text-center py-16 border w-full"
-                >
-                  <h3 className="text-xl font-medium mb-2">
-                    No game sessions yet
-                  </h3>
-                  <p className="mb-6">Start your first Gigaverse adventure!</p>
-                  <motion.div
-                    whileHover="hover"
-                    whileTap="tap"
-                    variants={buttonVariants}
-                  >
-                    <Button asChild variant="outline">
-                      <Link
-                        to="/games/ponziland/$chatId"
-                        params={{ chatId: `ponziland-1` }}
-                      >
-                        <PlusCircle size={20} className="mr-2" />
-                        <span>Start New Game</span>
-                      </Link>
-                    </Button>
-                  </motion.div>
-                </motion.div>
-              </div>
+              </motion.div>
             )}
           </motion.div>
         </motion.section>
+
+        {/* Ponziland Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-16"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Play Ponziland</h2>
+          </div>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}
+          >
+            {ponzilandChats?.length > 0 ? (
+              ponzilandChats.map((chat: any, index: number) => (
+                <motion.div
+                  key={chat.key}
+                  variants={itemVariants}
+                  whileHover="hover"
+                  custom={index}
+                >
+                  <Link
+                    to="/games/ponziland/$chatId"
+                    params={{ chatId: chat.key }}
+                    className="block bg-background border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
+                  >
+                    <div className="h-48 relative overflow-hidden">
+                      <motion.img
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.3 }}
+                        src="/ponzi.jpeg"
+                        alt="Ponziland Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-xl mb-1">{chat.key}</h3>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="col-span-full text-center py-16 border"
+              >
+                <h3 className="text-xl font-medium mb-2">
+                  No game sessions yet
+                </h3>
+                <p className="mb-6">Start your first Ponziland adventure!</p>
+                <motion.div
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={buttonVariants}
+                >
+                  <Button asChild variant="outline">
+                    <Link
+                      to="/games/ponziland/$chatId"
+                      params={{ chatId: `ponziland-1` }}
+                    >
+                      <PlusCircle size={20} className="mr-2" />
+                      <span>Start New Game</span>
+                    </Link>
+                  </Button>
+                </motion.div>
+              </motion.div>
+            )}
+          </motion.div>
+        </motion.section>
+
         {/* Upcoming Games Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}

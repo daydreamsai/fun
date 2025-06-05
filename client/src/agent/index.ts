@@ -28,6 +28,25 @@ const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
+// Custom serialization to handle BigInt values
+function serialize(value: unknown): string {
+  return JSON.stringify(value, (key, val) => {
+    if (typeof val === "bigint") {
+      return { __type: "bigint", value: val.toString() };
+    }
+    return val;
+  });
+}
+
+function deserialize<T>(serialized: string): T {
+  return JSON.parse(serialized, (key, val) => {
+    if (val && typeof val === "object" && val.__type === "bigint") {
+      return BigInt(val.value);
+    }
+    return val;
+  });
+}
+
 function getDb(): Promise<IDBPDatabase> {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
@@ -44,12 +63,12 @@ function getDb(): Promise<IDBPDatabase> {
 async function idbGet<T>(key: string): Promise<T | null> {
   const db = await getDb();
   const value = await db.get(STORE_NAME, key);
-  return value ? (JSON.parse(value as string) as T) : null;
+  return value ? deserialize<T>(value as string) : null;
 }
 
 async function idbSet(key: string, value: unknown): Promise<void> {
   const db = await getDb();
-  await db.put(STORE_NAME, JSON.stringify(value), key);
+  await db.put(STORE_NAME, serialize(value), key);
 }
 
 async function idbDelete(key: string): Promise<void> {
@@ -69,17 +88,17 @@ export const browserStorage = (): MemoryStore => {
   return {
     async get<T>(key: string): Promise<T | null> {
       // 1. Try in-memory cache first
-      let data = await memoryStore.get<T>(key);
+      let data = await memoryStore.get<T>(key.toString());
       if (data !== null) {
         return data;
       }
 
       // 2. Try IndexedDB
       try {
-        data = await idbGet<T>(key);
+        data = await idbGet<T>(key.toString());
         if (data !== null) {
           // Cache in memory if found in IDB
-          await memoryStore.set(key, data);
+          await memoryStore.set(key.toString(), data);
           return data;
         }
       } catch (error) {
@@ -93,9 +112,9 @@ export const browserStorage = (): MemoryStore => {
     async set(key: string, value: unknown): Promise<void> {
       try {
         // 1. Set in IndexedDB
-        await idbSet(key, value);
+        await idbSet(key.toString(), value);
         // 2. Set in in-memory cache
-        await memoryStore.set(key, value);
+        await memoryStore.set(key.toString(), value);
       } catch (error) {
         console.error(`IndexedDB set failed for key "${key}":`, error);
         // Consider if fallback to memoryStore only is acceptable
@@ -122,7 +141,7 @@ export const browserStorage = (): MemoryStore => {
         // 1. Delete from IndexedDB
         await idbDelete(key);
         // 2. Delete from in-memory cache
-        await memoryStore.delete(key);
+        await memoryStore.delete(key.toString());
       } catch (error) {
         console.error(`IndexedDB delete failed for key "${key}":`, error);
         await memoryStore.delete(key); // Ensure memory is updated even if IDB fails

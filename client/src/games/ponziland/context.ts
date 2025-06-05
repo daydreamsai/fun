@@ -1,7 +1,8 @@
-import { context } from "@daydreamsai/core";
+import { context, input } from "@daydreamsai/core";
 import { z } from "zod";
 import * as client from "./client";
 import { getAllTokensFromAPI } from "./client/ponziland_api";
+import { subscriptionClient, subscribeToEntityUpdates } from "./client";
 
 export async function fetchState(address: string, ctx: client.ClientsContext) {
   const tokens = await getAllTokensFromAPI();
@@ -18,6 +19,48 @@ export const ponzilandContext = context({
     id: z.string(),
   },
   key: ({ id }) => id,
+  inputs: {
+    "subscribe.entity_updated": input({
+      schema: z.object({
+        id: z.string(),
+        keys: z.array(z.string()),
+        eventId: z.string(),
+        models: z.array(z.any()),
+      }),
+
+      subscribe(send, agent) {
+        let subscriptionId: string;
+
+        const startSubscription = async () => {
+          try {
+            subscriptionId = await subscribeToEntityUpdates((event) => {
+              console.log("event", event);
+              send(
+                ponzilandContext,
+                { id: "ponziland-1" },
+                {
+                  id: event.id,
+                  keys: event.keys,
+                  eventId: event.eventId,
+                  models: event.models,
+                }
+              );
+            });
+          } catch (error) {
+            console.error("Failed to start subscription:", error);
+          }
+        };
+
+        startSubscription();
+
+        return () => {
+          if (subscriptionId) {
+            subscriptionClient.unsubscribe(subscriptionId);
+          }
+        };
+      },
+    }),
+  },
   instructions: "Build your bitcoin empire in ponziland",
   setup: () => {
     const { account, address, ...ctx } = client.createClientsContext();

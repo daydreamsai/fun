@@ -5,6 +5,7 @@ import { ponziland_abi } from "../configs/ponziland_abi";
 import { view_abi } from "../configs/view_abi";
 
 export * from "./querys";
+export * from "./subscription_client";
 
 export type ClientsContext = Pick<
   ReturnType<typeof createClientsContext>,
