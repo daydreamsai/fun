@@ -3,7 +3,6 @@ import { z } from "zod";
 import { CallData, cairo } from "starknet";
 import type { Call } from "starknet";
 import { indexToPosition } from "../utils/utils";
-import { useSettingsStore } from "@/store/settingsStore";
 import { ponziland_address } from "../constants";
 import { ponzilandContext } from "../context";
 
@@ -30,7 +29,6 @@ export const buy = action({
       ),
   }),
   async handler(data, ctx, agent) {
-    const { cartridgeAccount } = useSettingsStore.getState();
     const calls = [];
 
     const land = await ctx.options.ponziLandContract.get_land(
@@ -40,7 +38,7 @@ export const buy = action({
     const balance = await ctx.options.provider.callContract({
       contractAddress: data.token_for_sale,
       entrypoint: "balanceOf",
-      calldata: CallData.compile({ address: cartridgeAccount?.address! }),
+      calldata: CallData.compile({ address: ctx.options.account?.address! }),
     });
 
     const token = land[0].token_used;
@@ -107,7 +105,25 @@ export const buy = action({
 
     calls.push(buy_call);
 
-    const res = await cartridgeAccount?.execute(calls);
+    const res = await ctx.options.account?.execute(calls);
+
+    const waitTx = await ctx.options.account?.waitForTransaction(
+      res?.transaction_hash!
+    );
+
+    if (waitTx?.isRejected()) {
+      return {
+        res: waitTx.transaction_failure_reason,
+        str: "Transaction failed",
+      };
+    }
+
+    if (waitTx?.isReverted()) {
+      return {
+        res: waitTx.revert_reason,
+        str: "Transaction failed",
+      };
+    }
 
     return {
       res,

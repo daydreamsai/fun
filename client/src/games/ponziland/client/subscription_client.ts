@@ -26,6 +26,31 @@ export interface EntityUpdatedEvent {
         buyer: string;
         seller: string;
       }
+    | {
+        __typename: "ponzi_land_Auction";
+        land_location: number;
+        start_time: string;
+        start_price: string;
+        floor_price: string;
+        is_finished: boolean;
+        decay_rate: number;
+        sold_at_price: string | null;
+      }
+    | {
+        __typename: "ponzi_land_LandStake";
+        location: number;
+        last_pay_time: string;
+        amount: string;
+      }
+    | {
+        __typename: "ponzi_land_Land";
+        location: number;
+        block_date_bought: string;
+        owner: string;
+        sell_price: string;
+        token_used: string;
+        level: string;
+      }
   >;
 }
 

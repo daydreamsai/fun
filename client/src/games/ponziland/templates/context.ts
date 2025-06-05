@@ -1,4 +1,4 @@
-{{guide}}
+export const contextTemplate = `{{guide}}
 
 ---
 
@@ -32,3 +32,6 @@ Only worry about conserving resources when you are almost out (< 100)
 You also should use the get_neighbors and get_all_lands actions to identify possible purchases.
 
 {{memory}}
+`;
+
+export default contextTemplate;

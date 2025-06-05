@@ -31,9 +31,6 @@ export const bid = action({
   async handler(data, ctx, agent) {
     const calls = [];
 
-    // const { abi: token_abi } = await provider.getClassAt(data.token_for_sale);
-    // const { abi: estark_abi } = await provider.getClassAt(estark_address);
-
     const price = await ctx.options.ponziLandContract.get_current_auction_price(
       data.land_location
     );
@@ -83,6 +80,24 @@ export const bid = action({
     calls.push(bid_call);
 
     const res = await ctx.options.account.execute(calls);
+
+    const waitTx = await ctx.options.account?.waitForTransaction(
+      res?.transaction_hash!
+    );
+
+    if (waitTx?.isRejected()) {
+      return {
+        res: waitTx.transaction_failure_reason,
+        str: "Transaction failed",
+      };
+    }
+
+    if (waitTx?.isReverted()) {
+      return {
+        res: waitTx.revert_reason,
+        str: "Transaction failed",
+      };
+    }
 
     return {
       res,

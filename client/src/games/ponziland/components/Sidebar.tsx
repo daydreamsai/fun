@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { InferSchemaArguments } from "@daydreamsai/core";
 import { Trash, ShieldQuestion, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ponzilandContext } from "../context";
@@ -15,7 +15,7 @@ import { useStarknetLogin } from "@/hooks/starknet-provider";
 import { useAccount } from "@starknet-react/core";
 import { useState } from "react";
 import { type TokenPrice } from "../client/ponziland_api";
-import { type Auction } from "../client/querys";
+import { LandModel, type Auction } from "../client/querys";
 
 type PonzilandContext = typeof ponzilandContext;
 
@@ -34,25 +34,11 @@ interface Land {
   owner: string;
 }
 
-interface LandData {
-  lands: Land[];
-  nuke_time: unknown[];
-  yields: bigint[];
-}
-
 interface Claim {
   amount: bigint;
   can_be_nuked: boolean;
   land_location: bigint;
   token_address: string;
-}
-
-interface PonzilandContextData {
-  tokens: TokenPrice[];
-  balance: TokenBalance[];
-  auctions: Auction[];
-  land: LandData;
-  claims: Claim[];
 }
 
 // Simple table component
@@ -63,9 +49,9 @@ const SimpleTable = ({
   headers: string[];
   rows: (string | number | React.ReactNode)[][];
 }) => (
-  <div className="border rounded-md">
+  <div className="border rounded-md max-h-40 overflow-y-auto">
     <table className="w-full">
-      <thead className="border-b bg-muted/50">
+      <thead className="border-b bg-muted/50 sticky top-0">
         <tr>
           {headers.map((header, i) => (
             <th key={i} className="text-left p-1 text-xs font-medium">
@@ -151,7 +137,9 @@ export function PonziLandSidebar({
   }
 
   // Properly typed context data
-  const contextData = ponzilandState.data?.memory as PonzilandContextData;
+  const contextData = ponzilandState.data?.memory;
+
+  console.log(contextData);
 
   return (
     <div className="h-full flex flex-col">
@@ -257,7 +245,7 @@ export function PonziLandSidebar({
           {/* Token Balances Section */}
           {contextData?.balance && (
             <Card>
-              <CardHeader className="pb-1">
+              <CardHeader className="p-2">
                 <CardTitle className="text-sm">Token Balances</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
@@ -273,17 +261,41 @@ export function PonziLandSidebar({
             </Card>
           )}
 
+          {/* All Owned Lands Section */}
+          {contextData?.all_owned_lands && (
+            <Card>
+              <CardHeader className="p-2">
+                <CardTitle className="text-sm">
+                  All Owned Lands (can purchase)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-2">
+                <SimpleTable
+                  headers={["Location", "Sell Price", "Token", "Yield"]}
+                  rows={[...contextData.all_owned_lands]
+                    .sort((a, b) => Number(b.sell_price) - Number(a.sell_price))
+                    .map((land: LandModel) => [
+                      land.location,
+                      (Number(land.sell_price) / 10 ** 18).toFixed(2),
+                      land.token_used.slice(0, 8) + "...",
+                    ])}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Owned Lands Section */}
           {contextData?.land?.lands && (
             <Card>
-              <CardHeader className="pb-1">
+              <CardHeader className="p-2">
                 <CardTitle className="text-sm">Owned Lands</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
                 <SimpleTable
                   headers={["Location", "Sell Price", "Token", "Yield"]}
-                  rows={contextData.land.lands.map(
-                    (land: Land, index: number) => {
+                  rows={[...contextData.land.lands]
+                    .sort((a, b) => Number(b.sell_price) - Number(a.sell_price))
+                    .map((land: Land, index: number) => {
                       // Find token symbol from address
                       const token = contextData.tokens?.find(
                         (t) => t.address === land.token_used
@@ -300,8 +312,7 @@ export function PonziLandSidebar({
                           10 ** 18
                         ).toFixed(2),
                       ];
-                    }
-                  )}
+                    })}
                 />
               </CardContent>
             </Card>
@@ -310,7 +321,7 @@ export function PonziLandSidebar({
           {/* Auctions Section */}
           {contextData?.auctions && (
             <Card>
-              <CardHeader className="pb-1">
+              <CardHeader className="p-2">
                 <CardTitle className="text-sm">Active Auctions</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
@@ -323,20 +334,25 @@ export function PonziLandSidebar({
                     "Decay",
                     "Status",
                   ]}
-                  rows={contextData.auctions.map((auction: Auction) => [
-                    auction.land_location,
-                    auction.current_price.toString(),
-                    (Number(auction.floor_price) / 10 ** 18).toFixed(2),
-                    (Number(auction.start_price) / 10 ** 18).toFixed(2),
-                    auction.decay_rate,
-                    <Badge
-                      key={auction.land_location}
-                      variant={auction.is_finished ? "secondary" : "default"}
-                      className="text-xs px-1 py-0"
-                    >
-                      {auction.is_finished ? "Done" : "Live"}
-                    </Badge>,
-                  ])}
+                  rows={[...contextData.auctions]
+                    .sort(
+                      (a, b) =>
+                        Number(b.current_price) - Number(a.current_price)
+                    )
+                    .map((auction: Auction) => [
+                      auction.land_location,
+                      auction.current_price.toString(),
+                      (Number(auction.floor_price) / 10 ** 18).toFixed(2),
+                      (Number(auction.start_price) / 10 ** 18).toFixed(2),
+                      auction.decay_rate,
+                      <Badge
+                        key={auction.land_location}
+                        variant={auction.is_finished ? "secondary" : "default"}
+                        className="text-xs px-1 py-0"
+                      >
+                        {auction.is_finished ? "Done" : "Live"}
+                      </Badge>,
+                    ])}
                 />
               </CardContent>
             </Card>
@@ -345,7 +361,7 @@ export function PonziLandSidebar({
           {/* Claims Section */}
           {contextData?.claims && contextData.claims.length > 0 && (
             <Card>
-              <CardHeader className="pb-1">
+              <CardHeader className="p-2">
                 <CardTitle className="text-sm">Pending Claims</CardTitle>
               </CardHeader>
               <CardContent className="p-2">

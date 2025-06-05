@@ -6,6 +6,7 @@ import {
   increase_stake,
   level_up,
   swap,
+  claimAll,
 } from "./actions";
 
 export const ponziland = ponzilandContext.setActions([
@@ -15,6 +16,7 @@ export const ponziland = ponzilandContext.setActions([
   increase_stake,
   level_up,
   swap,
+  claimAll,
 ]);
 
 // export const provider = new RpcProvider({

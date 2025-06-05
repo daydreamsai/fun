@@ -2,107 +2,107 @@ import { action } from "@daydreamsai/core";
 import { z } from "zod";
 import { executeSwap as executeAvnuSwap, fetchQuotes } from "@avnu/avnu-sdk";
 import { getAllTokensFromAPI } from "../client/ponziland_api";
-import { useSettingsStore } from "@/store/settingsStore";
 
 export const swap = action({
   name: "swap",
   description:
-    "Swap tokens using AVNU SDK. Always make sure to check your balances first and use the correct token addresses. Remeber you don't need to already own any of the token you are buying, just the token you are selling.",
+    "Swap tokens using AVNU SDK. Always make sure to check your balances first and use the correct token addresses. Remember you don't need to already own any of the token you are buying, just the token you are selling.",
   schema: {
-    selling_address: z.string().describe("Token address you are selling"),
-    buying_address: z.string().describe("Token address you are buying"),
+    sellingAddress: z.string().describe("Token address you are selling"),
+    buyingAddress: z.string().describe("Token address you are buying"),
     amount: z
       .string()
       .describe(
-        "Amount of token to sell. Remeber 1 token = 10^18. Always use the scaled up value. This amount should NEVER be <10^18, unles you are swapping less than a single token."
+        "Amount of token to sell. Remember 1 token = 10^18. Always use the scaled up value. This amount should NEVER be <10^18, unless you are swapping less than a single token."
       ),
   },
-  async handler(data) {
-    const { cartridgeAccount } = useSettingsStore.getState();
-    let tokens = await getAllTokensFromAPI();
+  async handler(data, ctx) {
+    const tokens = await getAllTokensFromAPI();
 
-    if (data.selling_address == data.buying_address) {
-      throw new Error("You cannot swap the same token");
+    // Validate different tokens
+    if (data.sellingAddress === data.buyingAddress) {
+      throw new Error("Cannot swap the same token");
     }
 
-    let token_selling = tokens.find(
-      (t) => BigInt(t.address) == BigInt(data.selling_address)
+    // Find tokens by address
+    const sellingToken = tokens.find(
+      (token) => BigInt(token.address) === BigInt(data.sellingAddress)
     );
-    let token_buying = tokens.find(
-      (t) => BigInt(t.address) == BigInt(data.buying_address)
+    const buyingToken = tokens.find(
+      (token) => BigInt(token.address) === BigInt(data.buyingAddress)
     );
 
-    console.log("token_in", token_selling);
-    console.log("token_out", token_buying);
-
-    if (!token_selling || !token_buying) {
-      throw new Error("Token not found");
+    if (!sellingToken || !buyingToken) {
+      throw new Error(
+        `Token not found: ${!sellingToken ? "selling token" : "buying token"}`
+      );
     }
 
     try {
-      // Convert amount to proper format (assuming 18 decimals for most tokens)
       const sellAmount = BigInt(data.amount);
-      let pool = token_buying.best_pool;
 
-      if (!pool) {
-        pool = {
-          token0: token_selling.address,
-          token1: token_buying.address,
-        };
+      // Validate amount
+      if (sellAmount <= 0) {
+        throw new Error("Sell amount must be greater than 0");
       }
 
       const quoteParams = {
-        sellTokenAddress: pool.token1,
-        buyTokenAddress: pool.token0,
-        sellAmount: "0x" + sellAmount.toString(16),
+        sellTokenAddress: data.sellingAddress,
+        buyTokenAddress: data.buyingAddress,
+        sellAmount: sellAmount,
       };
 
-      console.log("Fetching quotes with params:", quoteParams);
+      console.log("Fetching quotes for swap:", {
+        from: sellingToken.symbol,
+        to: buyingToken.symbol,
+        amount: data.amount,
+      });
 
-      let baseUrl = "https://api.avnu.fi";
-      // Fetch quotes from AVNU
-      const quotes = await fetch(
-        `${baseUrl}/swap/v2/quotes?sellTokenAddress=${quoteParams.sellTokenAddress}&buyTokenAddress=${quoteParams.buyTokenAddress}&sellAmount=${quoteParams.sellAmount}`
-      );
+      // Use AVNU SDK's fetchQuotes method
+      const baseUrl = "https://api.avnu.fi";
+      const quotes = await fetchQuotes(quoteParams, { baseUrl });
 
-      let res = await quotes.json();
-      console.log("quotes", res);
+      if (!quotes || quotes.length === 0) {
+        throw new Error("No quotes available for this swap");
+      }
 
-      console.log("Found quotes:", res.length);
-      // Use the best quote (first one)
-      const bestQuote = res[0];
+      console.log(`Found ${quotes.length} quotes`);
 
-      console.log("Executing swap with AVNU SDK...");
+      // Use the best quote (first one is typically the best)
+      const bestQuote = quotes[0];
 
-      console.log("bestQuote", bestQuote);
+      if (!bestQuote.buyAmount || BigInt(bestQuote.buyAmount) <= 0) {
+        throw new Error("Invalid quote received");
+      }
 
-      // Execute the swap using AVNU SDK with the chain's account
+      console.log("Executing swap...");
+
+      // Execute the swap using AVNU SDK
       const swapResult = await executeAvnuSwap(
-        cartridgeAccount!,
+        ctx.options.account!,
         bestQuote,
         {},
-        { baseUrl: baseUrl }
+        { baseUrl }
       );
 
-      console.log("Swap executed successfully:", swapResult);
+      console.log("Swap executed successfully");
 
-      const result = {
+      return {
         success: true,
-        transaction_hash: swapResult.transactionHash,
-        sell_token: token_selling.symbol,
-        buy_token: token_buying.symbol,
-        sell_amount: data.amount,
-        buy_amount: bestQuote.buyAmount,
-        quote_id: bestQuote.quoteId,
-        message: `Successfully swapped ${data.amount} ${token_selling.symbol} for ${bestQuote.buyAmount} ${token_buying.symbol}`,
+        transactionHash: swapResult.transactionHash,
+        sellToken: sellingToken.symbol,
+        buyToken: buyingToken.symbol,
+        sellAmount: data.amount,
+        buyAmount: bestQuote.buyAmount,
+        quoteId: bestQuote.quoteId,
+        message: `Successfully swapped ${data.amount} ${sellingToken.symbol} for ${bestQuote.buyAmount} ${buyingToken.symbol}`,
       };
-
-      return result;
     } catch (error) {
       console.error("Swap failed:", error);
-      throw new Error(
-        `Swap failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      throw new Error(`Swap failed: ${errorMessage}`);
     }
   },
 });

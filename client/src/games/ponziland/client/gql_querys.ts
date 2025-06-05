@@ -48,6 +48,21 @@ export const land_query = /* GraphQL */ `
   }
 `;
 
+export const get_all_owned_lands_query = /* GraphQL */ `
+  query GetAllOwnedLands {
+    ponziLandLandModels(limit: 100) {
+      edges {
+        node {
+          location
+          sell_price
+          token_used
+          owner
+        }
+      }
+    }
+  }
+`;
+
 export const nuke_query = /* GraphQL */ `
   query GetNukeableLands {
     ponziLandLandModels(where: { stake_amount: "0" }, limit: 100) {
@@ -84,6 +99,28 @@ export const entity_updated_subscription = /* GraphQL */ `
           token_used
           buyer
           seller
+        }
+        ... on ponzi_land_Auction {
+          land_location
+          start_time
+          start_price
+          floor_price
+          is_finished
+          decay_rate
+          sold_at_price
+        }
+        ... on ponzi_land_LandStake {
+          location
+          last_pay_time
+          amount
+        }
+        ... on ponzi_land_Land {
+          location
+          block_date_bought
+          owner
+          sell_price
+          token_used
+          level
         }
       }
     }

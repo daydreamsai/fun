@@ -1,6 +1,10 @@
 import { http } from "@daydreamsai/core";
 import { CairoCustomEnum, Contract } from "starknet";
-import { auction_query, land_query } from "./gql_querys";
+import {
+  auction_query,
+  get_all_owned_lands_query,
+  land_query,
+} from "./gql_querys";
 import { getAllTokensFromAPI, type TokenPrice } from "./ponziland_api";
 import { getTokenData } from "../utils/utils";
 import { ponziland_address, TORII_URL } from "../constants";
@@ -37,14 +41,14 @@ export const get_balances = async (
   return balancesData;
 };
 
-type Land = {
+export type Land = {
   location: number;
   sell_price: bigint;
   token_used: string;
   owner: string;
 };
 
-type LandModel = {
+export type LandModel = {
   location: number;
   sell_price: string;
   token_used: string;
@@ -57,8 +61,6 @@ export const get_lands = async (
   ctx: ClientsContext
 ) => {
   const { ponziLandContract } = ctx;
-
-  owner = owner.toUpperCase();
 
   const lands: Land[] = await client<{
     ponziLandLandModels: { edges: { node: LandModel }[] };
@@ -307,6 +309,13 @@ async function calculateIncome(
 }
 
 export const get_prices = async () => {
-  const tokens = await getAllTokensFromAPI();
-  return tokens;
+  return await getAllTokensFromAPI();
+};
+
+export const get_all_owned_lands = async () => {
+  return await client<{
+    ponziLandLandModels: { edges: { node: LandModel }[] };
+  }>(get_all_owned_lands_query, {}).then((res) =>
+    res?.ponziLandLandModels?.edges?.map((edge) => edge?.node)
+  );
 };

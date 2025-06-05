@@ -27,6 +27,15 @@ export const level_up = action({
 
     const res = await account.execute(calls);
 
+    const waitTx = await account?.waitForTransaction(res?.transaction_hash!);
+
+    if (waitTx?.isRejected()) {
+      return {
+        res: waitTx.transaction_failure_reason,
+        str: "Transaction failed",
+      };
+    }
+
     return {
       res,
       str:
@@ -121,7 +130,16 @@ export const increase_stake = action({
     calls = [...approveCalls, ...calls];
 
     const res = await ctx.options.account.execute(calls);
-    console.log("res", res);
+    const waitTx = await ctx.options.account?.waitForTransaction(
+      res?.transaction_hash!
+    );
+
+    if (waitTx?.isRejected()) {
+      return {
+        res: waitTx.transaction_failure_reason,
+        str: "Transaction failed",
+      };
+    }
 
     const str =
       "Increased stake on lands " +
@@ -167,6 +185,17 @@ export const increase_price = action({
     calls.push(increase_price_call);
 
     const res = await ctx.options.account.execute(calls);
+
+    const waitTx = await ctx.options.account?.waitForTransaction(
+      res?.transaction_hash!
+    );
+
+    if (waitTx?.isRejected()) {
+      return {
+        res: waitTx.transaction_failure_reason,
+        str: "Transaction failed",
+      };
+    }
 
     return {
       res,
