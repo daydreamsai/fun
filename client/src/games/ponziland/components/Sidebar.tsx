@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { InferSchemaArguments } from "@daydreamsai/core";
-import { Trash, ShieldQuestion, Settings } from "lucide-react";
+import { Trash, ShieldQuestion, Settings, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +14,10 @@ import { ErrorComponent, Link } from "@tanstack/react-router";
 import { useStarknetLogin } from "@/hooks/starknet-provider";
 import { useAccount } from "@starknet-react/core";
 import { useState } from "react";
-import { type TokenPrice } from "../client/ponziland_api";
+
 import { LandModel, type Auction } from "../client/querys";
+import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
+import { templates as defaultTemplates, defaultSections } from "../templates";
 
 type PonzilandContext = typeof ponzilandContext;
 
@@ -80,11 +82,10 @@ export function PonziLandSidebar({
 }: {
   args: InferSchemaArguments<PonzilandContext["schema"]>;
 }) {
-  const [activeTab, setActiveTab] = useState<string>("overview");
-
   const { account } = useAccount();
   const { cartridgeAccount } = useSettingsStore((state) => state);
   const { mutate: login } = useStarknetLogin();
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
   const agent = useAgentStore((state) => state.agent);
   const contextId = agent.getContextId({ context: ponzilandContext, args });
@@ -97,13 +98,16 @@ export function PonziLandSidebar({
 
   useEffect(() => {
     return agent.subscribeContext(contextId, (log, done) => {
+      console.log(log);
       if (!done) return;
       switch (log.ref) {
         case "step": {
+          console.log("step");
           ponzilandState.refetch();
           break;
         }
         case "action_result": {
+          console.log("action_result");
           if (log.name.startsWith("ponziland")) {
             ponzilandState.refetch();
           }
@@ -139,15 +143,13 @@ export function PonziLandSidebar({
   // Properly typed context data
   const contextData = ponzilandState.data?.memory;
 
-  console.log(contextData);
-
   return (
     <div className="h-full flex flex-col">
-      <div className="flex gap-2 p-2 flex-shrink-0">
+      <div className="grid grid-cols-2 gap-2 p-2 flex-shrink-0">
         <Button
           variant="outline"
           size="sm"
-          className="flex-1 text-muted-foreground"
+          className="text-muted-foreground"
           onClick={() => setShowHelpWindow(true)}
         >
           <ShieldQuestion className="w-4 h-4" />
@@ -156,7 +158,16 @@ export function PonziLandSidebar({
         <Button
           variant="outline"
           size="sm"
-          className="flex-1 text-muted-foreground"
+          className="text-muted-foreground"
+          onClick={() => setShowTemplateEditor(true)}
+        >
+          <ScrollText className="w-4 h-4" />
+          Templates
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-muted-foreground"
           asChild
         >
           <Link to="/settings">
@@ -167,7 +178,7 @@ export function PonziLandSidebar({
         <Button
           variant="outline"
           size="sm"
-          className="flex-1 text-muted-foreground"
+          className="text-muted-foreground"
           onClick={async () => {
             await agent.deleteContext(contextId);
             await queryClient.invalidateQueries({
@@ -189,12 +200,9 @@ export function PonziLandSidebar({
       </div>
 
       <img
-        src="/ponziland-banner.png"
+        src="/ponzi.jpeg"
         alt="Ponziland Banner"
         className="border-b w-full h-32 object-cover flex-shrink-0"
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
       />
 
       {ponzilandState.error ? (
@@ -206,8 +214,8 @@ export function PonziLandSidebar({
           {/* Overview Section */}
           {contextData && (
             <Card>
-              <CardHeader className="pb-1">
-                <CardTitle className="text-sm">Portfolio Summary</CardTitle>
+              <CardHeader className="p-2">
+                <CardTitle className="text-sm">Portfolio</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -238,6 +246,40 @@ export function PonziLandSidebar({
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Owned Lands Section */}
+          {contextData?.land?.lands && (
+            <Card>
+              <CardHeader className="p-2">
+                <CardTitle className="text-sm">Your Lands</CardTitle>
+              </CardHeader>
+              <CardContent className="p-2">
+                <SimpleTable
+                  headers={["Location", "Sell Price", "Token", "Yield"]}
+                  rows={[...contextData.land.lands]
+                    .sort((a, b) => Number(b.sell_price) - Number(a.sell_price))
+                    .map((land: Land, index: number) => {
+                      // Find token symbol from address
+                      const token = contextData.tokens?.find(
+                        (t) => t.address === land.token_used
+                      );
+                      const tokenSymbol =
+                        token?.symbol || land.token_used.slice(0, 8) + "...";
+
+                      return [
+                        land.location,
+                        (Number(land.sell_price) / 10 ** 18).toFixed(2),
+                        tokenSymbol,
+                        (
+                          Number(contextData.land.yields?.[index] || 0) /
+                          10 ** 18
+                        ).toFixed(2),
+                      ];
+                    })}
+                />
               </CardContent>
             </Card>
           )}
@@ -279,40 +321,6 @@ export function PonziLandSidebar({
                       (Number(land.sell_price) / 10 ** 18).toFixed(2),
                       land.token_used.slice(0, 8) + "...",
                     ])}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Owned Lands Section */}
-          {contextData?.land?.lands && (
-            <Card>
-              <CardHeader className="p-2">
-                <CardTitle className="text-sm">Owned Lands</CardTitle>
-              </CardHeader>
-              <CardContent className="p-2">
-                <SimpleTable
-                  headers={["Location", "Sell Price", "Token", "Yield"]}
-                  rows={[...contextData.land.lands]
-                    .sort((a, b) => Number(b.sell_price) - Number(a.sell_price))
-                    .map((land: Land, index: number) => {
-                      // Find token symbol from address
-                      const token = contextData.tokens?.find(
-                        (t) => t.address === land.token_used
-                      );
-                      const tokenSymbol =
-                        token?.symbol || land.token_used.slice(0, 8) + "...";
-
-                      return [
-                        land.location,
-                        (Number(land.sell_price) / 10 ** 18).toFixed(2),
-                        tokenSymbol,
-                        (
-                          Number(contextData.land.yields?.[index] || 0) /
-                          10 ** 18
-                        ).toFixed(2),
-                      ];
-                    })}
                 />
               </CardContent>
             </Card>
@@ -391,6 +399,16 @@ export function PonziLandSidebar({
           )}
         </div>
       )}
+
+      <TemplateEditorDialog
+        open={showTemplateEditor}
+        onOpenChange={setShowTemplateEditor}
+        title="Ponziland Templates"
+        description="Customize AI behavior with custom rules and instructions"
+        variables={defaultTemplates.variables}
+        templateKey="ponziland"
+        sections={defaultSections}
+      />
     </div>
   );
 }

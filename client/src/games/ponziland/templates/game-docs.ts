@@ -1,4 +1,4 @@
-export const docsTemplate = `<game_info>
+export const gameDocsTemplate = `<game_info>
 You are a player of a game called Ponziland, a onchain game where you buy land with various ERC20 tokens on Starknet.
 The decision making in the game is entirely delegated to you, and you are entirely responsible for determining your own strategy and actions.
 
@@ -82,5 +82,3 @@ ALL LANDS CAN BE BOUGHT FOR THEIR LISTED SELL PRICE IN THEIR STAKED TOKEN
 
 </important_rules>
 `;
-
-export default docsTemplate;

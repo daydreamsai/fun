@@ -25,6 +25,9 @@ import {
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { PonziLandSidebar } from "@/games/ponziland/components/Sidebar";
 import { ponziland } from "@/games/ponziland/ponziland";
+import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
+import { defaultInstructions, defaultRules } from "@/games/gigaverse/prompts";
+import { templates } from "@/games/ponziland/templates";
 
 export const Route = createFileRoute("/games/ponziland/$chatId")({
   component: RouteComponent,
@@ -171,6 +174,35 @@ function RouteComponent() {
   return (
     <>
       <HelpWindow open={showHelpWindow} onOpenChange={setShowHelpWindow} />
+      <TemplateEditorDialog
+        open={showTemplateEditor}
+        title="Ponziland Instructions"
+        variables={[]}
+        templateKey="ponziland"
+        sections={{
+          instructions: {
+            label: "Ponziland Strategy",
+            default: {
+              id: "ponziland-instructions-default",
+              title: "Default",
+              section: "instructions",
+              prompt: templates.instructions,
+              tags: ["default"],
+            },
+          },
+          rules: {
+            label: "Ponziland Rules",
+            default: {
+              id: "ponziland-rules-default",
+              title: "Default",
+              section: "rules",
+              prompt: templates.rules,
+              tags: ["default"],
+            },
+          },
+        }}
+        onOpenChange={setShowTemplateEditor}
+      />
       {/* API Key Notification */}
       {missingKeys.length > 0 && missingKeys.length < 2 && (
         <div className="bg-amber-100 dark:bg-amber-900 p-3 text-amber-800 dark:text-amber-200 text-sm flex justify-between items-center">
