@@ -2,6 +2,8 @@
 
 API_URL=""
 RELEASE="dev"
+NODE_URL="https://api.cartridge.gg/x/starknet/mainnet"
+CHAIN_ID="mainnet"
 
 for ARGUMENT in "$@"
 do
@@ -19,6 +21,6 @@ echo "RELEASE: ${RELEASE}"
 
 # echo ${API_URL}
 
-docker build --platform linux/amd64 --build-arg API_URL="${API_URL}" -t dreams-play-client:${RELEASE} .
+docker build --platform linux/amd64 --build-arg API_URL="${API_URL}" --build-arg NODE_URL="${NODE_URL}" --build-arg CHAIN_ID="${CHAIN_ID}" -t dreams-play-client:${RELEASE} .
 docker tag dreams-play-client:${RELEASE} europe-southwest1-docker.pkg.dev/daydreams-cloud/dreams-fun/play-client:${RELEASE}
 docker push europe-southwest1-docker.pkg.dev/daydreams-cloud/dreams-fun/play-client:${RELEASE}
