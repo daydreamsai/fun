@@ -12,7 +12,7 @@ ARG CHAIN_ID
 ENV NODE_ENV=production
 ENV VITE_FUN_API_URL=${API_URL}
 ENV VITE_PUBLIC_NODE_URL=${NODE_URL}
-ENV VITE_PUBLIC_CHAIN_ID=${CHAIN_ID}
+ENV VITE_PUBLIC_CHAIN=${CHAIN_ID}
 
 COPY . .
 RUN --mount=type=cache,id=vitecache,target=/app/node_modules/.vite bun run build
