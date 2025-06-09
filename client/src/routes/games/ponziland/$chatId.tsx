@@ -26,6 +26,7 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { PonziLandSidebar } from "@/games/ponziland/components/Sidebar";
 import { ponziland } from "@/games/ponziland/ponziland";
 import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
+import { useCartridgeAccount } from "@/hooks/starknet-provider";
 
 import { templates } from "@/games/ponziland/templates";
 
@@ -39,10 +40,10 @@ export const Route = createFileRoute("/games/ponziland/$chatId")({
   loader({ params }) {
     // Check if user has required API keys
     const hasOpenRouterKey = hasApiKey("openrouterKey");
-    const hasCartridgeAccount = hasApiKey("cartridgeAccount");
 
-    // If neither key is available, redirect to settings
-    if (!hasOpenRouterKey && !hasCartridgeAccount) {
+    // Only redirect to settings if no OpenRouter key is available
+    // Account connection will be handled by the component itself
+    if (!hasOpenRouterKey) {
       throw redirect({
         to: "/settings",
       });
@@ -121,6 +122,7 @@ function RouteComponent() {
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [missingKeys, setMissingKeys] = useState<string[]>([]);
   const agent = useAgentStore((state) => state.agent);
+  const { account, isConnected, isLoading } = useCartridgeAccount();
 
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
   const setShowHelpWindow = useSettingsStore(
@@ -136,10 +138,12 @@ function RouteComponent() {
     setMissingKeys(missing);
   }, []);
 
+  // Only initialize context-dependent hooks when account is connected
   const { logs } = useLogs({
     agent: agent,
     context: ponziland,
     args: { id: chatId },
+    enabled: isConnected,
   });
 
   const { send, abortControllerRef } = useSend({
@@ -148,7 +152,16 @@ function RouteComponent() {
     args: { id: chatId },
   });
 
+  const ctxState = useContextState({
+    agent,
+    context: ponziland,
+    args: { id: chatId },
+    enabled: isConnected,
+  });
+
   const handleSubmitMessage = async (message: string) => {
+    if (!isConnected) return;
+
     send.mutate({
       input: {
         type: "message",
@@ -165,11 +178,19 @@ function RouteComponent() {
     behavior: "auto",
   });
 
-  const ctxState = useContextState({
-    agent,
-    context: ponziland,
-    args: { id: chatId },
-  });
+  // Show loading state while account is connecting
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="text-lg font-medium">Loading Ponziland...</div>
+          <div className="text-sm text-muted-foreground mt-2">
+            Connecting to your wallet...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -204,7 +225,7 @@ function RouteComponent() {
         onOpenChange={setShowTemplateEditor}
       />
       {/* API Key Notification */}
-      {missingKeys.length > 0 && missingKeys.length < 2 && (
+      {missingKeys.length > 0 && (
         <div className="bg-amber-100 dark:bg-amber-900 p-3 text-amber-800 dark:text-amber-200 text-sm flex justify-between items-center">
           <div>
             <span className="font-medium">Note:</span> You're missing the{" "}
@@ -244,7 +265,7 @@ function RouteComponent() {
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              disabled={send.isPending}
+              disabled={send.isPending || !isConnected}
               onClick={() => setShowTemplateEditor(true)}
               className="h-full flex text-muted-foreground"
             >
@@ -257,13 +278,17 @@ function RouteComponent() {
         </Tooltip>
         <MessageInput
           isLoading={send.isPending}
-          disabled={ctxState.error !== null || missingKeys.length > 0}
+          disabled={
+            ctxState.error !== null || missingKeys.length > 0 || !isConnected
+          }
           onSubmit={handleSubmitMessage}
           abortControllerRef={abortControllerRef}
           placeholderText={
-            missingKeys.length === 2
-              ? "Please set up API keys in settings to start chatting"
-              : undefined
+            !isConnected
+              ? "Please connect your wallet to start chatting"
+              : missingKeys.length > 0
+                ? "Please set up OpenRouter API key in settings to start chatting"
+                : undefined
           }
         />
       </div>

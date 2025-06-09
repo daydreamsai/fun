@@ -25,6 +25,15 @@ export async function fetchState(address: string, ctx: client.ClientsContext) {
     client.get_all_owned_lands(),
   ]);
 
+  console.log("land", {
+    tokens,
+    balance,
+    auctions,
+    land,
+    claims,
+    all_owned_lands,
+  });
+
   return {
     tokens,
     balance,
@@ -85,7 +94,11 @@ export const ponzilandContext = context({
   },
   setup: () => {
     const { account, address, ...ctx } = client.createClientsContext();
-    if (!account || !address) throw new Error("no account");
+    if (!account || !address) {
+      throw new Error(
+        "Cartridge account not connected. Please connect your wallet first."
+      );
+    }
     return {
       account,
       address,
@@ -109,6 +122,14 @@ export const ponzilandContext = context({
   async loader({ memory, options: { address, ...ctx } }) {
     const { auctions, balance, claims, land, all_owned_lands } =
       await fetchState(address, ctx);
+
+    console.log("memory", {
+      auctions,
+      balance,
+      claims,
+      land,
+      all_owned_lands,
+    });
     Object.assign(memory, { auctions, balance, claims, land, all_owned_lands });
   },
 

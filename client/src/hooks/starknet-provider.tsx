@@ -51,17 +51,34 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useStarknetLogin() {
-  const settings = useSettingsStore();
-  const { connect, connectors } = useConnect();
+// Custom hook to manage account state properly
+export function useCartridgeAccount() {
   const { account } = useAccount();
+  const { cartridgeAccount, setCartridgeAccount } = useSettingsStore();
 
-  // Check if account is already connected on mount and update store
+  // Sync account to store when available (only one place to manage this)
   useEffect(() => {
-    if (account && !settings.cartridgeAccount) {
-      settings.setCartridgeAccount(account as Account | AccountInterface);
+    if (
+      account &&
+      (!cartridgeAccount || cartridgeAccount.address !== account.address)
+    ) {
+      setCartridgeAccount(account as Account | AccountInterface);
+    } else if (!account && cartridgeAccount) {
+      // Clear store account if starknet account is disconnected
+      setCartridgeAccount(null);
     }
-  }, [account, settings]);
+  }, [account, cartridgeAccount, setCartridgeAccount]);
+
+  return {
+    account: cartridgeAccount,
+    isConnected: !!cartridgeAccount,
+    isLoading: !account && !cartridgeAccount, // Still loading if no account from either source
+  };
+}
+
+export function useStarknetLogin() {
+  const { setCartridgeAccount } = useSettingsStore();
+  const { connect, connectors } = useConnect();
 
   return useMutation({
     mutationKey: ["starknet:auth"],
@@ -70,12 +87,12 @@ export function useStarknetLogin() {
         connect({ connector: connectors[0] });
       } catch (error) {
         console.error(error);
+        throw error;
       }
-
-      return account;
     },
-    onSuccess(account) {
-      settings.setCartridgeAccount(account as Account | AccountInterface);
+    onSuccess(_, variables) {
+      // Account will be set via useCartridgeAccount hook when useAccount updates
+      console.log("Starknet connection initiated");
     },
   });
 }

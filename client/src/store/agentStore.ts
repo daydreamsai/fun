@@ -37,12 +37,14 @@ export const useAgentStore = create<AgentState>((set) => {
   // Subscribe to settings changes
   const unsubscribe = useSettingsStore.subscribe((state, prevState) => {
     // Only recreate if relevant settings changed
+    // Note: cartridgeAccount is not included as it doesn't affect agent creation
     const relevantSettingsChanged =
       state.model !== prevState.model ||
       state.openrouterKey !== prevState.openrouterKey ||
       state.gigaverseToken !== prevState.gigaverseToken;
 
     if (relevantSettingsChanged) {
+      console.log("Relevant settings changed, recreating agent");
       recreateAgent();
     }
   });

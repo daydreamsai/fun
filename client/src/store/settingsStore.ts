@@ -149,7 +149,7 @@ export function getApiKey(key: keyof UserSettings) {
 
 /**
  * Check if a specific API key or token is set
- * @param key The key to check ('openaiKey', 'openrouterKey', 'anthropicKey', or 'gigaverseToken')
+ * @param key The key to check ('openaiKey', 'openrouterKey', 'anthropicKey', 'gigaverseToken', or 'cartridgeAccount')
  * @returns True if the key exists and is not empty
  */
 export function hasApiKey(
@@ -163,6 +163,13 @@ export function hasApiKey(
   >
 ): boolean {
   const value = getApiKey(key);
+
+  // Special handling for cartridgeAccount which is an object, not a string
+  if (key === "cartridgeAccount") {
+    return value !== undefined && value !== null && typeof value === "object";
+  }
+
+  // For string-based keys
   return value !== undefined && value !== "";
 }
 

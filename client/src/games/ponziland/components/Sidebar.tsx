@@ -11,8 +11,10 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { useAgentStore } from "@/store/agentStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { ErrorComponent, Link } from "@tanstack/react-router";
-import { useStarknetLogin } from "@/hooks/starknet-provider";
-import { useAccount } from "@starknet-react/core";
+import {
+  useStarknetLogin,
+  useCartridgeAccount,
+} from "@/hooks/starknet-provider";
 import { useState } from "react";
 
 import { LandModel, type Auction } from "../client/querys";
@@ -77,30 +79,52 @@ const SimpleTable = ({
   </div>
 );
 
-export function PonziLandSidebar({
-  args,
-}: {
-  args: InferSchemaArguments<PonzilandContext["schema"]>;
-}) {
-  const { account } = useAccount();
-  const { cartridgeAccount, setCartridgeAccount } = useSettingsStore(
-    (state) => state
-  );
-  const { mutate: login } = useStarknetLogin();
-  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
-
+// Custom hook to safely use ponziland context only when account is ready
+function usePonzilandContext(
+  args: InferSchemaArguments<PonzilandContext["schema"]>
+) {
+  const { account, isConnected } = useCartridgeAccount();
   const agent = useAgentStore((state) => state.agent);
-  const contextId = agent.getContextId({ context: ponzilandContext, args });
 
+  // Only get context state if account is connected
   const ponzilandState = useContextState({
     agent,
     context: ponzilandContext,
     args,
   });
 
+  // Override the query to be disabled if no account
+  const safeState = {
+    ...ponzilandState,
+    isEnabled: isConnected && !!account,
+    error: !isConnected
+      ? new Error("Account not connected")
+      : ponzilandState.error,
+  };
+
+  return safeState;
+}
+
+export function PonziLandSidebar({
+  args,
+}: {
+  args: InferSchemaArguments<PonzilandContext["schema"]>;
+}) {
+  const { account, isConnected, isLoading } = useCartridgeAccount();
+  const { mutate: login } = useStarknetLogin();
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+
+  const agent = useAgentStore((state) => state.agent);
+  const contextId = agent.getContextId({ context: ponzilandContext, args });
+
+  const ponzilandState = usePonzilandContext(args);
+
   useEffect(() => {
+    // Only subscribe if account is connected
+    if (!isConnected || !account) return;
+
     return agent.subscribeContext(contextId, (log, done) => {
-      console.log(log);
+      console.log("agent", agent);
       if (!done) return;
       switch (log.ref) {
         case "step": {
@@ -109,22 +133,15 @@ export function PonziLandSidebar({
           break;
         }
         case "action_result": {
-          console.log("action_result");
           if (log.name.startsWith("ponziland")) {
+            console.log("action_result");
             ponzilandState.refetch();
           }
           break;
         }
       }
     });
-  }, [contextId]);
-
-  // Sync account to store when available
-  useEffect(() => {
-    if (account && !cartridgeAccount) {
-      setCartridgeAccount(account);
-    }
-  }, [account, cartridgeAccount, setCartridgeAccount]);
+  }, [contextId, isConnected, account]);
 
   const queryClient = useQueryClient();
 
@@ -132,7 +149,26 @@ export function PonziLandSidebar({
     (state) => state.setShowHelpWindow
   );
 
-  if (!account || !cartridgeAccount) {
+  // Show loading state while account is being loaded
+  if (isLoading) {
+    return (
+      <div className="p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Loading...</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Connecting to wallet...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show connect prompt if no account
+  if (!isConnected || !account) {
     return (
       <div className="p-4">
         <Card>

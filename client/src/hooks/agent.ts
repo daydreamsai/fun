@@ -14,11 +14,13 @@ import { useRef } from "react";
 
 export function useContextState<TContext extends AnyContext>({
   agent,
+  enabled = true,
   ...ref
 }: {
   agent: AnyAgent;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
+  enabled?: boolean;
 }) {
   const contextId = agent.getContextId(ref);
   return useQuery({
@@ -31,16 +33,19 @@ export function useContextState<TContext extends AnyContext>({
       return false;
     },
     throwOnError: false,
+    enabled,
   });
 }
 
 export function useWorkingMemory<TContext extends AnyContext>({
   agent,
+  enabled = true,
   ...ref
 }: {
   agent: AnyAgent;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
+  enabled?: boolean;
 }) {
   const contextId = agent.getContextId(ref);
   return useQuery({
@@ -51,43 +56,50 @@ export function useWorkingMemory<TContext extends AnyContext>({
       );
     },
     initialData: () => [],
+    enabled,
   });
 }
 
 export function useLogs<TContext extends AnyContext>({
   agent,
+  enabled = true,
   ...ref
 }: {
   agent: AnyAgent;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
+  enabled?: boolean;
 }) {
   const [logs, setLogs] = useState<AnyRef[]>([]);
   const contextId = agent.getContextId(ref);
   const queryClient = useQueryClient();
 
-  const workingMemory = useWorkingMemory({ agent, ...ref });
+  const workingMemory = useWorkingMemory({ agent, enabled, ...ref });
 
   useEffect(() => {
+    if (!enabled) return;
+
     const unsubscribe = agent.subscribeContext(contextId, (log, _done) => {
       setLogs((logs) => [...logs.filter((l) => l.id !== log.id), log]);
     });
     return () => {
       unsubscribe();
     };
-  }, [contextId, agent]);
+  }, [contextId, agent, enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     setLogs([]);
-  }, [contextId]);
+  }, [contextId, enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     setLogs(
       workingMemory.data
         .slice()
         .sort((a, b) => (a.timestamp >= b.timestamp ? 1 : -1))
     );
-  }, [workingMemory.data, workingMemory.dataUpdatedAt]);
+  }, [workingMemory.data, workingMemory.dataUpdatedAt, enabled]);
 
   const clearMemory = async () => {
     await agent.memory.store.delete("working-memory:" + contextId);
