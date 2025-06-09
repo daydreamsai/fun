@@ -42,7 +42,21 @@ export const buy = action({
     });
 
     const token = num.toHexString(land[0].token_used);
-    const price = Number(land[0].sell_price);
+
+    // Handle both hex and decimal formats for sell_price due to indexer quirk
+    const rawPrice = land[0].sell_price;
+    let price: number;
+
+    if (typeof rawPrice === "string" && /[a-fA-F]/.test(rawPrice)) {
+      // It's hexadecimal format
+      price = parseInt(rawPrice, 16);
+    } else {
+      // It's decimal format
+      price = Number(rawPrice);
+    }
+
+    console.log("price", BigInt(price));
+    console.log("balance", BigInt(balance[0]));
 
     if (BigInt(balance[0]) < BigInt(price)) {
       return {
