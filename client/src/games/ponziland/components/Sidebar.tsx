@@ -83,7 +83,9 @@ export function PonziLandSidebar({
   args: InferSchemaArguments<PonzilandContext["schema"]>;
 }) {
   const { account } = useAccount();
-  const { cartridgeAccount } = useSettingsStore((state) => state);
+  const { cartridgeAccount, setCartridgeAccount } = useSettingsStore(
+    (state) => state
+  );
   const { mutate: login } = useStarknetLogin();
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
@@ -116,6 +118,13 @@ export function PonziLandSidebar({
       }
     });
   }, [contextId]);
+
+  // Sync account to store when available
+  useEffect(() => {
+    if (account && !cartridgeAccount) {
+      setCartridgeAccount(account);
+    }
+  }, [account, cartridgeAccount, setCartridgeAccount]);
 
   const queryClient = useQueryClient();
 

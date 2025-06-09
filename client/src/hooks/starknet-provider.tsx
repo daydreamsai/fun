@@ -25,10 +25,10 @@ const nonLocalController = new ControllerConnector({
     import.meta.env.VITE_PUBLIC_CHAIN === "mainnet"
       ? constants.StarknetChainId.SN_MAIN
       : constants.StarknetChainId.SN_SEPOLIA,
-  preset: "ponziland",
+  preset: "daydreams",
   policies: toSessionPolicies(policies.chains["SN_MAIN"].policies),
   slot: "ponziland",
-  namespace: "ponziland",
+  namespace: "daydreams",
 });
 
 const provider = jsonRpcProvider({

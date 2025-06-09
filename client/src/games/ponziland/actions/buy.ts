@@ -1,6 +1,6 @@
 import { action } from "@daydreamsai/core";
 import { z } from "zod";
-import { CallData, cairo } from "starknet";
+import { CallData, cairo, num } from "starknet";
 import type { Call } from "starknet";
 import { indexToPosition } from "../utils/utils";
 import { ponziland_address } from "../constants";
@@ -41,8 +41,8 @@ export const buy = action({
       calldata: CallData.compile({ address: ctx.options.account?.address! }),
     });
 
-    const token = land[0].token_used;
-    const price = land[0].sell_price;
+    const token = num.toHexString(land[0].token_used);
+    const price = Number(land[0].sell_price);
 
     if (BigInt(balance[0]) < BigInt(price)) {
       return {
@@ -54,10 +54,6 @@ export const buy = action({
           data.land_location,
       };
     }
-
-    console.log("land", land);
-    console.log("land 0", land[0]);
-    console.log("price", price);
 
     if (token == data.token_for_sale) {
       const approve_call: Call = {

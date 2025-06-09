@@ -26,7 +26,7 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { PonziLandSidebar } from "@/games/ponziland/components/Sidebar";
 import { ponziland } from "@/games/ponziland/ponziland";
 import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
-import { defaultInstructions, defaultRules } from "@/games/gigaverse/prompts";
+
 import { templates } from "@/games/ponziland/templates";
 
 export const Route = createFileRoute("/games/ponziland/$chatId")({
