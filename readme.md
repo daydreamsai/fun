@@ -30,7 +30,6 @@ Dreams Play is an open-source platform for building, running, and extending Dayd
 
 3. **Environment setup:**
 
-   - See `client/SUPABASE_SETUP.md` for database setup instructions.
    - Copy and configure any required `.env` files for each service.
 
 4. **Run locally:**
