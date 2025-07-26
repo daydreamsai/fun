@@ -13,7 +13,9 @@ import {
 } from "lucide-react";
 import { LogContainer } from "@/components/chat/LogsLIst";
 import { DungeonData, GameItemBalanceChange } from "../client/types/game";
-import { GameData } from "../context";
+import { GameData } from "../client/types/game";
+import { usePriceStore } from "@/store/priceStore";
+import { formatEther } from "viem";
 
 // Helper function to render move icon
 const renderMoveIcon = (move?: string) => {
@@ -59,6 +61,7 @@ function AttackAction({
   }>;
   gameData?: GameData;
 }) {
+  const { exchangeRate } = usePriceStore();
   if (!result) return null;
 
   if (!result.data.success) {
@@ -106,8 +109,13 @@ function AttackAction({
             <div className="flex gap-2">
               {result?.data.gameItemBalanceChanges.map((item, i) => {
                 const itemData = gameData.offchain.gameItems.find(
-                  (i) => parseInt(i.docId) === item.id
+                  (i: any) => parseInt(i.docId) === item.id
                 );
+
+                const floorPrice = gameData.marketplaceFloor.entities.find(
+                  (i: any) => parseInt(i.GAME_ITEM_ID_CID) === item.id
+                )?.ETH_MINT_PRICE_CID;
+
                 return (
                   <div className="text-center flex flex-col" key={i}>
                     <img
@@ -115,6 +123,13 @@ function AttackAction({
                       className="size-12 mb-2"
                     ></img>
                     <div>+{item.amount}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {floorPrice && exchangeRate
+                        ? `$${Number(
+                            formatEther(BigInt(floorPrice * exchangeRate))
+                          ).toFixed(4)}`
+                        : "N/A"}
+                    </div>
                   </div>
                 );
               })}
@@ -123,9 +138,6 @@ function AttackAction({
         )}
     </div>
   ) : null;
-  // (
-  //   <div>{JSON.stringify({ result })}</div>
-  // );
 }
 
 const lootIndexes: Record<string, number> = {

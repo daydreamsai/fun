@@ -227,12 +227,12 @@ export const gigaverseContext = context({
     }
   },
 
-  shouldContinue(ctx) {
-    if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
-      return true;
-    }
-    return false;
-  },
+  // shouldContinue(ctx) {
+  //   if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
+  //     return true;
+  //   }
+  //   return false;
+  // },
 
   render({ memory, options: { game } }) {
     const { selected, templates } = useTemplateStore.getState();
