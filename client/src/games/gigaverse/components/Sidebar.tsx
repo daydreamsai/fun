@@ -3,11 +3,7 @@ import { InferSchemaArguments, prepareContexts } from "@daydreamsai/core";
 import { Trash, ShieldQuestion, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  getAbstractAddress,
-  GigaverseContext,
-  gigaverseContext,
-} from "../context";
+import { GigaverseContext, gigaverseContext } from "../context";
 import { OverviewTab } from "@/games/gigaverse/components/OverviewTab";
 import { useContextState } from "@/hooks/agent";
 import { useSettingsStore } from "@/store/settingsStore";
@@ -20,6 +16,9 @@ import { SkillsTab } from "./SkillsTab";
 import { ErrorComponent, Link, useSearch } from "@tanstack/react-router";
 import { GigaverseAuth } from "../settings";
 import { useNavigate } from "@tanstack/react-router";
+
+export const getAbstractAddress = () =>
+  useSettingsStore.getState().abstractAddress;
 
 export function GigaverseSidebar({
   args,
@@ -131,7 +130,14 @@ export function GigaverseSidebar({
 
       <img src="/giga.jpeg" alt="Giga Banner" className="border-b" />
 
-      {gigaverseState.error ? (
+      {gigaverseState.isLoading ? (
+        <div className="p-4 m-2 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="text-muted-foreground">Loading game state...</p>
+          </div>
+        </div>
+      ) : gigaverseState.error ? (
         <>
           <div className="p-2 border border-destructive m-2">
             <ErrorComponent error={gigaverseState.error}></ErrorComponent>

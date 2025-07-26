@@ -1,18 +1,9 @@
-import {
-  context,
-  action,
-  extension,
-  formatXml,
-  formatValue,
-  XMLElement,
-  xml,
-} from "@daydreamsai/core";
+import { context, action, extension, formatXml, xml } from "@daydreamsai/core";
 import { string, z } from "zod";
 import { useSettingsStore } from "@/store/settingsStore";
 import { GameClient } from "./client/GameClient";
 import { useTemplateStore } from "@/store/templateStore";
 import { GetSkillsProgressResponse } from "./client/types/responses";
-import { jsonPath } from "@/lib/jsonPath";
 import {
   GameData,
   GigaverseState,
@@ -27,11 +18,7 @@ import {
 import { ActionPayload } from "./client/types/requests";
 import { Cache } from "@/agent/utils/cache";
 import { parseDungeonState, parseItems } from "./utils";
-
-// Get the token directly from the store for better reactivity
-export const getGigaToken = () => useSettingsStore.getState().gigaverseToken;
-export const getAbstractAddress = () =>
-  useSettingsStore.getState().abstractAddress;
+import { render } from "./render";
 
 export const getApiBaseUrl = () => {
   if (import.meta.env.DEV) {
@@ -95,7 +82,6 @@ export const gigaverseContext = context({
   key: ({ id }) => id,
   maxSteps: 100,
   maxWorkingMemorySize: 20,
-
   async setup(_, settings, agent) {
     const {
       gigaverseToken,
@@ -158,6 +144,8 @@ export const gigaverseContext = context({
       true
     );
 
+    const energy = await client.getEnergy(address);
+
     return {
       address,
       client,
@@ -172,6 +160,7 @@ export const gigaverseContext = context({
           skills: playerSkills,
           balances,
           consumables,
+          energy,
         },
         today,
       },
@@ -179,7 +168,7 @@ export const gigaverseContext = context({
     };
   },
 
-  async create({ options }): Promise<GigaverseState> {
+  async create({ options }): Promise<GigaverseState & { gamesToPlay: number }> {
     const memory = await fetchGigaverseState(
       options.client,
       options.game,
@@ -187,11 +176,19 @@ export const gigaverseContext = context({
       options.game.marketplaceFloor,
       true
     );
-    return memory;
+
+    return {
+      ...memory,
+      gamesToPlay: 0,
+    };
   },
 
   async loader(state, _agent) {
     const { maxSteps, maxWorkingMemorySize } = useSettingsStore.getState();
+
+    state.options.game.player.energy = await state.options.client.getEnergy(
+      state.options.address
+    );
 
     state.settings.maxSteps ??= maxSteps;
     state.settings.maxWorkingMemorySize ??= maxWorkingMemorySize;
@@ -217,22 +214,33 @@ export const gigaverseContext = context({
         );
       }
     } else {
-      state.memory = await fetchGigaverseState(
+      const gigaverseState = await fetchGigaverseState(
         state.options.client,
         state.options.game,
         state.options.address,
         state.options.game.marketplaceFloor,
         false
       );
+
+      state.memory = {
+        ...gigaverseState,
+        gamesToPlay: state.memory.gamesToPlay,
+      };
     }
   },
+  async onError(error, ctx) {
+    console.error(error);
+  },
 
-  // shouldContinue(ctx) {
-  //   if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
-  //     return true;
-  //   }
-  //   return false;
-  // },
+  shouldContinue(ctx) {
+    // If we're in a dungeon and player is alive, continue
+    if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
+      return true;
+    }
+
+    // If player died or we're not in a dungeon, stop
+    return false;
+  },
 
   render({ memory, options: { game } }) {
     const { selected, templates } = useTemplateStore.getState();
@@ -298,10 +306,9 @@ export const gigaverseContext = context({
     const inventory = xml(
       "inventory",
       undefined,
-      [
-        ...memory.balances,
-        // ...memory.consumables
-      ].filter((t) => t.balance > 0 && t.item.type !== "Consumable")
+      [...memory.balances].filter(
+        (t) => t.balance > 0 && t.item.type !== "Consumable"
+      )
     );
 
     const consumables = xml(
@@ -330,9 +337,6 @@ export const gigaverseContext = context({
     return prompt;
   },
 }).setActions([
-  /**
-   * Action to attack in the rock-paper-scissors game
-   */
   action({
     name: "gigaverse.attackInDungeon",
     description:
@@ -469,9 +473,7 @@ Enemy Shield: ${state.enemy.shield.current}
       }
     },
   }),
-  /**
-   * Action to start a new dungeon run
-   */
+
   action({
     name: "gigaverse.startNewRun",
     description:
@@ -495,23 +497,25 @@ Enemy Shield: ${state.enemy.shield.current}
     - 150 Giga Shards (itemId: 3)
 
     `,
-    // # Consumables
-    // Consumables selected will be brought into battle.
-    // You can only select items from <consumables>.
-    // You can select one consumable, to use more you need special gear.
-    // Important:
-    // All items brought into battle that are unsed will be lost upon death.
-    // Dont use any other type of item, only use consumables. If you are not sure dont use it.
+
     schema: {
       dungeonId: z
         .number()
         .default(1)
         .describe("The ID of the dungeon to start."),
-      // consumables: z.number().array().describe("The IDs of the consumables"),
     },
     async handler(data, ctx) {
       try {
         const { dungeonId } = data;
+
+        if (ctx.memory.gamesToPlay <= 0) {
+          return {
+            success: false,
+            error: "You dont have any games to play. First add games to play.",
+          };
+        }
+
+        ctx.memory.gamesToPlay -= 1;
 
         const payload = {
           action: "start_run",
@@ -554,12 +558,18 @@ Enemy Shield: ${state.enemy.shield.current}
           error instanceof Error ? error.message : String(error);
         console.error("Error starting new run:", error);
 
-        ctx.memory = await fetchGigaverseState(
+        const gigaverseState = await fetchGigaverseState(
           ctx.options.client,
           ctx.options.game,
           ctx.options.address,
           ctx.options.game.marketplaceFloor
         );
+
+        ctx.memory = {
+          ...gigaverseState,
+          gamesToPlay: ctx.memory.gamesToPlay,
+        };
+
         ctx.options.actionToken = "";
 
         return {
@@ -598,10 +608,6 @@ Enemy Shield: ${state.enemy.shield.current}
       };
     },
   }),
-  // action({
-  //   enabled: () => false,
-  //   name: "gigaverse.",
-  // }),
   action({
     enabled: () => false,
     name: "gigaverse.levelup",
@@ -636,50 +642,31 @@ Enemy Shield: ${state.enemy.shield.current}
       };
     },
   }),
-  // action({
-  //   enabled: () => false,
-  //   name: "gigaverse.marketplace.listings",
-  //   schema: {
-  //     itemId: z.number(),
-  //   },
-  //   async handler() {
-  //     // https://gigaverse.io/api/marketplace/eth/player/0xBfe67820C7aA9bC167fb2ED2EdDE0dABdF1d3c20
-  //     // https://gigaverse.io/api/marketplace/item/listing/item/151
-  //   },
-  // }),
+
+  // action to add number of games to play
+  action({
+    name: "gigaverse.addGamesToPlay",
+    description: "Add number of games to play.",
+    instructions: `\
+You should only ever use this function if the user has asked you to add games to play.
+`,
+    schema: {
+      games: z.number(),
+    },
+    async handler({ games }, { memory }) {
+      memory.gamesToPlay += Number(games);
+
+      return {
+        success: true,
+        message: `Added ${games} games to play`,
+      };
+    },
+  }),
 ]);
 
-// Create the Gigaverse agent with UI integration
 export const giga = extension({
   name: "giga",
   contexts: {
     gigaverse: gigaverseContext,
   },
 });
-
-export function render<Template extends string>(str: Template, data: any) {
-  return str
-    .trim()
-    .replace(/\{\{([a-zA-Z0-9_.]+)\}\}/g, (_match, key: string) => {
-      const res = jsonPath(data, key);
-      if (!res) return "";
-      const [value] = res;
-      if (typeof value === "object") {
-        if (value && "tag" in value) return formatXml(value as XMLElement);
-        if (value) return formatValue(value);
-      }
-
-      if (Array.isArray(value)) {
-        return value
-          .map((v) => {
-            if (typeof v === "object" && v && "tag" in v) {
-              return formatXml(v);
-            }
-            return formatValue(v);
-          })
-          .join("\n");
-      }
-
-      return value ?? "";
-    });
-}

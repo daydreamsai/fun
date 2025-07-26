@@ -1,5 +1,6 @@
 import { ContextState } from "@daydreamsai/core";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 import { GigaverseContext } from "../context";
 import { GameData, GigaverseDungeonState, Player } from "../client/types/game";
@@ -28,7 +29,19 @@ export function OverviewTab({
   const { game } = state.options;
   const { player } = game;
 
-  const energy = state.memory.energy.entities[0].parsedData;
+  const energy = player.energy.entities[0].parsedData;
+
+  // Calculate time until full energy
+  const energyNeeded = energy.maxEnergy - energy.energyValue;
+  const secondsUntilFull =
+    energyNeeded > 0
+      ? Math.ceil(energyNeeded / (energy.regenPerHour / 3600))
+      : 0;
+  const minutesUntilFull = Math.floor(secondsUntilFull / 60);
+  const hoursUntilFull = Math.floor(minutesUntilFull / 60);
+  const remainingMinutes = minutesUntilFull % 60;
+
+  const playerHealth = dungeon?.player.health.current;
 
   return (
     <div className="flex flex-col gap-4 pb-8">
@@ -38,27 +51,49 @@ export function OverviewTab({
         </h4>
         <div className="">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-medium uppercase">Energy</span>
+            <span className="text-sm font-medium uppercase">
+              Energy{" "}
+              <span className="text-xs text-muted-foreground animate-pulse">
+                {energy.isPlayerJuiced ? "Juiced" : "Not Juiced"}
+              </span>
+            </span>
             <span className="text-sm text-center">
               {energy.energyValue} / {energy.maxEnergy}
             </span>
           </div>
-          <div className="w-full bg-muted h-2.5">
+          <div className="relative w-full bg-muted h-2.5 overflow-hidden">
             <div
               className={cn(
-                "h-2.5 animate-pulse",
-                energy.isPlayerJuiced ? "bg-accent" : "bg-primary"
+                "h-2.5 transition-all duration-500",
+                energy.isPlayerJuiced ? "bg-accent animate-pulse" : "bg-primary"
               )}
               style={{
                 width: `${Math.min(100, perc(energy.energyValue, energy.maxEnergy))}%`,
               }}
-            ></div>
+            />
+            {/* Subtle regeneration indicator */}
+            {energy.energyValue < energy.maxEnergy && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-slide-x" />
+            )}
+          </div>
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-xs text-muted-foreground">
+              +{energy.regenPerHour}/h
+            </span>
+            {energy.energyValue < energy.maxEnergy && (
+              <span className="text-xs text-muted-foreground">
+                Full in{" "}
+                {hoursUntilFull > 0
+                  ? `${hoursUntilFull}h ${remainingMinutes}m`
+                  : `${minutesUntilFull}m`}
+              </span>
+            )}
           </div>
         </div>
       </div>
       {/* <JuiceStats juice={juice} /> */}
 
-      {dungeon ? (
+      {dungeon && game && playerHealth && playerHealth > 0 ? (
         <DungeonState state={dungeon} game={game} />
       ) : (
         <>
@@ -131,11 +166,14 @@ function Dungeons({
 }) {
   const { agent } = useAgentStore();
   const navigate = useNavigate({ from: "/games/gigaverse/$chatId" });
+  const [loadingDungeons, setLoadingDungeons] = useState<Set<number>>(
+    new Set()
+  );
 
   return (
     <div className="flex flex-col gap-2">
       <h4 className="text-secondary-foreground uppercase text-center bg-secondary">
-        Dungeons
+        Dungeons to run: {state.memory.gamesToPlay}
       </h4>
       <div className="flex flex-col gap-2 text-sm">
         {today.dungeonDataEntities.map((dungeon) => {
@@ -158,9 +196,7 @@ function Dungeons({
                   )?.LEVEL_CID ?? 0}
                 </div>
               </div>
-              <div className="flex justify-between my-1">
-                {/* <div>134/146</div> */}
-              </div>
+
               <div className="flex gap-2 mt-2 mb-1 justify-between">
                 <Button
                   size="sm"
@@ -182,10 +218,25 @@ function Dungeons({
                   variant="default"
                   disabled={
                     !isCheckpointClear ||
-                    state.memory.energy.entities[0].parsedData.energyValue <
-                      dungeon.ENERGY_CID
+                    state.options.game.player.energy.entities[0].parsedData
+                      .energyValue < dungeon.ENERGY_CID ||
+                    loadingDungeons.has(dungeon.ID_CID)
                   }
                   onClick={async () => {
+                    // Set loading state
+                    setLoadingDungeons((prev) =>
+                      new Set(prev).add(dungeon.ID_CID)
+                    );
+
+                    // Clear loading state after 2 seconds
+                    setTimeout(() => {
+                      setLoadingDungeons((prev) => {
+                        const newSet = new Set(prev);
+                        newSet.delete(dungeon.ID_CID);
+                        return newSet;
+                      });
+                    }, 2000);
+
                     await agent.send({
                       context: state.context,
                       args: state.args,
@@ -193,13 +244,18 @@ function Dungeons({
                         type: "message",
                         data: {
                           user: "player",
-                          content: "Lets play " + dungeon.NAME_CID,
+                          content:
+                            "Lets play 1 game of " +
+                            dungeon.NAME_CID +
+                            "first add a game to play then start a new run",
                         },
                       },
                     });
                   }}
                 >
-                  Play
+                  {loadingDungeons.has(dungeon.ID_CID)
+                    ? "Dungeon Started"
+                    : "Play"}
                 </Button>
               </div>
             </div>

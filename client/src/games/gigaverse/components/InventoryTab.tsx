@@ -8,7 +8,7 @@ interface InventoryTabProps {
 }
 
 export function InventoryTab({ state }: InventoryTabProps) {
-  const { balances, consumables } = state.options.game.player;
+  const { balances } = state.options.game.player;
 
   const { exchangeRate } = usePriceStore();
 
@@ -24,7 +24,7 @@ export function InventoryTab({ state }: InventoryTabProps) {
             <div className="relative">
               <img
                 src={itemData?.IMG_URL_CID}
-                className="w-full h-auto rounded-md"
+                className="w-full aspect-square object-cover rounded-md"
               />
               <div className="absolute top-1 left-1 bg-primary/20 text-white px-1.5 py-0.5 rounded text-xs font-medium">
                 {balance}

@@ -20,7 +20,7 @@ export function LogContainer({
   return (
     <div
       className={cn(
-        "relative w-full py-2 px-4 text-sm border border-border/50 flex flex-col bg-card",
+        "relative w-full py-2 px-4 text-sm border border-border/10 flex flex-col bg-card/50",
         className
       )}
     >
@@ -55,7 +55,7 @@ export const defaultComponents: ComponentsRecord = {
           </div>
           <CollapsibleContent>
             {log.content && (
-              <pre className="whitespace-pre-wrap break-all my-2 text-white">
+              <pre className="whitespace-pre-wrap break-all my-2 ">
                 {log.content.trim()}
               </pre>
             )}

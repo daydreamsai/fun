@@ -35,7 +35,7 @@ export function MessageInput({
           placeholderText ||
           (isLoading ? "Waiting for response..." : "Type your message...")
         }
-        className="border flex-1 px-6 py-4 focus:outline-none focus:border-primary"
+        className="border flex-1 px-6 py-4 focus:outline-none focus:border-primary "
         disabled={disabled || isLoading}
       />
       {isLoading ? (

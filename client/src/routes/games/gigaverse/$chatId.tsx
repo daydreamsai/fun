@@ -276,14 +276,14 @@ function RouteComponent() {
         />
       </div>
 
-      <div className="bg-background flex mt-auto">
+      <div className="bg-background flex mt-auto p-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"
               disabled={send.isPending}
               onClick={() => setShowTemplateEditor(true)}
-              className="h-full flex text-muted-foreground"
+              className="h-full flex text-muted-foreground border-r-0"
             >
               <ScrollText />
             </Button>
