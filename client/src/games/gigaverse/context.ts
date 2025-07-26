@@ -25,7 +25,7 @@ export const getApiBaseUrl = () => {
     return "/gigaverse-api";
   }
 
-  return "https://fun-production-4656.up.railway.app/api";
+  return import.meta.env.VITE_GIGA_PROXY + "/api";
 };
 
 export type GigaverseContext = typeof gigaverseContext;
