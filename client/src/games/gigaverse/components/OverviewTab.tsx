@@ -1,8 +1,8 @@
 import { ContextState } from "@daydreamsai/core";
 import { Button } from "@/components/ui/button";
 
-import { GameData, GigaverseContext, GigaverseDungeonState } from "../context";
-import { Player } from "../client/types/game";
+import { GigaverseContext } from "../context";
+import { GameData, GigaverseDungeonState, Player } from "../client/types/game";
 import { cn } from "@/lib/utils";
 
 import {
@@ -11,96 +11,17 @@ import {
 } from "../client/types/responses";
 import { useAgentStore } from "@/store/agentStore";
 import { useNavigate } from "@tanstack/react-router";
+import { perc } from "../utils";
+import { Weapons } from "./Weapons";
+import { Stats } from "./Stats";
 
-interface OverviewTabProps {
+export function OverviewTab({
+  state,
+}: {
   state: ContextState<GigaverseContext> | undefined;
   lastUpdated: number;
   refresh: () => void;
-}
-
-function perc(current: number, max: number) {
-  return current && max ? (current / max) * 100 : 0;
-}
-
-// const chests = {
-//   entities: [
-//     {
-//       docId: "Recipe#700000",
-//       ID_CID: "700000",
-//       NAME_CID: "Noob Chest",
-//       FACTION_CID_array: [],
-//       GEAR_TYPE_CID: 0,
-//       DURABILITY_CID: 0,
-//       TIER_CID: 0,
-//       UINT256_CID: 0,
-//       INPUT_NAMES_CID_array: [],
-//       INPUT_ID_CID_array: [],
-//       INPUT_AMOUNT_CID_array: [],
-//       LOOT_ID_CID_array: [2, 21],
-//       LOOT_AMOUNT_CID_array: [30, 1],
-//       LOOT_FULFILLER_ID_CID_array: [
-//         "75502504502920090138965878018173592913898371762662353957054979645271527284958",
-//         "75502504502920090138965878018173592913898371762662353957054979645271527284958",
-//       ],
-//       TIME_BETWEEN_CID: 0,
-//       TAG_CID_array: ["node"],
-//       SUCCESS_RATE_CID: 100,
-//       COOLDOWN_CID: 604800,
-//       MAX_COMPLETIONS_CID: 0,
-//       ENERGY_CID: 0,
-//     },
-//     {
-//       docId: "Recipe#700001",
-//       ID_CID: "700001",
-//       NAME_CID: "Blue Pot 1",
-//       FACTION_CID_array: [],
-//       GEAR_TYPE_CID: 5,
-//       DURABILITY_CID: 2,
-//       TIER_CID: 1,
-//       UINT256_CID: 4,
-//       INPUT_NAMES_CID_array: [],
-//       INPUT_ID_CID_array: [],
-//       INPUT_AMOUNT_CID_array: [],
-//       LOOT_ID_CID_array: [60],
-//       LOOT_AMOUNT_CID_array: [1],
-//       LOOT_FULFILLER_ID_CID_array: [
-//         "53627656127806277773141899801706887938266705126509836268160347079208875429400",
-//       ],
-//       TIME_BETWEEN_CID: 0,
-//       TAG_CID_array: ["node"],
-//       SUCCESS_RATE_CID: 100,
-//       COOLDOWN_CID: 259200,
-//       MAX_COMPLETIONS_CID: 0,
-//       ENERGY_CID: 5,
-//     },
-//     {
-//       docId: "Recipe#700002",
-//       ID_CID: "700002",
-//       NAME_CID: "Tan Pot 1",
-//       FACTION_CID_array: [],
-//       GEAR_TYPE_CID: 5,
-//       DURABILITY_CID: 2,
-//       TIER_CID: 2,
-//       UINT256_CID: 2,
-//       INPUT_NAMES_CID_array: [],
-//       INPUT_ID_CID_array: [],
-//       INPUT_AMOUNT_CID_array: [],
-//       LOOT_ID_CID_array: [61],
-//       LOOT_AMOUNT_CID_array: [1],
-//       LOOT_FULFILLER_ID_CID_array: [
-//         "53627656127806277773141899801706887938266705126509836268160347079208875429400",
-//       ],
-//       TIME_BETWEEN_CID: 0,
-//       TAG_CID_array: ["node"],
-//       SUCCESS_RATE_CID: 100,
-//       COOLDOWN_CID: 86400,
-//       MAX_COMPLETIONS_CID: 0,
-//       ENERGY_CID: 5,
-//     },
-//   ],
-// };
-
-export function OverviewTab({ state }: OverviewTabProps) {
+}) {
   if (!state) return null;
 
   const { dungeon } = state.memory;
@@ -122,11 +43,11 @@ export function OverviewTab({ state }: OverviewTabProps) {
               {energy.energyValue} / {energy.maxEnergy}
             </span>
           </div>
-          <div className="w-full bg-gray-200 h-2.5 dark:bg-gray-700">
+          <div className="w-full bg-muted h-2.5">
             <div
               className={cn(
                 "h-2.5 animate-pulse",
-                energy.isPlayerJuiced ? "bg-orange-500" : "bg-cyan-600"
+                energy.isPlayerJuiced ? "bg-accent" : "bg-primary"
               )}
               style={{
                 width: `${Math.min(100, perc(energy.energyValue, energy.maxEnergy))}%`,
@@ -138,7 +59,7 @@ export function OverviewTab({ state }: OverviewTabProps) {
       {/* <JuiceStats juice={juice} /> */}
 
       {dungeon ? (
-        <DungeoState state={dungeon} game={game} />
+        <DungeonState state={dungeon} game={game} />
       ) : (
         <>
           <Dungeons
@@ -193,40 +114,6 @@ export function OverviewTab({ state }: OverviewTabProps) {
   );
 }
 
-// function ChestAndPots() {
-//   return (
-//     <div>
-//       <div className="bg-secondary mb-2 flex justify-center relative items-center">
-//         <h4 className="text-secondary-foreground uppercase text-center">
-//           Chests & Pots
-//         </h4>
-//         {/* <Button variant="ghost" size="icon" className="">
-//             <ChevronDown />
-//           </Button> */}
-//       </div>
-//       <div className="flex flex-col gap-2">
-//         {chests.entities.map((chest) => (
-//           <div key={chest.docId} className="flex gap-2 text-sm items-center">
-//             <div>
-//               <div>{chest.NAME_CID}</div>
-//               <div className="flex gap-2 text-xs text-muted-foreground">
-//                 <div>Tier: {chest.TIER_CID}</div>
-//                 <div>Energy: {chest.ENERGY_CID}</div>
-//               </div>
-//             </div>
-//             {/* <div>{chest.COOLDOWN_CID}</div> */}
-//             <div className="ml-auto">
-//               <Button className="" size="sm" variant="outline" disabled>
-//                 Collect
-//               </Button>
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
-
 const skillByDungeon: Record<number, number> = {
   1: 1,
   2: 1,
@@ -274,15 +161,11 @@ function Dungeons({
               <div className="flex justify-between my-1">
                 {/* <div>134/146</div> */}
               </div>
-              <div className="flex gap-2 mt-2 mb-1">
-                {/* <Button size="sm" variant="outline" className="w-full">
-              Stats
-            </Button>
-            */}
+              <div className="flex gap-2 mt-2 mb-1 justify-between">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="w-full"
+                  className="w-1/2"
                   onClick={() => {
                     navigate({
                       search: {
@@ -295,8 +178,8 @@ function Dungeons({
                 </Button>
                 <Button
                   size="sm"
+                  className="w-1/2"
                   variant="default"
-                  className="w-full"
                   disabled={
                     !isCheckpointClear ||
                     state.memory.energy.entities[0].parsedData.energyValue <
@@ -322,21 +205,6 @@ function Dungeons({
             </div>
           );
         })}
-        {/* <div>
-          <div>Dungetron 5000</div>
-          <div className="flex justify-between">
-            <div>Lvl: 5</div>
-            <div>134/146</div>
-          </div>
-          <div className="flex gap-2 mt-1">
-            <Button variant="secondary" className="w-full">
-              View Skills
-            </Button>
-            <Button variant="default" className="w-full" disabled>
-              Play Dungeon
-            </Button>
-          </div>
-        </div> */}
       </div>
     </div>
   );
@@ -388,7 +256,7 @@ function Dungeons({
 //   );
 // }
 
-function DungeoState({
+function DungeonState({
   state,
   game,
 }: {
@@ -397,12 +265,6 @@ function DungeoState({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      {/* <div className="py-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium uppercase">Loot Available</span>
-          <span className="text-sm">{state.lootPhase || "None"}</span>
-        </div>
-      </div> */}
       <div>
         <h5 className="text-sm font-medium mb-2 text-secondary-foreground uppercase text-center bg-secondary">
           Dungeon
@@ -471,117 +333,16 @@ function DungeoState({
         <Stats
           title="Player"
           player={state.player}
-          colors={{ hp: "bg-green-600/80", shield: "bg-blue-600/80" }}
+          colors={{ hp: "bg-primary/80", shield: "bg-primary/80" }}
         />
         <Stats
           title="Enemy"
           player={state.enemy}
-          colors={{ hp: "bg-red-600/80", shield: "bg-purple-600/80" }}
+          colors={{ hp: "bg-destructive/80", shield: "bg-secondary/80" }}
         />
       </div>
       <Weapons player={state.player} title="Weapons" />
       <Weapons player={state.enemy} title="Enemy Weapons" />
-    </div>
-  );
-}
-
-function Stats({
-  title,
-  player,
-  colors,
-}: {
-  title: string;
-  player: Player;
-  colors: { hp: string; shield: string };
-}) {
-  return (
-    <div className="">
-      <h5 className="text-sm font-medium mb-2 text-secondary-foreground uppercase text-center bg-secondary">
-        {title}
-      </h5>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="text-sm">HP:</span>
-          <span className="text-sm font-medium">
-            {player.health.current}/{player.health.currentMax}
-          </span>
-        </div>
-        <div className="w-full bg-muted  h-2 mt-1">
-          <div
-            className={cn("h-2", colors.hp)}
-            style={{
-              width: `${perc(player.health.current, player.health.currentMax)}%`,
-            }}
-          ></div>
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-sm">Shield:</span>
-          <span className="text-sm font-medium">
-            {player.shield.current}/{player.shield.currentMax}
-          </span>
-        </div>
-        <div className="w-full bg-muted  h-2 mt-1">
-          <div
-            className={cn("h-2", colors.shield)}
-            style={{
-              width: `${perc(player.shield.current, player.shield.currentMax)}%`,
-            }}
-          ></div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Weapons({ title, player }: { title: string; player: Player }) {
-  return (
-    <div>
-      <h5 className="text-sm font-medium mb-2 uppercase text-center text-secondary-foreground bg-secondary">
-        {title}
-      </h5>
-      <div className="grid grid-cols-3 gap-2">
-        <div className="border-2 border-secondary rounded-md p-2 flex flex-col items-center">
-          <div className="font-medium">⚔️ x {player.rock.currentCharges}</div>
-          <div className="text-sm mt-1 space-y-0.5 w-full">
-            <div className="flex justify-between">
-              <span>ATK:</span>
-              <span>{player.rock.currentATK}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>DEF:</span>
-              <span>{player.rock.currentDEF}</span>
-            </div>
-          </div>
-        </div>
-        <div className="border-2 border-secondary rounded-md p-2 flex flex-col items-center">
-          <div className="font-medium">🛡️ x {player.paper.currentCharges}</div>
-          <div className="text-sm mt-1 space-y-0.5 w-full">
-            <div className="flex justify-between">
-              <span>ATK:</span>
-              <span>{player.paper.currentATK}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>DEF:</span>
-              <span>{player.paper.currentDEF}</span>
-            </div>
-          </div>
-        </div>
-        <div className="border-2 border-secondary rounded-md p-2 flex flex-col items-center">
-          <div className="font-medium">
-            ✨ x {player.scissor.currentCharges}
-          </div>
-          <div className="text-sm mt-1 space-y-0.5 w-full">
-            <div className="flex justify-between">
-              <span>ATK:</span>
-              <span>{player.scissor.currentATK}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>DEF:</span>
-              <span>{player.scissor.currentDEF}</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

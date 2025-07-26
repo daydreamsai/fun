@@ -23,17 +23,17 @@ const renderMoveIcon = (move?: string) => {
 
   switch (move) {
     case "rock":
-      return <Sword className={`${iconClass} text-stone-500`} />;
+      return <Sword className={`${iconClass} text-muted-foreground`} />;
     case "paper":
-      return <ShieldAlert className={`${iconClass} text-blue-400`} />;
+      return <ShieldAlert className={`${iconClass} text-primary`} />;
     case "scissor":
-      return <Stars className={`${iconClass} text-violet-500`} />;
+      return <Stars className={`${iconClass} text-secondary`} />;
     case "loot_one":
-      return <PackageIcon className={`${iconClass} text-amber-500`} />;
+      return <PackageIcon className={`${iconClass} text-accent`} />;
     case "loot_two":
-      return <Package2Icon className={`${iconClass} text-emerald-500`} />;
+      return <Package2Icon className={`${iconClass} text-primary`} />;
     case "loot_three":
-      return <GiftIcon className={`${iconClass} text-purple-500`} />;
+      return <GiftIcon className={`${iconClass} text-secondary`} />;
     default:
       return null;
   }
@@ -84,10 +84,10 @@ function AttackAction({
           <div
             className={`ml-auto px-2 py-1 rounded text-xs uppercase font-bold ${
               run.players[0].thisPlayerWin
-                ? "bg-green-500/10 text-green-500"
+                ? "bg-primary/10 text-primary"
                 : run.players[0].otherPlayerWin
-                  ? "bg-red-500/10 text-red-500"
-                  : "bg-yellow-500/10 text-yellow-500"
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-accent/10 text-accent"
             }`}
           >
             {run.players[0].thisPlayerWin
@@ -205,28 +205,28 @@ export function GigaverseAction({
 
       {call.name === "gigaverse.startNewRun" && (
         <div className="mt-2 flex items-center gap-2">
-          <Play className="h-4 w-4 text-green-500" />
+          <Play className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium">New Run Started</span>
         </div>
       )}
 
       {call.name === "gigaverse.getPlayerState" && (
-        <div className="p-3 bg-blue-500/5 rounded-md border border-blue-500/30 flex items-center gap-2">
-          <Shield className="h-4 w-4 text-blue-500" />
+        <div className="p-3 bg-primary/5 rounded-md border border-primary/30 flex items-center gap-2">
+          <Shield className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium">Player Status Updated</span>
         </div>
       )}
 
       {call.name === "gigaverse.getUpcomingEnemies" && (
-        <div className="p-3 bg-purple-500/5 rounded-md border border-purple-500/30 flex items-center gap-2">
-          <Flag className="h-4 w-4 text-purple-500" />
+        <div className="p-3 bg-secondary/5 rounded-md border border-secondary/30 flex items-center gap-2">
+          <Flag className="h-4 w-4 text-secondary" />
           <span className="text-sm font-medium">Enemies Scouted</span>
         </div>
       )}
 
       {call.name === "gigaverse.manuallyUpdateState" && (
-        <div className="p-3 bg-amber-500/5 rounded-md border border-amber-500/30 flex items-center gap-2">
-          <RefreshCw className="h-4 w-4 text-amber-500" />
+        <div className="p-3 bg-accent/5 rounded-md border border-accent/30 flex items-center gap-2">
+          <RefreshCw className="h-4 w-4 text-accent" />
           <span className="text-sm font-medium">Game State Updated</span>
         </div>
       )}

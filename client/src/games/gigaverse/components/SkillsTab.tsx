@@ -1,5 +1,6 @@
 import { ContextState } from "@daydreamsai/core";
 import { GigaverseContext } from "../context";
+import { Separator } from "@/components/ui/separator";
 
 interface SkillsTabProps {
   state: ContextState<GigaverseContext>;
@@ -8,19 +9,23 @@ interface SkillsTabProps {
 export function SkillsTab({ state }: SkillsTabProps) {
   const { skills, player } = state.options.game;
 
+  console.log(player.skills);
+
   return (
     <div className="">
-      {player.skills.entities.map((progress) => {
+      {player.skills.entities.map((progress, index) => {
         const skill = skills.entities.find(
           (skill) => parseInt(skill.docId) === progress.SKILL_CID
         )!;
 
         return (
           <div key={progress.SKILL_CID} className="">
+            {index > 0 && <Separator className="mb-4" />}
             <div className="truncate">{skill.NAME_CID}</div>
             <div className="text-muted-foreground">
               Level {progress.LEVEL_CID}
             </div>
+            <Separator className="my-2" />
             <div className="mt-2 text-sm">
               {skill.stats.map((stat, i) => (
                 <div className="grid grid-cols-3 items-baseline justify-between even:mb-2">

@@ -64,7 +64,6 @@ export const Route = createRootRouteWithContext<{
                       <Separator orientation="vertical" className="h-4" />
                       {sidebar?.context.sidebar && (
                         <Button
-                          variant="ghost"
                           size="icon"
                           className="h-7 w-7"
                           onClick={() => setIsMobileSidebarOpen((t) => !t)}

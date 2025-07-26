@@ -135,7 +135,7 @@ function Index() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className=" text-gray-500 mt-2 font-normal"
+              className=" text-muted-foreground mt-2 font-normal"
             >
               agentic-automation for your web3 games
             </motion.p>
@@ -158,11 +158,11 @@ function Index() {
           >
             {chats?.length > 0 ? (
               chats.map((chat: any, index: number) => (
-                <motion.div
+                <div
                   key={chat.key}
-                  variants={itemVariants}
-                  whileHover="hover"
-                  custom={index}
+                  // variants={itemVariants}
+                  // whileHover="hover"
+                  // custom={index}
                 >
                   <Link
                     to="/games/gigaverse/$chatId"
@@ -183,7 +183,7 @@ function Index() {
                       <h3 className="font-semibold text-xl mb-1">{chat.key}</h3>
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               ))
             ) : (
               <motion.div
@@ -213,50 +213,6 @@ function Index() {
                 </motion.div>
               </motion.div>
             )}
-          </motion.div>
-        </motion.section>
-        {/* Upcoming Games Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-12"
-        >
-          <h2 className="text-2xl font-bold mb-6">Upcoming Agent Games</h2>
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}
-          >
-            {upcomingGames.map((game, index) => (
-              <motion.div
-                key={game.id}
-                variants={itemVariants}
-                whileHover="hover"
-                custom={index}
-                className="relative"
-              >
-                <div className="block bg-background border">
-                  <div className="h-48 bg-gray-200 relative overflow-hidden opacity-60">
-                    <img
-                      src={game.image}
-                      alt={game.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <span className="text-white font-semibold px-4 py-2 rounded-full bg-black/50 backdrop-blur-sm">
-                        Coming Soon
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-xl mb-1">{game.name}</h3>
-                    <p className="text-sm text-gray-500">{game.description}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
           </motion.div>
         </motion.section>
       </motion.div>

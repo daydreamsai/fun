@@ -90,7 +90,7 @@ function PaymentSuccessPage() {
             </div>
           ) : paymentDetails?.success ? (
             <div className="flex flex-col items-center space-y-4">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+              <CheckCircle className="h-16 w-16 text-primary" />
               <p className="text-xl font-medium">
                 {paymentDetails.credits} credits have been added to your
                 account!
@@ -103,7 +103,7 @@ function PaymentSuccessPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center space-y-4 text-center">
-              <p className="text-red-500 font-medium">
+              <p className="text-destructive font-medium">
                 {error ||
                   "We couldn't verify your payment. Please try again or contact support."}
               </p>

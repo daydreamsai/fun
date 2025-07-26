@@ -1,5 +1,16 @@
 // path: src/client/types/game.ts
 
+import { GetAccountResponse, GetStaticResponse } from "../GameClient";
+import {
+  GetAllGameItemsResponse,
+  GetEnergyResponse,
+  GetAllSkillsResponse,
+  GetFactionResponse,
+  GetSkillsProgressResponse,
+  GetTodayResponse,
+  GetGigaJuiceResponse,
+} from "./responses";
+
 /**
  * Type definitions for players, runs, equipment, items, etc.
  */
@@ -127,3 +138,78 @@ export interface EnemyEntity {
   LOOT_ID_CID: number;
   MOVE_STATS_CID_array: number[];
 }
+
+// Define an interface for the state (template removed)
+export interface GigaverseDungeonState {
+  currentDungeon: number;
+  currentRoom: number;
+  currentEnemy: number;
+
+  player: Player;
+  items: number[];
+
+  enemy: Player;
+
+  lootPhase: boolean;
+  lootOptions: any[];
+
+  lastBattleResult: string | null;
+}
+
+export type ItemBalance = {
+  item: {
+    id: number;
+    name: string;
+    description: string;
+    type: string;
+  };
+  balance: number;
+};
+
+export type GigaverseState = {
+  energy: GetEnergyResponse;
+  juice: GetGigaJuiceResponse;
+  consumables: ItemBalance[];
+  balances: ItemBalance[];
+  dungeon: GigaverseDungeonState | undefined;
+  lastUpdate?: number;
+};
+
+export type GameData = {
+  items: GetAllGameItemsResponse;
+  skills: GetAllSkillsResponse;
+  offchain: GetStaticResponse;
+  player: {
+    account: GetAccountResponse;
+    faction: GetFactionResponse;
+    skills: GetSkillsProgressResponse;
+    balances: ItemBalance[];
+  };
+  today: GetTodayResponse;
+};
+
+export type MarketplaceFloorResponse = {
+  entities: {
+    GAME_ITEM_ID_CID: number;
+    ETH_MINT_PRICE_CID: number;
+  }[];
+};
+
+export type MarketplaceItemListingResponse = {
+  entities: {
+    _id: string;
+    docId: string;
+    tableName: string;
+    firstTx: string;
+    lastTx: string;
+    EXPORT_AMOUNT_CID: number;
+    createdAt: string;
+    updatedAt: string;
+    OWNER_CID: string;
+    ID_CID: string;
+    UINT256_CID: number;
+    TIMESTAMP_CID: number;
+    ETH_MINT_PRICE_CID: number;
+    GAME_ITEM_ID_CID: number;
+  }[];
+};

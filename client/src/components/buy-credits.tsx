@@ -335,17 +335,17 @@ export function BuyCredits() {
           <CardContent>
             {apiKeyData ? (
               <div className="space-y-4">
-                <div className="flex items-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <KeyRound className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
-                  <span className="text-green-600 dark:text-green-400 font-medium">
+                <div className="flex items-center p-4 bg-primary/10 rounded-lg">
+                  <KeyRound className="h-5 w-5 text-primary mr-2" />
+                  <span className="text-primary font-medium">
                     API key is set up and ready to use
                   </span>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col space-y-4">
-                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                  <p className="text-amber-600 dark:text-amber-400">
+                <div className="p-4 bg-accent/10 rounded-lg">
+                  <p className="text-accent-foreground">
                     You need to create an API key before you can purchase
                     credits
                   </p>

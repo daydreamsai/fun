@@ -212,7 +212,7 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
                   </div>
                   <span className="text-sm">Connect your Solana wallet</span>
                   {connected && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-primary ml-auto shrink-0" />
                   )}
                 </li>
                 <li className="flex items-start gap-3">
@@ -228,9 +228,9 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
                   {connected && (
                     <>
                       {hasBalance ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-primary ml-auto shrink-0" />
                       ) : (
-                        <CircleX className="h-4 w-4 text-red-500 ml-auto shrink-0 animate-pulse" />
+                        <CircleX className="h-4 w-4 text-destructive ml-auto shrink-0 animate-pulse" />
                       )}
                     </>
                   )}
@@ -245,9 +245,9 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
                   {hasBalance ? (
                     <>
                       {accessState.isAuthenticated ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto animate-pulse" />
+                        <CheckCircle2 className="h-4 w-4 text-primary ml-auto animate-pulse" />
                       ) : (
-                        <CircleX className="h-4 w-4 text-red-500 ml-auto shrink-0 animate-pulse" />
+                        <CircleX className="h-4 w-4 text-destructive ml-auto shrink-0 animate-pulse" />
                       )}
                     </>
                   ) : null}
@@ -327,9 +327,9 @@ export const TokenGate: FC<TokenGateProps> = ({ children }) => {
               accessState.tokenBalance !== undefined &&
               accessState.tokenBalance >=
                 TOKEN_GATE_CONFIG.REQUIRED_BALANCE && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 shadow-md backdrop-blur-sm">
+                <div className="rounded-xl border border-accent/30 bg-accent/5 p-5 shadow-md backdrop-blur-sm">
                   <h3 className="mb-3 flex items-center gap-2 font-semibold text-foreground">
-                    <AlertCircle size={18} className="text-amber-500" />
+                    <AlertCircle size={18} className="text-accent" />
                     Wallet Verification Required
                   </h3>
                   <p className="text-sm mb-4">

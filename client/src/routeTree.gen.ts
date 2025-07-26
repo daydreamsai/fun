@@ -10,138 +10,64 @@
 
 import { createFileRoute } from '@tanstack/react-router'
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as GamesGigaverseChatIdRouteImport } from './routes/games/gigaverse/$chatId'
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as ChatsChatIdImport } from './routes/chats/$chatId'
-import { Route as GamesGigaverseChatIdImport } from './routes/games/gigaverse/$chatId'
+const SettingsLazyRouteImport = createFileRoute('/settings')()
+const ProfileLazyRouteImport = createFileRoute('/profile')()
+const PaymentSuccessLazyRouteImport = createFileRoute('/payment-success')()
+const IndexLazyRouteImport = createFileRoute('/')()
 
-// Create Virtual Routes
-
-const SettingsLazyImport = createFileRoute('/settings')()
-const ProfileLazyImport = createFileRoute('/profile')()
-const PaymentSuccessLazyImport = createFileRoute('/payment-success')()
-const IndexLazyImport = createFileRoute('/')()
-
-// Create/Update Routes
-
-const SettingsLazyRoute = SettingsLazyImport.update({
+const SettingsLazyRoute = SettingsLazyRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/settings.lazy').then((d) => d.Route))
-
-const ProfileLazyRoute = ProfileLazyImport.update({
+const ProfileLazyRoute = ProfileLazyRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/profile.lazy').then((d) => d.Route))
-
-const PaymentSuccessLazyRoute = PaymentSuccessLazyImport.update({
+const PaymentSuccessLazyRoute = PaymentSuccessLazyRouteImport.update({
   id: '/payment-success',
   path: '/payment-success',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
   import('./routes/payment-success.lazy').then((d) => d.Route),
 )
-
-const IndexLazyRoute = IndexLazyImport.update({
+const IndexLazyRoute = IndexLazyRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
-
-const ChatsChatIdRoute = ChatsChatIdImport.update({
-  id: '/chats/$chatId',
-  path: '/chats/$chatId',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const GamesGigaverseChatIdRoute = GamesGigaverseChatIdImport.update({
+const GamesGigaverseChatIdRoute = GamesGigaverseChatIdRouteImport.update({
   id: '/games/gigaverse/$chatId',
   path: '/games/gigaverse/$chatId',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-// Populate the FileRoutesByPath interface
-
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexLazyImport
-      parentRoute: typeof rootRoute
-    }
-    '/payment-success': {
-      id: '/payment-success'
-      path: '/payment-success'
-      fullPath: '/payment-success'
-      preLoaderRoute: typeof PaymentSuccessLazyImport
-      parentRoute: typeof rootRoute
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileLazyImport
-      parentRoute: typeof rootRoute
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsLazyImport
-      parentRoute: typeof rootRoute
-    }
-    '/chats/$chatId': {
-      id: '/chats/$chatId'
-      path: '/chats/$chatId'
-      fullPath: '/chats/$chatId'
-      preLoaderRoute: typeof ChatsChatIdImport
-      parentRoute: typeof rootRoute
-    }
-    '/games/gigaverse/$chatId': {
-      id: '/games/gigaverse/$chatId'
-      path: '/games/gigaverse/$chatId'
-      fullPath: '/games/gigaverse/$chatId'
-      preLoaderRoute: typeof GamesGigaverseChatIdImport
-      parentRoute: typeof rootRoute
-    }
-  }
-}
-
-// Create and export the route tree
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/payment-success': typeof PaymentSuccessLazyRoute
   '/profile': typeof ProfileLazyRoute
   '/settings': typeof SettingsLazyRoute
-  '/chats/$chatId': typeof ChatsChatIdRoute
   '/games/gigaverse/$chatId': typeof GamesGigaverseChatIdRoute
 }
-
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/payment-success': typeof PaymentSuccessLazyRoute
   '/profile': typeof ProfileLazyRoute
   '/settings': typeof SettingsLazyRoute
-  '/chats/$chatId': typeof ChatsChatIdRoute
   '/games/gigaverse/$chatId': typeof GamesGigaverseChatIdRoute
 }
-
 export interface FileRoutesById {
-  __root__: typeof rootRoute
+  __root__: typeof rootRouteImport
   '/': typeof IndexLazyRoute
   '/payment-success': typeof PaymentSuccessLazyRoute
   '/profile': typeof ProfileLazyRoute
   '/settings': typeof SettingsLazyRoute
-  '/chats/$chatId': typeof ChatsChatIdRoute
   '/games/gigaverse/$chatId': typeof GamesGigaverseChatIdRoute
 }
-
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
@@ -149,7 +75,6 @@ export interface FileRouteTypes {
     | '/payment-success'
     | '/profile'
     | '/settings'
-    | '/chats/$chatId'
     | '/games/gigaverse/$chatId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -157,7 +82,6 @@ export interface FileRouteTypes {
     | '/payment-success'
     | '/profile'
     | '/settings'
-    | '/chats/$chatId'
     | '/games/gigaverse/$chatId'
   id:
     | '__root__'
@@ -165,18 +89,55 @@ export interface FileRouteTypes {
     | '/payment-success'
     | '/profile'
     | '/settings'
-    | '/chats/$chatId'
     | '/games/gigaverse/$chatId'
   fileRoutesById: FileRoutesById
 }
-
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   PaymentSuccessLazyRoute: typeof PaymentSuccessLazyRoute
   ProfileLazyRoute: typeof ProfileLazyRoute
   SettingsLazyRoute: typeof SettingsLazyRoute
-  ChatsChatIdRoute: typeof ChatsChatIdRoute
   GamesGigaverseChatIdRoute: typeof GamesGigaverseChatIdRoute
+}
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment-success': {
+      id: '/payment-success'
+      path: '/payment-success'
+      fullPath: '/payment-success'
+      preLoaderRoute: typeof PaymentSuccessLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/games/gigaverse/$chatId': {
+      id: '/games/gigaverse/$chatId'
+      path: '/games/gigaverse/$chatId'
+      fullPath: '/games/gigaverse/$chatId'
+      preLoaderRoute: typeof GamesGigaverseChatIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -184,46 +145,8 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentSuccessLazyRoute: PaymentSuccessLazyRoute,
   ProfileLazyRoute: ProfileLazyRoute,
   SettingsLazyRoute: SettingsLazyRoute,
-  ChatsChatIdRoute: ChatsChatIdRoute,
   GamesGigaverseChatIdRoute: GamesGigaverseChatIdRoute,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/",
-        "/payment-success",
-        "/profile",
-        "/settings",
-        "/chats/$chatId",
-        "/games/gigaverse/$chatId"
-      ]
-    },
-    "/": {
-      "filePath": "index.lazy.tsx"
-    },
-    "/payment-success": {
-      "filePath": "payment-success.lazy.tsx"
-    },
-    "/profile": {
-      "filePath": "profile.lazy.tsx"
-    },
-    "/settings": {
-      "filePath": "settings.lazy.tsx"
-    },
-    "/chats/$chatId": {
-      "filePath": "chats/$chatId.tsx"
-    },
-    "/games/gigaverse/$chatId": {
-      "filePath": "games/gigaverse/$chatId.tsx"
-    }
-  }
-}
-ROUTE_MANIFEST_END */

@@ -156,7 +156,7 @@ export function UserProfile() {
               </div>
             )}
 
-            {error && <p className="text-red-500 mt-4">{error}</p>}
+            {error && <p className="text-destructive mt-4">{error}</p>}
           </CardContent>
 
           {isConnectedUser && (
