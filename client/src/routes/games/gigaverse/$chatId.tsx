@@ -36,6 +36,7 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import { usePriceStore } from "@/store/priceStore";
 
 const searchParams = z.object({
   sidebar: z
@@ -144,6 +145,12 @@ function RouteComponent() {
   const setShowHelpWindow = useSettingsStore(
     (state) => state.setShowHelpWindow
   );
+
+  const { fetchExchangeRate } = usePriceStore();
+
+  useEffect(() => {
+    fetchExchangeRate();
+  }, []);
 
   useEffect(() => {
     const hasOpenRouterKey = hasApiKey("openrouterKey");

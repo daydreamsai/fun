@@ -1,4 +1,8 @@
-import { GameData, ItemBalance } from "./client/types/game";
+import {
+  GameData,
+  ItemBalance,
+  MarketplaceFloorResponse,
+} from "./client/types/game";
 import { GigaverseDungeonState } from "./client/types/game";
 import {
   BaseResponse,
@@ -46,6 +50,7 @@ export function parseItems(
   consumables: GetConsumablesResponse | GetBalancesResponse,
   items: GameData["items"],
   offchain: GameData["offchain"],
+  marketplaceFloor: MarketplaceFloorResponse,
   consumable: boolean = false
 ): ItemBalance[] {
   return consumables.entities
@@ -57,12 +62,17 @@ export function parseItems(
         (item) => item.docId === entity.ID_CID
       )!;
 
+      const floorPrice = marketplaceFloor.entities.find(
+        (item) => item.GAME_ITEM_ID_CID === parseInt(docId)
+      )?.ETH_MINT_PRICE_CID;
+
       return {
         item: {
           id: parseInt(docId),
           name: NAME_CID,
           description: DESCRIPTION_CID,
           type: TYPE_CID,
+          floorPrice: floorPrice ?? 0,
         },
         balance: entity.BALANCE_CID,
       };

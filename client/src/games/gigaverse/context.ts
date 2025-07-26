@@ -13,7 +13,11 @@ import { GameClient } from "./client/GameClient";
 import { useTemplateStore } from "@/store/templateStore";
 import { GetSkillsProgressResponse } from "./client/types/responses";
 import { jsonPath } from "@/lib/jsonPath";
-import { GameData, GigaverseState } from "./client/types/game";
+import {
+  GameData,
+  GigaverseState,
+  MarketplaceFloorResponse,
+} from "./client/types/game";
 import {
   defaultInstructions,
   defaultRules,
@@ -43,13 +47,25 @@ async function fetchGigaverseState(
   client: GameClient,
   data: GameData,
   address: string,
+  marketplaceFloor: MarketplaceFloorResponse,
   fetchDungeon: boolean = true
 ): Promise<GigaverseState> {
   const energy = await client.getEnergy(address);
   const juice = await client.getJuice(address);
   const userBalances = await client.getUserBalances();
-  const consumables = parseItems(userBalances, data.items, data.offchain, true);
-  const balances = parseItems(userBalances, data.items, data.offchain);
+  const consumables = parseItems(
+    userBalances,
+    data.items,
+    data.offchain,
+    marketplaceFloor,
+    true
+  );
+  const balances = parseItems(
+    userBalances,
+    data.items,
+    data.offchain,
+    marketplaceFloor
+  );
 
   const dungeon = fetchDungeon
     ? parseDungeonState(await client.fetchDungeonState())
@@ -114,6 +130,8 @@ export const gigaverseContext = context({
       }
     );
 
+    const marketplaceFloor = await client.getMarketplaceItemFloor();
+
     const today = await client.getToday();
 
     const account = await client.getAccount(address);
@@ -125,9 +143,20 @@ export const gigaverseContext = context({
 
     const userBalances = await client.getUserBalances();
 
-    const balances = parseItems(userBalances, items, offchain);
+    const balances = parseItems(
+      userBalances,
+      items,
+      offchain,
+      marketplaceFloor
+    );
 
-    const consumables = parseItems(userBalances, items, offchain, true);
+    const consumables = parseItems(
+      userBalances,
+      items,
+      offchain,
+      marketplaceFloor,
+      true
+    );
 
     return {
       address,
@@ -136,6 +165,7 @@ export const gigaverseContext = context({
         items,
         skills,
         offchain,
+        marketplaceFloor,
         player: {
           account,
           faction,
@@ -154,6 +184,7 @@ export const gigaverseContext = context({
       options.client,
       options.game,
       options.address,
+      options.game.marketplaceFloor,
       true
     );
     return memory;
@@ -190,6 +221,7 @@ export const gigaverseContext = context({
         state.options.client,
         state.options.game,
         state.options.address,
+        state.options.game.marketplaceFloor,
         false
       );
     }
@@ -525,7 +557,8 @@ Enemy Shield: ${state.enemy.shield.current}
         ctx.memory = await fetchGigaverseState(
           ctx.options.client,
           ctx.options.game,
-          ctx.options.address
+          ctx.options.address,
+          ctx.options.game.marketplaceFloor
         );
         ctx.options.actionToken = "";
 

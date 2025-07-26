@@ -1,5 +1,7 @@
 import { ContextState } from "@daydreamsai/core";
 import { GigaverseContext } from "../context";
+import { formatEther } from "viem";
+import { usePriceStore } from "@/store/priceStore";
 
 interface InventoryTabProps {
   state: ContextState<GigaverseContext>;
@@ -7,6 +9,8 @@ interface InventoryTabProps {
 
 export function InventoryTab({ state }: InventoryTabProps) {
   const { balances, consumables } = state.options.game.player;
+
+  const { exchangeRate } = usePriceStore();
 
   return (
     <div className="grid grid-cols-4 gap-2 gap-y-3 mt-4">
@@ -24,6 +28,16 @@ export function InventoryTab({ state }: InventoryTabProps) {
               />
               <div className="absolute top-1 left-1 bg-primary/20 text-white px-1.5 py-0.5 rounded text-xs font-medium">
                 {balance}
+              </div>
+              <div className="absolute bottom-1 right-1 bg-primary/20 text-white px-1.5 py-0.5 rounded text-xs font-medium">
+                {exchangeRate && (
+                  <span className="text-xs">
+                    $
+                    {Number(
+                      formatEther(BigInt(item.floorPrice * exchangeRate))
+                    ).toFixed(4)}
+                  </span>
+                )}
               </div>
             </div>
             <div className="truncate">

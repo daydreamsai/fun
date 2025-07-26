@@ -162,6 +162,7 @@ export type ItemBalance = {
     name: string;
     description: string;
     type: string;
+    floorPrice: number;
   };
   balance: number;
 };

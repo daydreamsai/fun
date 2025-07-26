@@ -1200,7 +1200,7 @@ export class GameClient {
   }
 
   public async getMarketplaceItemFloor() {
-    return this.httpClient.get<MarketplaceFloorResponse[]>(
+    return this.httpClient.get<MarketplaceFloorResponse>(
       "/marketplace/item/floor/all"
     );
   }
