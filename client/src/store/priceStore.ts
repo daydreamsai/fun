@@ -21,13 +21,12 @@ export const usePriceStore = create<PriceState>()(
       fetchExchangeRate: async () => {
         const { lastFetched } = get();
         const now = Date.now();
-        // if (lastFetched && now - lastFetched < FIVE_MINUTES) {
-        //   // Already fetched within 5 minutes, do nothing
-        //   return;
-        // }
+        if (lastFetched && now - lastFetched < FIVE_MINUTES) {
+          return;
+        }
         set({ loading: true, error: null });
         try {
-          const res = await fetch("http://localhost:8000/price");
+          const res = await fetch(import.meta.env.VITE_GIGA_PROXY);
           if (!res.ok) throw new Error("Failed to fetch exchange rate");
           const data = await res.json();
 
