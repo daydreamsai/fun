@@ -164,7 +164,7 @@ function ChatHistoryList() {
 
   if (chats.isError) {
     return (
-      <div className="px-4 py-2 text-sm text-red-500">
+      <div className="px-4 py-2 text-sm text-destructive">
         Error loading chats
         <Button
           variant="ghost"

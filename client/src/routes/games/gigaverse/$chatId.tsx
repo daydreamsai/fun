@@ -36,6 +36,7 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import { usePriceStore } from "@/store/priceStore";
 
 const searchParams = z.object({
   sidebar: z
@@ -145,6 +146,12 @@ function RouteComponent() {
     (state) => state.setShowHelpWindow
   );
 
+  const { fetchExchangeRate } = usePriceStore();
+
+  useEffect(() => {
+    fetchExchangeRate();
+  }, []);
+
   useEffect(() => {
     const hasOpenRouterKey = hasApiKey("openrouterKey");
     const hasGigaverseToken = hasApiKey("gigaverseToken");
@@ -225,7 +232,7 @@ function RouteComponent() {
       />
       {/* API Key Notification */}
       {missingKeys.length > 0 && missingKeys.length < 2 && (
-        <div className="bg-amber-100 dark:bg-amber-900 p-3 text-amber-800 dark:text-amber-200 text-sm flex justify-between items-center">
+        <div className="bg-accent/20 p-3 text-accent-foreground text-sm flex justify-between items-center">
           <div>
             <span className="font-medium">Note:</span> You're missing the{" "}
             {missingKeys.join(", ")} API key. You can still use the app, but

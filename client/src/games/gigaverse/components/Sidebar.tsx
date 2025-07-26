@@ -85,32 +85,13 @@ export function GigaverseSidebar({
     (state) => state.setShowHelpWindow
   );
 
-  // if (isCollapsed) {
-  // const [isCollapsed, setIsCollapsed] = useState(false);
-  //   return (
-  //     <div className="border-l bg-background/95 backdrop-blur flex flex-col items-center py-4 h-full">
-  //       <Button
-  //         variant="ghost"
-  //         size="icon"
-  //         onClick={() => setIsCollapsed(false)}
-  //         className="mb-4"
-  //       >
-  //         <ChevronLeft className="h-4 w-4" />
-  //       </Button>
-  //       <Cpu className="h-5 w-5 my-2 text-muted-foreground" />
-  //       <Eye className="h-5 w-5 my-2 text-muted-foreground" />
-  //       <Settings className="h-5 w-5 my-2 text-muted-foreground" />
-  //     </div>
-  //   );
-  // }
-
   return (
     <div>
-      <div className="flex">
+      <div className="flex gap-2">
         <Button
           variant="outline"
           size="sm"
-          className="w-full text-muted-foreground"
+          className="flex-1 text-muted-foreground"
           onClick={() => setShowHelpWindow(true)}
         >
           <ShieldQuestion /> Help
@@ -118,7 +99,7 @@ export function GigaverseSidebar({
         <Button
           variant="outline"
           size="sm"
-          className="w-full text-muted-foreground"
+          className="flex-1 text-muted-foreground"
           asChild
         >
           <Link to="/settings">
@@ -128,13 +109,13 @@ export function GigaverseSidebar({
         <Button
           variant="outline"
           size="sm"
-          className="w-full text-muted-foreground"
+          className="flex-1 text-muted-foreground"
           onClick={async () => {
             await agent.deleteContext(contextId);
             await queryClient.invalidateQueries({
               type: "active",
               exact: false,
-              predicate(query) {
+              predicate(query: any) {
                 try {
                   return query.queryKey[1] === contextId;
                 } catch (error) {
@@ -152,7 +133,7 @@ export function GigaverseSidebar({
 
       {gigaverseState.error ? (
         <>
-          <div className="p-2 border border-red-700 m-2">
+          <div className="p-2 border border-destructive m-2">
             <ErrorComponent error={gigaverseState.error}></ErrorComponent>
           </div>
           <div className="p-2 mt-2">

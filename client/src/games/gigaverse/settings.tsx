@@ -93,7 +93,7 @@ export function GigaverseAuth() {
                   <button
                     type="button"
                     onClick={() => toggleVisibility("gigaverseToken")}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+                    className="text-muted-foreground hover:text-foreground focus:outline-none"
                     aria-label={
                       visibleFields.gigaverseToken
                         ? "Hide Gigaverse Token"

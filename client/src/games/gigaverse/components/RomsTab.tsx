@@ -161,9 +161,9 @@ export function RomsTab({
 }
 
 const colors = {
-  energy: "bg-yellow-500",
-  dust: "bg-orange-500",
-  shard: "bg-cyan-500",
+  energy: "bg-accent",
+  dust: "bg-accent",
+  shard: "bg-primary",
 };
 
 function Production({

@@ -114,24 +114,24 @@ export function MessagesList({
     switch (action.type) {
       case "gigaverse.attackInDungeon":
         if (action.result === "win") {
-          return <TrophyIcon className={`${iconClass} text-green-500`} />;
+          return <TrophyIcon className={`${iconClass} text-primary`} />;
         } else if (action.result === "lose") {
-          return <SkullIcon className={`${iconClass} text-red-500`} />;
+          return <SkullIcon className={`${iconClass} text-destructive`} />;
         } else {
-          return <Swords className={`${iconClass} text-yellow-500`} />;
+          return <Swords className={`${iconClass} text-accent`} />;
         }
 
       case "gigaverse.getPlayerState":
-        return <Shield className={`${iconClass} text-blue-500`} />;
+        return <Shield className={`${iconClass} text-primary`} />;
 
       case "gigaverse.getUpcomingEnemies":
-        return <Flag className={`${iconClass} text-purple-500`} />;
+        return <Flag className={`${iconClass} text-secondary`} />;
 
       case "gigaverse.startNewRun":
-        return <Play className={`${iconClass} text-green-500`} />;
+        return <Play className={`${iconClass} text-primary`} />;
 
       case "gigaverse.manuallyUpdateState":
-        return <RefreshCw className={`${iconClass} text-amber-500`} />;
+        return <RefreshCw className={`${iconClass} text-accent`} />;
 
       default:
         return null;
@@ -146,17 +146,17 @@ export function MessagesList({
 
     switch (move) {
       case "rock":
-        return <Sword className={`${iconClass} text-stone-500`} />;
+        return <Sword className={`${iconClass} text-muted-foreground`} />;
       case "paper":
-        return <ShieldAlert className={`${iconClass} text-blue-400`} />;
+        return <ShieldAlert className={`${iconClass} text-primary`} />;
       case "scissor":
-        return <Stars className={`${iconClass} text-violet-500`} />;
+        return <Stars className={`${iconClass} text-secondary`} />;
       case "loot_one":
-        return <PackageIcon className={`${iconClass} text-amber-500`} />;
+        return <PackageIcon className={`${iconClass} text-accent`} />;
       case "loot_two":
-        return <Package2Icon className={`${iconClass} text-emerald-500`} />;
+        return <Package2Icon className={`${iconClass} text-primary`} />;
       case "loot_three":
-        return <GiftIcon className={`${iconClass} text-purple-500`} />;
+        return <GiftIcon className={`${iconClass} text-secondary`} />;
       default:
         return null;
     }
@@ -276,10 +276,10 @@ export function MessagesList({
                             <div
                               className={`px-2 py-1 rounded text-xs uppercase font-bold ${
                                 msg.action.result === "win"
-                                  ? "bg-green-500/10 text-green-500"
+                                  ? "bg-primary/10 text-primary"
                                   : msg.action.result === "lose"
-                                    ? "bg-red-500/10 text-red-500"
-                                    : "bg-yellow-500/10 text-yellow-500"
+                                    ? "bg-destructive/10 text-destructive"
+                                    : "bg-accent/10 text-accent"
                               }`}
                             >
                               {msg.action.result}
@@ -291,8 +291,8 @@ export function MessagesList({
                   )}
 
                 {msg.action && msg.action.type === "gigaverse.startNewRun" && (
-                  <div className="mt-3 p-3 bg-green-500/5 rounded-md border border-green-500/30 flex items-center gap-2">
-                    <Play className="h-5 w-5 text-green-500" />
+                  <div className="mt-3 p-3 bg-primary/5 rounded-md border border-primary/30 flex items-center gap-2">
+                    <Play className="h-5 w-5 text-primary" />
                     <span className="text-sm font-medium">New Run Started</span>
                   </div>
                 )}

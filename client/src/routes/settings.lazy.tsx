@@ -200,7 +200,7 @@ function RouteComponent() {
                     <button
                       type="button"
                       onClick={() => toggleVisibility("openrouterKey")}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
                       aria-label={
                         visibleFields.openrouterKey
                           ? "Hide OpenRouter API Key"
@@ -250,7 +250,7 @@ function RouteComponent() {
                                 onClick={() =>
                                   toggleVisibility("gigaverseToken")
                                 }
-                                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+                                className="text-muted-foreground hover:text-foreground focus:outline-none"
                                 aria-label={
                                   visibleFields.gigaverseToken
                                     ? "Hide Gigaverse Token"
@@ -279,7 +279,7 @@ function RouteComponent() {
                             onClick={fetchGigaToken}
                             className={
                               settings.gigaverseToken
-                                ? "bg-green-600 hover:bg-green-700"
+                                ? "bg-primary hover:bg-primary/80"
                                 : ""
                             }
                           >
@@ -335,9 +335,7 @@ function RouteComponent() {
               </CardFooter>
               {saveStatus && (
                 <div className="px-6 pb-4">
-                  <p className="text-sm text-green-600 dark:text-green-400">
-                    {saveStatus}
-                  </p>
+                  <p className="text-sm text-primary">{saveStatus}</p>
                 </div>
               )}
             </Card>

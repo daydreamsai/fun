@@ -106,14 +106,14 @@ export function MemoryTab({
         <div className="text-xs flex items-center">
           {workingMemory.isLoading ? (
             <>
-              <div className="h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
-              <span className="text-green-600 dark:text-green-400 font-medium">
+              <div className="h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></div>
+              <span className="text-primary font-medium">
                 Active - Processing
               </span>
             </>
           ) : (
             <>
-              <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
+              <div className="h-2 w-2 rounded-full bg-primary mr-2"></div>
               <span>Idle - Ready</span>
             </>
           )}

@@ -22,6 +22,55 @@ const proxyPort = 8000; // The port the Express proxy server will listen on
 
 app.use(cors());
 
+// --- Custom API Endpoints ---
+
+// Price endpoint to fetch token prices from Alchemy
+app.get("/price", async (req, res) => {
+  try {
+    // Get API key from environment variable
+    const apiKey = process.env.ALCHEMY_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({
+        error: "ALCHEMY_API_KEY environment variable is not set",
+      });
+    }
+
+    // Get symbols from query parameters, default to ETH, BTC, USDT
+    const symbols = req.query.symbols
+      ? Array.isArray(req.query.symbols)
+        ? req.query.symbols
+        : [req.query.symbols]
+      : ["ETH"];
+
+    const fetchURL = `https://api.g.alchemy.com/prices/v1/${apiKey}/tokens/by-symbol`;
+
+    const params = new URLSearchParams();
+    symbols.forEach((symbol) => params.append("symbols", symbol));
+
+    const urlWithParams = `${fetchURL}?${params.toString()}`;
+
+    const response = await fetch(urlWithParams, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching prices:", error);
+    res.status(500).json({
+      error: "Failed to fetch token prices",
+      details: error.message,
+    });
+  }
+});
+
 // Create a proxy server instance
 const proxy = httpProxy.createProxyServer({});
 

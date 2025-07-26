@@ -9,26 +9,15 @@ import {
 } from "@daydreamsai/core";
 import { string, z } from "zod";
 import { useSettingsStore } from "@/store/settingsStore";
-import {
-  GameClient,
-  GetAccountResponse,
-  GetStaticResponse,
-} from "./client/GameClient";
+import { GameClient } from "./client/GameClient";
 import { useTemplateStore } from "@/store/templateStore";
-import {
-  BaseResponse,
-  GetAllGameItemsResponse,
-  GetAllSkillsResponse,
-  GetBalancesResponse,
-  GetConsumablesResponse,
-  GetFactionResponse,
-  GetSkillsProgressResponse,
-  GetGigaJuiceResponse,
-  GetTodayResponse,
-  GetEnergyResponse,
-} from "./client/types/responses";
+import { GetSkillsProgressResponse } from "./client/types/responses";
 import { jsonPath } from "@/lib/jsonPath";
-import { Player } from "./client/types/game";
+import {
+  GameData,
+  GigaverseState,
+  MarketplaceFloorResponse,
+} from "./client/types/game";
 import {
   defaultInstructions,
   defaultRules,
@@ -37,6 +26,7 @@ import {
 } from "./prompts";
 import { ActionPayload } from "./client/types/requests";
 import { Cache } from "@/agent/utils/cache";
+import { parseDungeonState, parseItems } from "./utils";
 
 // Get the token directly from the store for better reactivity
 export const getGigaToken = () => useSettingsStore.getState().gigaverseToken;
@@ -51,126 +41,32 @@ export const getApiBaseUrl = () => {
   return "https://fun-production-4656.up.railway.app/api";
 };
 
-// Define an interface for the state (template removed)
-export interface GigaverseDungeonState {
-  currentDungeon: number;
-  currentRoom: number;
-  currentEnemy: number;
-
-  player: Player;
-  items: number[];
-
-  enemy: Player;
-
-  lootPhase: boolean;
-  lootOptions: any[];
-
-  lastBattleResult: string | null;
-}
-
-export type ItemBalance = {
-  item: {
-    id: number;
-    name: string;
-    description: string;
-    type: string;
-  };
-  balance: number;
-};
-
-export type GigaverseState = {
-  energy: GetEnergyResponse;
-  juice: GetGigaJuiceResponse;
-  consumables: ItemBalance[];
-  balances: ItemBalance[];
-  dungeon: GigaverseDungeonState | undefined;
-  lastUpdate?: number;
-};
-
-export type GameData = {
-  items: GetAllGameItemsResponse;
-  skills: GetAllSkillsResponse;
-  offchain: GetStaticResponse;
-  player: {
-    account: GetAccountResponse;
-    faction: GetFactionResponse;
-    skills: GetSkillsProgressResponse;
-  };
-  today: GetTodayResponse;
-};
-
 export type GigaverseContext = typeof gigaverseContext;
-
-function parseDungeonState(
-  response: BaseResponse
-): GigaverseDungeonState | undefined {
-  if (!response.data?.run || !response.data?.entity) return undefined;
-
-  const [player, enemy] = response.data.run.players; // First player is the user
-
-  let lastBattleResult: any = null;
-
-  // Determine battle result based on thisPlayerWin and otherPlayerWin properties
-  if (player.thisPlayerWin === true) {
-    lastBattleResult = "win";
-  } else if (enemy.thisPlayerWin === true) {
-    lastBattleResult = "lose";
-  } else if (enemy.lastMove) {
-    lastBattleResult = "draw";
-  }
-
-  return {
-    currentRoom: response.data.entity.ROOM_NUM_CID,
-    currentDungeon: response.data.entity.DUNGEON_ID_CID,
-    currentEnemy: response.data.entity.ENEMY_CID,
-
-    player,
-
-    items: response.data.entity.GAME_ITEM_ID_CID_array,
-
-    enemy,
-
-    lastBattleResult,
-
-    lootOptions: response.data.run.lootOptions,
-    lootPhase: response.data.run.lootPhase,
-  };
-}
-
-function parseItems(
-  consumables: GetConsumablesResponse | GetBalancesResponse,
-  data: GameData
-): ItemBalance[] {
-  return consumables.entities.map((entity) => {
-    const { docId, NAME_CID } = data.items.entities.find(
-      (item) => item.docId === entity.ID_CID
-    )!;
-    const { DESCRIPTION_CID, TYPE_CID } = data.offchain.gameItems.find(
-      (item) => item.docId === entity.ID_CID
-    )!;
-
-    return {
-      item: {
-        id: parseInt(docId),
-        name: NAME_CID,
-        description: DESCRIPTION_CID,
-        type: TYPE_CID,
-      },
-      balance: entity.BALANCE_CID,
-    };
-  });
-}
 
 async function fetchGigaverseState(
   client: GameClient,
   data: GameData,
   address: string,
+  marketplaceFloor: MarketplaceFloorResponse,
   fetchDungeon: boolean = true
 ): Promise<GigaverseState> {
   const energy = await client.getEnergy(address);
   const juice = await client.getJuice(address);
-  // const consumables = parseItems(await client.getConsumables(address), data);
-  // const balances = parseItems(await client.getUserBalances(address), data);
+  const userBalances = await client.getUserBalances();
+  const consumables = parseItems(
+    userBalances,
+    data.items,
+    data.offchain,
+    marketplaceFloor,
+    true
+  );
+  const balances = parseItems(
+    userBalances,
+    data.items,
+    data.offchain,
+    marketplaceFloor
+  );
+
   const dungeon = fetchDungeon
     ? parseDungeonState(await client.fetchDungeonState())
     : undefined;
@@ -179,8 +75,8 @@ async function fetchGigaverseState(
     energy,
     juice,
     dungeon,
-    consumables: [],
-    balances: [],
+    consumables,
+    balances: balances,
     lastUpdate: Date.now(),
   };
 }
@@ -188,11 +84,9 @@ async function fetchGigaverseState(
 async function fetchDungeonState(
   client: GameClient
 ): Promise<GigaverseState["dungeon"]> {
-  const dungeon = parseDungeonState(await client.fetchDungeonState());
-
-  return dungeon;
+  return parseDungeonState(await client.fetchDungeonState());
 }
-// Context for the agent
+
 export const gigaverseContext = context({
   type: "gigaverse",
   schema: {
@@ -209,8 +103,6 @@ export const gigaverseContext = context({
       maxSteps,
       maxWorkingMemorySize,
     } = useSettingsStore.getState();
-
-    console.log({ maxSteps, maxWorkingMemorySize });
 
     settings.maxSteps = maxSteps;
     settings.maxWorkingMemorySize = maxWorkingMemorySize;
@@ -238,30 +130,51 @@ export const gigaverseContext = context({
       }
     );
 
+    const marketplaceFloor = await client.getMarketplaceItemFloor();
+
     const today = await client.getToday();
 
     const account = await client.getAccount(address);
-    // const usernames = await client.getUsernames(address);
+
     const faction = await client.getFaction(address);
+
     const playerSkills: GetSkillsProgressResponse =
       await client.getHeroSkillsProgress(account.noob.docId);
 
-    const game: GameData = {
+    const userBalances = await client.getUserBalances();
+
+    const balances = parseItems(
+      userBalances,
       items,
-      skills,
       offchain,
-      player: {
-        account,
-        faction,
-        skills: playerSkills,
-      },
-      today,
-    };
+      marketplaceFloor
+    );
+
+    const consumables = parseItems(
+      userBalances,
+      items,
+      offchain,
+      marketplaceFloor,
+      true
+    );
 
     return {
       address,
       client,
-      game,
+      game: {
+        items,
+        skills,
+        offchain,
+        marketplaceFloor,
+        player: {
+          account,
+          faction,
+          skills: playerSkills,
+          balances,
+          consumables,
+        },
+        today,
+      },
       actionToken: "" as string | number,
     };
   },
@@ -271,6 +184,7 @@ export const gigaverseContext = context({
       options.client,
       options.game,
       options.address,
+      options.game.marketplaceFloor,
       true
     );
     return memory;
@@ -307,6 +221,7 @@ export const gigaverseContext = context({
         state.options.client,
         state.options.game,
         state.options.address,
+        state.options.game.marketplaceFloor,
         false
       );
     }
@@ -314,7 +229,6 @@ export const gigaverseContext = context({
 
   shouldContinue(ctx) {
     if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
-      console.log("forcing continue...");
       return true;
     }
     return false;
@@ -381,23 +295,20 @@ export const gigaverseContext = context({
       },
     ]);
 
-    // const inventory = xml(
-    //   "inventory",
-    //   undefined,
-    //   [
-    //     ...memory.balances,
-    //     // ...memory.consumables
-    //   ].filter((t) => t.balance > 0 && t.item.type !== "Consumable")
-    // );
+    const inventory = xml(
+      "inventory",
+      undefined,
+      [
+        ...memory.balances,
+        // ...memory.consumables
+      ].filter((t) => t.balance > 0 && t.item.type !== "Consumable")
+    );
 
-    // const consumables = xml(
-    //   "consumables",
-    //   undefined,
-    //   [
-    //     ...memory.balances,
-    //     // ...memory.consumables
-    //   ].filter((t) => t.balance > 0 && t.item.type === "Consumable")
-    // );
+    const consumables = xml(
+      "consumables",
+      undefined,
+      [...memory.consumables].filter((t) => t.balance > 0)
+    );
 
     // Use the template from the store
     const prompt = render(template, {
@@ -408,8 +319,8 @@ export const gigaverseContext = context({
       state: [
         formatXml(gameData),
         formatXml(hero),
-        // formatXml(inventory),
-        // formatXml(consumables),
+        formatXml(inventory),
+        formatXml(consumables),
         memory.dungeon ? render(dungeonSection, sectionsVariables) : null,
       ]
         .filter((t) => !!t)
@@ -646,7 +557,8 @@ Enemy Shield: ${state.enemy.shield.current}
         ctx.memory = await fetchGigaverseState(
           ctx.options.client,
           ctx.options.game,
-          ctx.options.address
+          ctx.options.address,
+          ctx.options.game.marketplaceFloor
         );
         ctx.options.actionToken = "";
 
