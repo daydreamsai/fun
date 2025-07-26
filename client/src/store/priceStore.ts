@@ -26,7 +26,7 @@ export const usePriceStore = create<PriceState>()(
         }
         set({ loading: true, error: null });
         try {
-          const res = await fetch(import.meta.env.VITE_GIGA_PROXY);
+          const res = await fetch(import.meta.env.VITE_GIGA_PROXY + "/price");
           if (!res.ok) throw new Error("Failed to fetch exchange rate");
           const data = await res.json();
 

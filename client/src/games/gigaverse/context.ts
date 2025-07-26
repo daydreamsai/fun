@@ -25,7 +25,7 @@ export const getApiBaseUrl = () => {
     return "/gigaverse-api";
   }
 
-  return import.meta.env.VITE_GIGA_PROXY;
+  return import.meta.env.VITE_GIGA_PROXY + "/api";
 };
 
 export type GigaverseContext = typeof gigaverseContext;
