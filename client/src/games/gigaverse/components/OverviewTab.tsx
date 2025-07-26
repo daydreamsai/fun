@@ -200,22 +200,8 @@ function Dungeons({
               <div className="flex gap-2 mt-2 mb-1 justify-between">
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="w-1/2"
-                  onClick={() => {
-                    navigate({
-                      search: {
-                        sidebar: "skills",
-                      },
-                    });
-                  }}
-                >
-                  Skills
-                </Button>
-                <Button
-                  size="sm"
-                  className="w-1/2"
-                  variant="default"
+                  className="w-full"
+                  variant="secondary"
                   disabled={
                     !isCheckpointClear ||
                     state.options.game.player.energy.entities[0].parsedData

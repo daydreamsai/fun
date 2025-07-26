@@ -157,12 +157,11 @@ export function GigaverseSidebar({
             });
           }}
         >
-          <TabsList className="w-full justify-between">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="skills">Skills</TabsTrigger>
-            <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsList className="w-full justify-between uppercase text-xs">
+            <TabsTrigger value="overview">OVERVIEW</TabsTrigger>
+            <TabsTrigger value="skills">SKILLS</TabsTrigger>
+            <TabsTrigger value="inventory">INVENTORY</TabsTrigger>
             <TabsTrigger value="roms">ROMS</TabsTrigger>
-            {/* <TabsTrigger value="memory">Memory</TabsTrigger> */}
           </TabsList>
 
           <TabsContent
