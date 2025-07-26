@@ -117,11 +117,25 @@ function AttackAction({
                 )?.ETH_MINT_PRICE_CID;
 
                 return (
-                  <div className="text-center flex flex-col" key={i}>
-                    <img
-                      src={itemData?.IMG_URL_CID}
-                      className="size-12 mb-2"
-                    ></img>
+                  <div
+                    className="text-center flex flex-col"
+                    key={`item-${item.id}-${item.amount}`}
+                  >
+                    {itemData?.IMG_URL_CID ? (
+                      <img
+                        src={itemData.IMG_URL_CID}
+                        className="size-12 mb-2"
+                        alt={`Item ${item.id}`}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="size-12 mb-2 bg-accent/10 rounded flex items-center justify-center">
+                        <PackageIcon className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
                     <div>+{item.amount}</div>
                     <div className="text-xs text-muted-foreground">
                       {floorPrice && exchangeRate

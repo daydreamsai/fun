@@ -188,3 +188,36 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  @keyframes slide-x {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(200%);
+    }
+  }
+  
+  .animate-slide-x {
+    animation: slide-x 3s ease-in-out infinite;
+  }
+
+  /* Prevent image flashing and layout shifts */
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Add smooth transition for images */
+  img[loading="lazy"] {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  /* Hide broken images */
+  img:not([src]), img[src=""] {
+    display: none;
+  }
+}

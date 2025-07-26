@@ -2,13 +2,8 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 export const VALID_MODELS = [
-  "anthropic/claude-3.7-sonnet:beta",
-  "deepseek/deepseek-r1-distill-llama-70b",
-  "deepseek/deepseek-r1",
-  "google/gemma-3-27b-it",
-  "qwen/qwq-32b",
-  "google/gemini-2.0-flash-001",
-  "google/gemini-2.5-flash-preview",
+  "google/gemini-2.5-flash-lite",
+  "qwen/qwen3-235b-a22b",
 ] as const;
 
 export interface UserSettings {
@@ -40,7 +35,7 @@ interface SettingsState extends UserSettings {
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
-  model: "google/gemini-2.0-flash-001",
+  model: "google/gemini-2.5-flash-lite",
   openaiKey: "",
   openrouterKey: "",
   anthropicKey: "",
