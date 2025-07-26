@@ -21,22 +21,20 @@ export const usePriceStore = create<PriceState>()(
       fetchExchangeRate: async () => {
         const { lastFetched } = get();
         const now = Date.now();
-        if (lastFetched && now - lastFetched < FIVE_MINUTES) {
-          // Already fetched within 5 minutes, do nothing
-          return;
-        }
+        // if (lastFetched && now - lastFetched < FIVE_MINUTES) {
+        //   // Already fetched within 5 minutes, do nothing
+        //   return;
+        // }
         set({ loading: true, error: null });
         try {
-          const res = await fetch(
-            "https://fun-production-4656.up.railway.app/price"
-          );
+          const res = await fetch("http://localhost:8000/price");
           if (!res.ok) throw new Error("Failed to fetch exchange rate");
           const data = await res.json();
 
-          console.log(data);
-          const rate = data[0].prices[0].value;
+          const rate = data.data[0].prices[0].value;
+
           set({
-            exchangeRate: typeof rate === "number" ? rate : null,
+            exchangeRate: rate,
             loading: false,
             lastFetched: Date.now(),
           });

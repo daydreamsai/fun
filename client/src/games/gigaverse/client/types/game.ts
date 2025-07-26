@@ -185,8 +185,10 @@ export type GameData = {
     faction: GetFactionResponse;
     skills: GetSkillsProgressResponse;
     balances: ItemBalance[];
+    consumables: ItemBalance[];
   };
   today: GetTodayResponse;
+  marketplaceFloor: MarketplaceFloorResponse;
 };
 
 export type MarketplaceFloorResponse = {
