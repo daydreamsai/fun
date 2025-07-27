@@ -273,3 +273,97 @@ export interface DungeonDataEntity {
   CHECKPOINT_CID: number;
   juicedMaxRunsPerDay: number;
 }
+
+// New Fishing State Types
+export interface FishingCardEffect {
+  type: string;
+  amount: number;
+}
+
+export interface FishingCard {
+  id: number;
+  startingAmount: number;
+  manaCost: number;
+  hitZones: number[];
+  critZones: number[];
+  hitEffects: FishingCardEffect[];
+  missEffects: FishingCardEffect[];
+  critEffects: FishingCardEffect[];
+  unlockLevel: number;
+  rarity: number;
+  isDayCard: boolean;
+  earnable: boolean;
+}
+
+export interface FishingGameData {
+  deckCardData: FishingCard[];
+  playerMaxHp: number;
+  playerHp: number;
+  fishHp: number;
+  fishMaxHp: number;
+  fishPosition: number[];
+  previousFishPosition: number[];
+  fullDeck: number[];
+  nextCardIndex: number;
+  cardInDrawPile: number;
+  hand: number[];
+  discard: number[];
+  jebaitorTriggered: boolean;
+  day: number;
+  week: number;
+}
+
+export interface FishingGameState {
+  _id: string;
+  docId: string;
+  docType: string;
+  data: FishingGameData;
+  COMPLETE_CID: boolean;
+  LEVEL_CID: number;
+  ID_CID: string;
+  PLAYER_CID: string;
+  DAY_CID: number;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface FishingDayDoc {
+  _id: string;
+  docId: string;
+  UINT256_CID: number;
+  ID_CID: string;
+  TIMESTAMP_CID: number;
+  PLAYER_CID: string;
+  DOC_TYPE_CID: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  data?: {
+    deck: number[];
+  };
+}
+
+export interface ExchangeRate {
+  id: number;
+  tier: number;
+  baseVal: number;
+  value: number;
+}
+
+export interface GetFishingStateResponse {
+  gameState: FishingGameState;
+  dayDoc: FishingDayDoc;
+  maxPerDay: number;
+  maxPerDayJuiced: number;
+  node0Energy: number;
+  node1Energy: number;
+  node2Energy: number;
+  node0Weights: number[];
+  node1Weights: number[];
+  node2Weights: number[];
+  qualityWeights: number[];
+  unlockLvlsPerQuality: number[];
+  skillLevel: number;
+  exchangeRates: ExchangeRate[];
+}

@@ -1,7 +1,12 @@
 import { context, action, extension, formatXml, xml } from "@daydreamsai/core";
 import { string, z } from "zod";
 import { useSettingsStore } from "@/store/settingsStore";
-import { GameClient } from "./client/GameClient";
+import {
+  FishingActionData,
+  FishingCard,
+  FishingItemBalanceChanges,
+  GameClient,
+} from "./client/GameClient";
 import { useTemplateStore } from "@/store/templateStore";
 import { GetSkillsProgressResponse } from "./client/types/responses";
 import {
@@ -40,6 +45,8 @@ async function fetchGigaverseState(
   const energy = await client.getEnergy(address);
   const juice = await client.getJuice(address);
   const userBalances = await client.getUserBalances();
+
+  const fishingState = await client.getFishingState(address);
   const consumables = parseItems(
     userBalances,
     data.items,
@@ -65,6 +72,7 @@ async function fetchGigaverseState(
     consumables,
     balances: balances,
     lastUpdate: Date.now(),
+    fishingState,
   };
 }
 
@@ -146,6 +154,8 @@ export const gigaverseContext = context({
 
     const energy = await client.getEnergy(address);
 
+    const fishingState = await client.getFishingState(address);
+
     return {
       address,
       client,
@@ -163,12 +173,19 @@ export const gigaverseContext = context({
           energy,
         },
         today,
+        fishingState,
       },
       actionToken: "" as string | number,
     };
   },
 
-  async create({ options }): Promise<GigaverseState & { gamesToPlay: number }> {
+  async create({ options }): Promise<
+    GigaverseState & {
+      gamesToPlay: number;
+      fishingData: FishingActionData;
+      fishingBalanceChanges: FishingItemBalanceChanges;
+    }
+  > {
     const memory = await fetchGigaverseState(
       options.client,
       options.game,
@@ -180,6 +197,8 @@ export const gigaverseContext = context({
     return {
       ...memory,
       gamesToPlay: 0,
+      fishingData: {} as FishingActionData,
+      fishingBalanceChanges: [],
     };
   },
 
@@ -223,8 +242,8 @@ export const gigaverseContext = context({
       );
 
       state.memory = {
+        ...state.memory,
         ...gigaverseState,
-        gamesToPlay: state.memory.gamesToPlay,
       };
     }
   },
@@ -317,6 +336,20 @@ export const gigaverseContext = context({
       [...memory.consumables].filter((t) => t.balance > 0)
     );
 
+    const fishingData = xml("fishing_data", undefined, [
+      {
+        tag: "fishing_data",
+        children: memory.fishingData,
+      },
+    ]);
+
+    const fishingBalanceChanges = xml("fishing_balance_changes", undefined, [
+      {
+        tag: "fishing_balance_changes",
+        children: memory.fishingBalanceChanges,
+      },
+    ]);
+
     // Use the template from the store
     const prompt = render(template, {
       ...memory,
@@ -328,6 +361,8 @@ export const gigaverseContext = context({
         formatXml(hero),
         formatXml(inventory),
         formatXml(consumables),
+        formatXml(fishingData),
+        formatXml(fishingBalanceChanges),
         memory.dungeon ? render(dungeonSection, sectionsVariables) : null,
       ]
         .filter((t) => !!t)
@@ -566,8 +601,8 @@ Enemy Shield: ${state.enemy.shield.current}
         );
 
         ctx.memory = {
+          ...ctx.memory,
           ...gigaverseState,
-          gamesToPlay: ctx.memory.gamesToPlay,
         };
 
         ctx.options.actionToken = "";
@@ -638,6 +673,80 @@ Enemy Shield: ${state.enemy.shield.current}
       return {
         success: true,
         result: skills,
+        message: response.message,
+      };
+    },
+  }),
+  action({
+    name: "gigaverse.startFishingRun",
+    description: "Start a fishing run.",
+    instructions: `\
+You should only ever use this function if the user has asked you to start a fishing run.
+`,
+
+    schema: {
+      cards: z
+        .array(z.number())
+        .optional()
+        .describe("The id of the card to play, which is found in the deck"),
+    },
+
+    async handler({ cards }, { options }) {
+      const response = await options.client.startFishingRun({
+        action: "start_run",
+        actionToken: options.actionToken
+          ? options.actionToken
+          : Date.now().toString(),
+        data: {
+          cards: [],
+          nodeId: "0",
+        },
+      });
+
+      if (response.actionToken) {
+        options.actionToken = response.actionToken;
+      }
+
+      return {
+        success: true,
+        result: response.data,
+        message: response.message,
+      };
+    },
+  }),
+  action({
+    name: "gigaverse.playFishingCards",
+    description: "Play fishing cards.",
+    instructions: `\
+Use this to play fishing cards.
+`,
+    schema: {
+      cards: z
+        .array(z.number())
+        .describe(
+          "The index of the card to play, which is found in the in your hand. "
+        ),
+    },
+    async handler({ cards }, { options, memory }) {
+      const response = await options.client.startFishingRun({
+        action: "play_cards",
+        actionToken: options.actionToken as string,
+        data: {
+          cards,
+          nodeId: "",
+        },
+      });
+
+      if (response.actionToken) {
+        options.actionToken = response.actionToken;
+      }
+
+      memory.fishingData = response.data.doc.data;
+      memory.fishingBalanceChanges = response.gameItemBalanceChanges;
+
+      return {
+        success: true,
+        result: response.data,
         message: response.message,
       };
     },

@@ -9,6 +9,7 @@ import {
   GetSkillsProgressResponse,
   GetTodayResponse,
   GetGigaJuiceResponse,
+  GetFishingStateResponse,
 } from "./responses";
 
 /**
@@ -174,6 +175,7 @@ export type GigaverseState = {
   balances: ItemBalance[];
   dungeon: GigaverseDungeonState | undefined;
   lastUpdate?: number;
+  fishingState: GetFishingStateResponse;
 };
 
 export type GameData = {

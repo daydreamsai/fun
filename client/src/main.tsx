@@ -36,8 +36,6 @@ declare module "@tanstack/react-router" {
   }
 }
 
-console.log(import.meta.env);
-// Render the app
 const rootElement = document.getElementById("root")!;
 
 // Remove the conditional check that can cause hydration mismatches
