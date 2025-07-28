@@ -1,17 +1,17 @@
 import { context, action, extension, formatXml, xml } from "@daydreamsai/core";
 import { string, z } from "zod";
 import { useSettingsStore } from "@/store/settingsStore";
+import { GameClient } from "./client/GameClient";
 import {
   FishingActionData,
-  FishingCard,
   FishingItemBalanceChanges,
-  GameClient,
-} from "./client/GameClient";
+} from "./client/types/game";
 import { useTemplateStore } from "@/store/templateStore";
 import { GetSkillsProgressResponse } from "./client/types/responses";
 import {
   GameData,
   GigaverseState,
+  ItemBalance,
   MarketplaceFloorResponse,
 } from "./client/types/game";
 import {
@@ -22,7 +22,12 @@ import {
 } from "./prompts";
 import { ActionPayload } from "./client/types/requests";
 import { Cache } from "@/agent/utils/cache";
-import { parseDungeonState, parseItems } from "./utils";
+import {
+  parseBalanceChange,
+  parseDungeonState,
+  parseEquipedGear,
+  parseItems,
+} from "./utils";
 import { render } from "./render";
 
 export const getApiBaseUrl = () => {
@@ -132,6 +137,10 @@ export const gigaverseContext = context({
 
     const faction = await client.getFaction(address);
 
+    const equipedGear = await client.getEquipedGear(account.noob.docId);
+
+    const equipedGearParsed = parseEquipedGear(equipedGear, offchain);
+
     const playerSkills: GetSkillsProgressResponse =
       await client.getHeroSkillsProgress(account.noob.docId);
 
@@ -171,6 +180,7 @@ export const gigaverseContext = context({
           balances,
           consumables,
           energy,
+          gear: equipedGearParsed,
         },
         today,
         fishingState,
@@ -184,6 +194,7 @@ export const gigaverseContext = context({
       gamesToPlay: number;
       fishingData: FishingActionData;
       fishingBalanceChanges: FishingItemBalanceChanges;
+      currentHarvestedItems: ItemBalance[];
     }
   > {
     const memory = await fetchGigaverseState(
@@ -199,6 +210,7 @@ export const gigaverseContext = context({
       gamesToPlay: 0,
       fishingData: {} as FishingActionData,
       fishingBalanceChanges: [],
+      currentHarvestedItems: [],
     };
   },
 
@@ -252,10 +264,10 @@ export const gigaverseContext = context({
   },
 
   shouldContinue(ctx) {
-    // If we're in a dungeon and player is alive, continue
-    if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
-      return true;
-    }
+    // // If we're in a dungeon and player is alive, continue
+    // if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
+    //   return true;
+    // }
 
     // If player died or we're not in a dungeon, stop
     return false;
@@ -425,9 +437,6 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
           };
         }
 
-        const currentTime = Date.now();
-        const threeMinutesInMs = 3 * 60 * 1000;
-
         const payload: ActionPayload = {
           action,
           actionToken,
@@ -468,6 +477,33 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
 
         memory.dungeon = state;
         memory.lastUpdate = Date.now();
+
+        if (response.gameItemBalanceChanges) {
+          const newItems = parseBalanceChange(
+            response.gameItemBalanceChanges,
+            options.game.offchain,
+            options.game.marketplaceFloor
+          );
+          if (Array.isArray(memory.currentHarvestedItems)) {
+            // Add new items to existing, avoiding duplicates by id+amount
+            const existing = memory.currentHarvestedItems;
+            const combined = [...existing];
+            for (const newItem of newItems) {
+              // Find if an item with same id and amount already exists
+              const idx = combined.findIndex(
+                (item) =>
+                  item.item.id === newItem.item.id &&
+                  item.balance === newItem.balance
+              );
+              if (idx === -1) {
+                combined.push(newItem);
+              }
+            }
+            memory.currentHarvestedItems = combined;
+          } else {
+            memory.currentHarvestedItems = newItems;
+          }
+        }
 
         if (action.startsWith("loot")) {
           return {

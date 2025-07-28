@@ -47,6 +47,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "@tanstack/react-query": "^5.75.1",
     "@tanstack/react-router": "^1.119.0",
+    "@tanstack/react-table": "^8.21.3",
     "@tanstack/zod-adapter": "^1.120.2",
     "@tavily/core": "^0.3.7",
     "@types/three": "^0.172.0",

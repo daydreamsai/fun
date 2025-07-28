@@ -2,6 +2,8 @@
 
 import { HttpClient } from "./HttpClient";
 import {
+  FishingActionPlayCardsResponse,
+  FishingActionStartRun,
   MarketplaceFloorResponse,
   MarketplaceItemListingResponse,
 } from "./types/game";
@@ -10,6 +12,7 @@ import {
   ActionPayload,
   ClaimEnergyPayload,
   StartRunPayload,
+  EquipPayload,
 } from "./types/requests";
 
 import {
@@ -30,132 +33,18 @@ import {
   GetGigaJuiceResponse,
   GetTodayResponse,
   GetFishingStateResponse,
+  EquipResponse,
 } from "./types/responses";
 import { Logger } from "@daydreamsai/core";
 
 export const MAX_ENERGY = 240;
 export const MAX_JUICE = 480;
 
-type FishingCardEffect = {
-  type: "FISH_HP";
-  amount: number;
-};
+export const HEAD_CID =
+  "88599653422272993884141208563120605573864330818693086527897261466689762533731";
 
-export type FishingCard = {
-  id: number;
-  startingAmount: number;
-  manaCost: number;
-  hitZones: number[];
-  critZones: number[];
-  hitEffects: FishingCardEffect[];
-  missEffects: FishingCardEffect[];
-  critEffects: FishingCardEffect[];
-  unlockLevel: number;
-  rarity: number;
-  isDayCard: boolean;
-  earnable: boolean;
-};
-
-export type FishingCardsResponse = {
-  entities: FishingCard[];
-};
-
-// https://gigaverse.io/api/fishing/action
-type FishingActionStartRun = {
-  action: "start_run" | "play_cards";
-  actionToken: string | number;
-  data: {
-    cards: number[];
-    nodeId: string;
-  };
-};
-
-export type FishingActionData = {
-  deckCardData: FishingCard[];
-  playerMaxHp: number;
-  playerHp: number;
-  fishHp: number;
-  fishMaxHp: number;
-  fishPosition: number[];
-  previousFishPosition: number[];
-  fullDeck: number[];
-  nextCardIndex: number;
-  cardInDrawPile: number;
-  hand: number[];
-  discard: number[];
-  jebaitorTriggered: boolean;
-  day: number;
-  week: number;
-  caughtFish: {
-    gameItemId: number;
-    name: string;
-    rarity: number;
-    size: string;
-    startDate: string | null;
-    endDate: string | null;
-    moveDistances: number[];
-    levelRequired: number;
-    quality: number;
-    sizes: {
-      weight: number;
-      length: number;
-      girth: number;
-    };
-    plusOneRarity: boolean;
-    plusOneQuality: boolean;
-    doubled: boolean;
-    findexResult: {
-      newFish: boolean;
-      newLength: boolean;
-      newGirth: boolean;
-      newWeight: boolean;
-      newQuality: boolean;
-      totalCaught: number;
-    };
-    seaweedEarned: number;
-  };
-  cardsToAdd: FishingCard[];
-};
-
-interface FisingResponseData {
-  doc: {
-    _id: string;
-    docId: string;
-    docType: string;
-    data: FishingActionData;
-    COMPLETE_CID: boolean;
-    LEVEL_CID: number;
-    ID_CID: string;
-    PLAYER_CID: string;
-    DAY_CID: number;
-    createdAt: string;
-    updatedAt: string;
-    __v: number;
-    SUCCESS_CID: boolean;
-  };
-  events: Array<{
-    type: string;
-    value: number;
-    playerId: number;
-    batch: number;
-    data: any;
-  }>;
-}
-
-export type FishingItemBalanceChanges = Array<{
-  id: number;
-  amount: number;
-  gearInstanceId: string;
-  rarity: number;
-}>;
-
-export type FishingActionPlayCardsResponse = {
-  success: boolean;
-  message: string;
-  data: FisingResponseData;
-  gameItemBalanceChanges: FishingItemBalanceChanges;
-  actionToken: number;
-};
+export const BODY_CID =
+  "115305014569596518278023142279117918212535487760226513356624296206403416463707";
 
 /**
  * Main SDK class exposing methods for dungeon runs, user data, items, etc.
@@ -484,6 +373,22 @@ export class GameClient {
   public async getStatic() {
     return this.httpClient.get<GetStaticResponse>("/offchain/static");
   }
+
+  public async getEquipedGear(noodId: string) {
+    return this.httpClient.get<EquipedGearResponse>(
+      "/offchain/equipment/79966817350501100526447415351088260038671993089879876864314793285447998749147/" +
+        noodId
+    );
+  }
+
+  /**
+   * Equips an item to a specific slot
+   */
+  public async equip(payload: EquipPayload): Promise<EquipResponse> {
+    this.logger.info("gigaverse-http-client", "Equipping item...");
+    const endpoint = "/game/equip";
+    return this.httpClient.post<EquipResponse>(endpoint, payload);
+  }
 }
 
 export interface GetFishingCardsResponse {
@@ -516,7 +421,32 @@ export interface GetStaticResponse {
   };
   enemies: GetAllEnemiesResponse["entities"];
   gameItems: OffchainItems[];
-  recipies: any[];
+  recipies: {
+    docId: string;
+    ID_CID: string;
+    NAME_CID: string;
+    FACTION_CID_array: number[];
+    GEAR_TYPE_CID: number;
+    DURABILITY_CID: number;
+    TIER_CID: number;
+    UINT256_CID: number;
+    INPUT_NAMES_CID_array: string[];
+    INPUT_ID_CID_array: number[];
+    INPUT_AMOUNT_CID_array: number[];
+    LOOT_ID_CID_array: number[];
+    LOOT_AMOUNT_CID_array: number[];
+    LOOT_FULFILLER_ID_CID_array: string[];
+    TIME_BETWEEN_CID: number;
+    TAG_CID_array: string[];
+    SUCCESS_RATE_CID: number;
+    COOLDOWN_CID: number;
+    MAX_COMPLETIONS_CID: number;
+    ENERGY_CID: number;
+    IS_JUICED_CID: boolean;
+    IS_WEEKLY_CID: boolean;
+    IS_DAILY_CID: boolean;
+    JUICED_MULTIPLIER_CID: number;
+  }[];
 }
 
 export interface GetAccountResponse {
@@ -582,4 +512,18 @@ export type OffchainItems = {
   RARITY_NAME: string;
   IMG_URL_CID: string;
   ICON_URL_CID: string;
+};
+
+export type EquipedGear = {
+  _id: string;
+  docId: string;
+  CONSUMABLES_CID: any[];
+  createdAt: string;
+  updatedAt: string;
+  EQUIPMENT_BODY_CID: number;
+  EQUIPMENT_HEAD_CID: number;
+};
+
+export type EquipedGearResponse = {
+  entities: EquipedGear[];
 };

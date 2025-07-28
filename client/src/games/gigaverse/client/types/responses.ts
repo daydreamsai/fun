@@ -19,6 +19,22 @@ export interface BaseResponse<Data extends any = DungeonData> {
   gameItemBalanceChanges?: GameItemBalanceChange[];
 }
 
+export interface EquipEntity {
+  _id: string;
+  docId: string;
+  CONSUMABLES_CID: any[];
+  EQUIPMENT_BODY_CID: number;
+  EQUIPMENT_HEAD_CID: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EquipResponse {
+  success: boolean;
+  message: string;
+  data: EquipEntity[];
+}
+
 export interface ClaimEnergyResponse {
   success: boolean;
 }

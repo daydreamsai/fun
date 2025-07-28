@@ -1,5 +1,7 @@
+import { EquipedGearResponse, OffchainItems } from "./client/GameClient";
 import {
   GameData,
+  GameItemBalanceChange,
   ItemBalance,
   MarketplaceFloorResponse,
 } from "./client/types/game";
@@ -58,9 +60,8 @@ export function parseItems(
       const { docId, NAME_CID } = items.entities.find(
         (item) => item.docId === entity.ID_CID
       )!;
-      const { DESCRIPTION_CID, TYPE_CID } = offchain.gameItems.find(
-        (item) => item.docId === entity.ID_CID
-      )!;
+      const { DESCRIPTION_CID, TYPE_CID, ICON_URL_CID } =
+        offchain.gameItems.find((item) => item.docId === entity.ID_CID)!;
 
       const floorPrice = marketplaceFloor.entities.find(
         (item) => item.GAME_ITEM_ID_CID === parseInt(docId)
@@ -73,6 +74,7 @@ export function parseItems(
           description: DESCRIPTION_CID,
           type: TYPE_CID,
           floorPrice: floorPrice ?? 0,
+          img: ICON_URL_CID,
         },
         balance: entity.BALANCE_CID,
       };
@@ -92,3 +94,56 @@ export function parseItems(
 export function perc(current: number, max: number) {
   return current && max ? (current / max) * 100 : 0;
 }
+
+// parse equiped gear
+export function parseEquipedGear(
+  equipedGear: EquipedGearResponse,
+  offchain: GameData["offchain"]
+): {
+  head: OffchainItems | undefined;
+  body: OffchainItems | undefined;
+} {
+  const head =
+    offchain.gameItems.find(
+      (item) =>
+        item.docId === equipedGear.entities[0].EQUIPMENT_HEAD_CID.toString()
+    ) ?? undefined;
+  const body =
+    offchain.gameItems.find(
+      (item) =>
+        item.docId === equipedGear.entities[0].EQUIPMENT_BODY_CID.toString()
+    ) ?? undefined;
+
+  return {
+    head,
+    body,
+  };
+}
+
+export const parseBalanceChange = (
+  balanceChanges: GameItemBalanceChange[],
+  offchain: GameData["offchain"],
+  marketplaceFloor: MarketplaceFloorResponse
+): ItemBalance[] => {
+  return balanceChanges.map((balanceChange) => {
+    const itemData = offchain.gameItems.find(
+      (item) => item.docId === balanceChange.id.toString()
+    );
+
+    const floorPrice = marketplaceFloor.entities.find(
+      (item) => item.GAME_ITEM_ID_CID === parseInt(itemData?.docId ?? "0")
+    )?.ETH_MINT_PRICE_CID;
+
+    return {
+      item: {
+        id: parseInt(itemData?.docId ?? "0"),
+        name: itemData?.NAME_CID ?? "",
+        description: itemData?.DESCRIPTION_CID ?? "",
+        type: itemData?.TYPE_CID ?? "",
+        floorPrice: floorPrice ?? 0,
+        img: itemData?.ICON_URL_CID ?? "",
+      },
+      balance: balanceChange.amount,
+    };
+  });
+};

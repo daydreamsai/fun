@@ -25,3 +25,9 @@ export interface ActionPayload<T = any> {
   dungeonId: number;
   data: T;
 }
+
+export interface EquipPayload {
+  tokenId: string;
+  itemId: number;
+  slotCid: string;
+}

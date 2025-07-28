@@ -164,6 +164,7 @@ export type ItemBalance = {
     description: string;
     type: string;
     floorPrice: number;
+    img: string;
   };
   balance: number;
 };
@@ -217,4 +218,124 @@ export type MarketplaceItemListingResponse = {
     ETH_MINT_PRICE_CID: number;
     GAME_ITEM_ID_CID: number;
   }[];
+};
+
+type FishingCardEffect = {
+  type: "FISH_HP";
+  amount: number;
+};
+
+export type FishingCard = {
+  id: number;
+  startingAmount: number;
+  manaCost: number;
+  hitZones: number[];
+  critZones: number[];
+  hitEffects: FishingCardEffect[];
+  missEffects: FishingCardEffect[];
+  critEffects: FishingCardEffect[];
+  unlockLevel: number;
+  rarity: number;
+  isDayCard: boolean;
+  earnable: boolean;
+};
+
+export type FishingCardsResponse = {
+  entities: FishingCard[];
+};
+
+export type FishingActionStartRun = {
+  action: "start_run" | "play_cards";
+  actionToken: string | number;
+  data: {
+    cards: number[];
+    nodeId: string;
+  };
+};
+
+export type FishingActionData = {
+  deckCardData: FishingCard[];
+  playerMaxHp: number;
+  playerHp: number;
+  fishHp: number;
+  fishMaxHp: number;
+  fishPosition: number[];
+  previousFishPosition: number[];
+  fullDeck: number[];
+  nextCardIndex: number;
+  cardInDrawPile: number;
+  hand: number[];
+  discard: number[];
+  jebaitorTriggered: boolean;
+  day: number;
+  week: number;
+  caughtFish: {
+    gameItemId: number;
+    name: string;
+    rarity: number;
+    size: string;
+    startDate: string | null;
+    endDate: string | null;
+    moveDistances: number[];
+    levelRequired: number;
+    quality: number;
+    sizes: {
+      weight: number;
+      length: number;
+      girth: number;
+    };
+    plusOneRarity: boolean;
+    plusOneQuality: boolean;
+    doubled: boolean;
+    findexResult: {
+      newFish: boolean;
+      newLength: boolean;
+      newGirth: boolean;
+      newWeight: boolean;
+      newQuality: boolean;
+      totalCaught: number;
+    };
+    seaweedEarned: number;
+  };
+  cardsToAdd: FishingCard[];
+};
+
+export interface FisingResponseData {
+  doc: {
+    _id: string;
+    docId: string;
+    docType: string;
+    data: FishingActionData;
+    COMPLETE_CID: boolean;
+    LEVEL_CID: number;
+    ID_CID: string;
+    PLAYER_CID: string;
+    DAY_CID: number;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+    SUCCESS_CID: boolean;
+  };
+  events: Array<{
+    type: string;
+    value: number;
+    playerId: number;
+    batch: number;
+    data: any;
+  }>;
+}
+
+export type FishingItemBalanceChanges = Array<{
+  id: number;
+  amount: number;
+  gearInstanceId: string;
+  rarity: number;
+}>;
+
+export type FishingActionPlayCardsResponse = {
+  success: boolean;
+  message: string;
+  data: FisingResponseData;
+  gameItemBalanceChanges: FishingItemBalanceChanges;
+  actionToken: number;
 };
