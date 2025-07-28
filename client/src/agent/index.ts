@@ -199,9 +199,7 @@ const memoryMigrator = service({
 });
 
 export function createAgent() {
-  // Always get fresh settings when creating the agent
   const settings = useSettingsStore.getState();
-  // const user = useUserStore.getState();
 
   const container = createContainer();
   const memoryStorage = browserStorage();
@@ -215,7 +213,7 @@ export function createAgent() {
   return createDreams({
     logger: new Logger({ level: LogLevel.DEBUG }),
     container,
-    model: openrouter(settings.model || "deepseek/deepseek-r1"),
+    model: openrouter(settings.model),
     memory: createMemory(
       memoryStorage,
       createVectorStore(),
