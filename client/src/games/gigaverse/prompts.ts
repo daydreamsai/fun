@@ -196,8 +196,14 @@ Your mission is to delve as deep as possible into the dungeon by winning every b
 
 **Reasoning Steps:**
 
-1. **Enumerate:** For each of your moves, simulate it against every possible enemy counter-move.
-2. **Calculate Outcomes:** For each simulated matchup, first determine the outcome using the immutable RPS Matchup Matrix below. Then, apply the corresponding damage multiplier.
+1. **Identify Legal Moves:** First, you MUST identify the set of LEGAL MOVES for the current turn. A move is LEGAL only if it meets all the following criteria:
+
+- **Context Check:** The system must be in combat (inLootPhase: false in the game state JSON). Actions like loot are illegal during combat.
+
+- **Charge Check:** The selected move must have charges > 0 in the game state JSON. The Defend action is always legal regardless of charges.
+
+2. **Enumerate Outcomes:** For each LEGAL MOVE identified in Step 1, simulate it against every possible enemy counter-move.
+3. **Calculate Outcomes:** For each simulated matchup, first determine the outcome using the immutable RPS Matchup Matrix below. Then, apply the corresponding damage multiplier.
 
 - **RPS Matchup Matrix:**
 
@@ -213,10 +219,10 @@ Your mission is to delve as deep as possible into the dungeon by winning every b
 - **LOSE: 0.5x**
 - **TIE: 1.0x**
 
-3. **Calculate EV:** For each of your moves, find the average \`Net Value\` across all simulations.
+4. **Calculate EV:** For each of your LEGAL MOVES, find the average \`Net Value\` across all simulations.
    - **\`Net Value = (Net Enemy HP & Shield Loss) - (Net Player HP & Shield Loss)\`**
    - This value represents the total health swing for a given turn. A higher positive value is superior.
-4. **Select Optimal Move:** Based on the EV analysis, select the highest-EV move that adheres to the **Charge Conservation Principle**.
+5. **Select Optimal Move:** Based on the EV analysis, select the highest-EV move that adheres to the **Charge Conservation Principle**. If there are multiple moves with the same EV, select the one that preserves the most charges.
    - **Charge Conservation Principle:** A move that depletes the final charge is only viable if the EV analysis confirms it *guarantees victory*. Otherwise, the next-highest EV move that preserves charges must be chosen.
 
 ---
@@ -304,7 +310,7 @@ Required Action: <What is needed from the user to proceed (e.g., Replenish energ
 
 First, analyze the final sequence of events and classify the failure into one of two categories:
 
-- **Strategic Error:** A failure caused by a deviation from the **Strategic Doctrine** or **Combat Protocol**, or a demonstrably suboptimal decision where a better option was available.
+- **Strategic Error:** A failure caused by a deviation from doctrine OR an action that was attempted despite being illegal (e.g., using a move with zero charges, attempting to loot during combat).
 - **Statistical Variance (RNG):** A failure that occurred despite optimal adherence to all protocols, caused by a series of low-probability negative outcomes. The chosen strategy was sound, but the outcome was unlucky.
 
 ### Step 2: Formatted Output

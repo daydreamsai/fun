@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { perc } from "../utils";
 import { Dungeons, DungeonState } from "./Dungeons";
 import { Startup } from "./Startup";
+import { ListRestart } from "lucide-react";
 
 export function OverviewTab({
   state,
@@ -35,8 +36,11 @@ export function OverviewTab({
   return (
     <div className="flex flex-col gap-4 pb-8">
       <div className="">
-        <h4 className="text-secondary-foreground uppercase text-center bg-secondary mb-2">
+        <h4 className="text-secondary-foreground uppercase text-center bg-secondary mb-2 flex items-center justify-between px-2">
           Noob #{player.account.noob.docId}
+          <button onClick={() => {}}>
+            <ListRestart />
+          </button>
         </h4>
         <div className="">
           <div className="flex justify-between items-center mb-1">
