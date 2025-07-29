@@ -13,6 +13,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ContextState } from "@daydreamsai/core";
 import { GigaverseContext } from "../context";
 import { useAgentStore } from "@/store/agentStore";
@@ -23,6 +30,7 @@ interface DungeonConfig {
   selectedDungeon: string | null;
   selectedDungeonId: number | null;
   useConsumables: boolean;
+  lootStrategy: "Balanced" | "Glass Canon" | "Tank" | "Two Move Specialist";
 }
 
 interface FishingConfig {
@@ -52,6 +60,7 @@ export function Startup({ state }: StartupProps) {
     selectedDungeon: null,
     selectedDungeonId: null,
     useConsumables: false,
+    lootStrategy: "Balanced",
   });
 
   const { game } = state.options;
@@ -72,6 +81,7 @@ export function Startup({ state }: StartupProps) {
         selectedDungeon: null,
         selectedDungeonId: null,
         useConsumables: false,
+        lootStrategy: "Balanced",
       });
     } else {
       setConfig({
@@ -104,6 +114,19 @@ export function Startup({ state }: StartupProps) {
     }
   };
 
+  const handleLootStrategyChange = (value: string) => {
+    if (config.type === "dungeon") {
+      setConfig({
+        ...config,
+        lootStrategy: value as
+          | "Balanced"
+          | "Glass Canon"
+          | "Tank"
+          | "Two Move Specialist",
+      });
+    }
+  };
+
   const handleStartGame = async () => {
     if (config.type === "dungeon" && config.selectedDungeon) {
       await agent.send({
@@ -119,6 +142,7 @@ export function Startup({ state }: StartupProps) {
               selectedDungeon: config.selectedDungeon,
               selectedDungeonId: config.selectedDungeonId,
               useConsumables: config.useConsumables,
+              lootStrategy: config.lootStrategy,
             }),
           },
         },
@@ -140,7 +164,7 @@ export function Startup({ state }: StartupProps) {
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="dungeon">Dungeon</TabsTrigger>
-            <TabsTrigger value="fishing">Fishing</TabsTrigger>
+            {/* <TabsTrigger value="fishing">Fishing</TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="dungeon" className="space-y-6">
@@ -225,8 +249,31 @@ export function Startup({ state }: StartupProps) {
               </div>
             </div>
 
+            {/* Loot Strategy Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="loot-strategy">Loot Strategy</Label>
+              <Select
+                value={
+                  config.type === "dungeon" ? config.lootStrategy : "Balanced"
+                }
+                onValueChange={handleLootStrategyChange}
+              >
+                <SelectTrigger id="loot-strategy" className="w-full">
+                  <SelectValue placeholder="Select a loot strategy" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Balanced">Balanced</SelectItem>
+                  <SelectItem value="Glass Canon">Glass Canon</SelectItem>
+                  <SelectItem value="Tank">Tank</SelectItem>
+                  <SelectItem value="Two Move Specialist">
+                    Two Move Specialist
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Use Consumables Toggle */}
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <Label htmlFor="consumables" className="flex flex-col gap-1">
                 <span>Use Consumables</span>
                 <span className="text-sm text-muted-foreground font-normal">
@@ -240,7 +287,7 @@ export function Startup({ state }: StartupProps) {
                 }
                 onCheckedChange={handleConsumablesToggle}
               />
-            </div>
+            </div> */}
 
             <Separator />
 
@@ -351,10 +398,10 @@ export function Startup({ state }: StartupProps) {
         </div>
 
         {/* Current Configuration Preview */}
-        <div className="mt-6 p-4 rounded-lg bg-muted">
+        {/* <div className="mt-6 p-4 rounded-lg bg-muted">
           <h4 className="text-sm font-medium mb-2">Current Configuration</h4>
           <pre className="text-xs">{JSON.stringify(config, null, 2)}</pre>
-        </div>
+        </div> */}
       </CardContent>
     </Card>
   );

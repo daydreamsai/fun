@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRef } from "react";
+import { useAgentStore } from "../store/agentStore";
 
 export function useContextState<TContext extends AnyContext>({
   agent,
@@ -63,14 +64,22 @@ export function useLogs<TContext extends AnyContext>({
   args: InferSchemaArguments<TContext["schema"]>;
 }) {
   const [logs, setLogs] = useState<AnyRef[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
   const contextId = agent.getContextId(ref);
   const queryClient = useQueryClient();
 
   const workingMemory = useWorkingMemory({ agent, ...ref });
 
   useEffect(() => {
-    const unsubscribe = agent.subscribeContext(contextId, (log, _done) => {
+    const unsubscribe = agent.subscribeContext(contextId, (log, done) => {
       setLogs((logs) => [...logs.filter((l) => l.id !== log.id), log]);
+
+      // Track running state based on log activity
+      if (log.ref === "input" && log.type === "message") {
+        setIsRunning(true);
+      } else if (log.ref === "step" && done) {
+        setIsRunning(false);
+      }
     });
     return () => {
       unsubscribe();
@@ -106,7 +115,37 @@ export function useLogs<TContext extends AnyContext>({
     setLogs,
     workingMemory,
     clearMemory,
+    isRunning,
   };
+}
+
+// New hook specifically for tracking agent running state
+export function useAgentRunning<TContext extends AnyContext>({
+  agent,
+  ...ref
+}: {
+  agent: AnyAgent;
+  context: TContext;
+  args: InferSchemaArguments<TContext["schema"]>;
+}) {
+  const [isRunning, setIsRunning] = useState(false);
+  const contextId = agent.getContextId(ref);
+
+  useEffect(() => {
+    const unsubscribe = agent.subscribeContext(contextId, (log, done) => {
+      // Track running state based on log activity
+      if (log.ref === "input" && log.type === "message") {
+        setIsRunning(true);
+      } else if (log.ref === "step" && done) {
+        setIsRunning(false);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [contextId, agent]);
+
+  return isRunning;
 }
 
 type SendArguments = {
@@ -165,4 +204,41 @@ export function useSend<TContext extends AnyContext>({
   });
 
   return { send, abortControllerRef };
+}
+
+// New hook to ensure agent is fully initialized
+export function useInitializedAgent() {
+  const { agent, isInitialized, initializationPromise, initializeAgent } =
+    useAgentStore();
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        await initializeAgent();
+        if (mounted) {
+          setError(null);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err as Error);
+        }
+      }
+    };
+
+    init();
+
+    return () => {
+      mounted = false;
+    };
+  }, [initializeAgent]);
+
+  return {
+    agent: isInitialized ? agent : null,
+    isLoading: !isInitialized,
+    error,
+    isInitialized,
+  };
 }

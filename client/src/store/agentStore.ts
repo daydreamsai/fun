@@ -5,33 +5,107 @@ import { useSettingsStore } from "@/store/settingsStore";
 
 interface AgentState {
   agent: AnyAgent;
-  recreateAgent: () => void;
+  isInitialized: boolean;
+  initializationPromise: Promise<void> | null;
+  initializeAgent: () => Promise<void>;
+  recreateAgent: () => Promise<void>;
 }
 
-export const useAgentStore = create<AgentState>((set) => {
+export const useAgentStore = create<AgentState>((set, get) => {
   // Initial agent creation
   const agent = createAgent();
+  let initPromise: Promise<void> | null = null;
 
-  // Initialize the agent immediately
-  if (typeof window !== "undefined") {
-    // Only run in browser environment
-    agent.start().catch((error) => {
-      console.error("Failed to initialize agent:", error);
-    });
-  }
+  // Initialize function that can be called multiple times safely
+  const initializeAgent = async () => {
+    const state = get();
+
+    // If already initialized, return immediately
+    if (state.isInitialized) {
+      return;
+    }
+
+    // If initialization is in progress, return the existing promise
+    if (state.initializationPromise) {
+      return state.initializationPromise;
+    }
+
+    // Create new initialization promise
+    initPromise = (async () => {
+      try {
+        await agent.start();
+
+        // Give services time to fully initialize (particularly IndexedDB)
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Verify the agent is working by trying to get contexts
+        try {
+          await agent.getContexts();
+        } catch (verifyError) {
+          console.warn("Agent verification failed, retrying...", verifyError);
+          // Give it a bit more time
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          // Try once more
+          await agent.getContexts();
+        }
+
+        set({ isInitialized: true });
+        console.log("Agent successfully initialized and verified");
+      } catch (error) {
+        console.error("Failed to initialize agent:", error);
+        // Reset initialization promise on error so it can be retried
+        set({ initializationPromise: null });
+        throw error;
+      }
+    })();
+
+    // Store the promise immediately
+    set({ initializationPromise: initPromise });
+
+    return initPromise;
+  };
 
   // Function to recreate the agent with fresh settings
   const recreateAgent = async () => {
     const newAgent = createAgent();
-    // Initialize the new agent before setting it
-    if (typeof window !== "undefined") {
-      try {
+
+    // Reset initialization state
+    set({
+      agent: newAgent,
+      isInitialized: false,
+      initializationPromise: null,
+    });
+
+    // Initialize the new agent
+    try {
+      const newInitPromise = (async () => {
         await newAgent.start();
-      } catch (error) {
-        console.error("Failed to initialize new agent:", error);
-      }
+
+        // Give services time to fully initialize
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Verify the agent is working
+        try {
+          await newAgent.getContexts();
+        } catch (verifyError) {
+          console.warn(
+            "New agent verification failed, retrying...",
+            verifyError
+          );
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          await newAgent.getContexts();
+        }
+      })();
+
+      set({ initializationPromise: newInitPromise });
+      await newInitPromise;
+      set({ isInitialized: true });
+      console.log("New agent successfully initialized and verified");
+    } catch (error) {
+      console.error("Failed to initialize new agent:", error);
+      set({ initializationPromise: null });
+      throw error;
     }
-    set({ agent: newAgent });
   };
 
   // Subscribe to settings changes
@@ -53,8 +127,19 @@ export const useAgentStore = create<AgentState>((set) => {
     window.addEventListener("beforeunload", unsubscribe);
   }
 
+  // Start initialization immediately in browser environment
+  if (typeof window !== "undefined") {
+    // Use setTimeout to avoid calling set during store creation
+    setTimeout(() => {
+      initializeAgent();
+    }, 0);
+  }
+
   return {
     agent,
+    isInitialized: false,
+    initializationPromise: null,
+    initializeAgent,
     recreateAgent,
   };
 });

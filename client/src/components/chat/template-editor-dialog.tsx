@@ -116,6 +116,7 @@ export function TemplateEditorDialog({
                           selected[templateKey][section] === template.id;
                         return (
                           <TemplateCard
+                            key={template.id}
                             template={template}
                             isSelected={isSelected}
                             isDefault={

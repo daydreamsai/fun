@@ -365,21 +365,19 @@ export const gigaverseContext = context({
     // Use the template from the store
     const prompt = render(template, {
       ...memory,
-      rules: render(rules ?? "", sectionsVariables),
       instructions: render(instructions ?? "", sectionsVariables),
-
       state: [
-        formatXml(gameData),
         formatXml(hero),
         formatXml(inventory),
         formatXml(consumables),
-        formatXml(fishingData),
-        formatXml(fishingBalanceChanges),
+        formatXml(gameData),
         memory.dungeon ? render(dungeonSection, sectionsVariables) : null,
       ]
         .filter((t) => !!t)
         .join("\n"),
     });
+
+    console.log(prompt);
 
     return prompt;
   },

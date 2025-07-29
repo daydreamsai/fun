@@ -163,7 +163,7 @@ function RouteComponent() {
     setMissingKeys(missing);
   }, []);
 
-  const { logs } = useLogs({
+  const { logs, isRunning } = useLogs({
     agent: agent,
     context: gigaverseContext,
     args: { id: chatId },
@@ -293,7 +293,7 @@ function RouteComponent() {
           </TooltipContent>
         </Tooltip>
         <MessageInput
-          isLoading={send.isPending}
+          isLoading={send.isPending || isRunning}
           disabled={ctxState.error !== null || missingKeys.length > 0}
           onSubmit={handleSubmitMessage}
           abortControllerRef={abortControllerRef}
