@@ -276,12 +276,6 @@ export const gigaverseContext = context({
   render({ memory, options: { game } }) {
     const { selected, templates } = useTemplateStore.getState();
 
-    // Get the current template from the Zustand store
-    const rulesTemplate = selected.gigaverse?.rules
-      ? templates.gigaverse.find((t) => t.id === selected.gigaverse?.rules)
-          ?.prompt
-      : defaultRules;
-
     const instructionsTemplate = selected.gigaverse?.instructions
       ? templates.gigaverse.find(
           (t) => t.id === selected.gigaverse?.instructions
@@ -289,11 +283,10 @@ export const gigaverseContext = context({
       : defaultInstructions;
 
     const sectionsVariables = {
-      energy: memory.energy,
+      energy: memory.energy.entities[0].parsedData.energy,
       ...memory.dungeon,
     };
 
-    const rules = rulesTemplate ? render(rulesTemplate, sectionsVariables) : "";
     const instructions = instructionsTemplate
       ? render(instructionsTemplate, sectionsVariables)
       : "";
@@ -348,19 +341,20 @@ export const gigaverseContext = context({
       [...memory.consumables].filter((t) => t.balance > 0)
     );
 
-    const fishingData = xml("fishing_data", undefined, [
-      {
-        tag: "fishing_data",
-        children: memory.fishingData,
-      },
-    ]);
+    // TODO: dev do in a different template
+    // const fishingData = xml("fishing_data", undefined, [
+    //   {
+    //     tag: "fishing_data",
+    //     children: memory.fishingData,
+    //   },
+    // ]);
 
-    const fishingBalanceChanges = xml("fishing_balance_changes", undefined, [
-      {
-        tag: "fishing_balance_changes",
-        children: memory.fishingBalanceChanges,
-      },
-    ]);
+    // const fishingBalanceChanges = xml("fishing_balance_changes", undefined, [
+    //   {
+    //     tag: "fishing_balance_changes",
+    //     children: memory.fishingBalanceChanges,
+    //   },
+    // ]);
 
     // Use the template from the store
     const prompt = render(template, {

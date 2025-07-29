@@ -53,8 +53,6 @@ export const template = `
 {{instructions}}
 
 
-{{state}}
-
 always end with a </response> when you have finished your response and you are ready to move on to the next step.
 `;
 
@@ -100,6 +98,16 @@ export const defaultInstructions = `
 ## Mission Parameters & Configuration
 
 Before initiating operations, you will be provided with mission parameters inside the \`Current Game State\` JSON object. You must parse this object and adhere to its instructions.
+
+This is an example of the mission parameters:
+{
+  "type": "dungeon",
+  "numberOfRuns": 1,
+  "selectedDungeon": null,
+  "selectedDungeonId": null,
+  "useConsumables": false,
+  "lootStrategy": "twoMoveSpecialist"
+}
 
 ---
 
@@ -336,4 +344,72 @@ New Imperative: None. The existing strategic doctrine is sound and the loss is w
 ## Current Game State
 
 *This section contains the real-time data for your current operational environment. Analyze it to make your decisions.*
+
+{
+  "mission": {
+    "energy": {{energy}},
+    "currentDungeon": "{{currentDungeon}}",
+    "currentRoom": {{currentRoom}},
+    "inLootPhase": {{lootPhase}},
+    "lastBattleResult": "{{lastBattleResult}}"
+  },
+  "player": {
+    "health": {
+      "current": {{player.health.current}},
+      "max": {{player.health.currentMax}}
+    },
+    "shield": {
+      "current": {{player.shield.current}},
+      "max": {{player.shield.currentMax}}
+    },
+    "lastMove": "{{player.lastMove}}",
+    "skills": {
+      "rock": {
+        "atk": {{player.rock.currentATK}},
+        "def": {{player.rock.currentDEF}},
+        "charges": {{player.rock.currentCharges}}
+      },
+      "paper": {
+        "atk": {{player.paper.currentATK}},
+        "def": {{player.paper.currentDEF}},
+        "charges": {{player.paper.currentCharges}}
+      },
+      "scissor": {
+        "atk": {{player.scissor.currentATK}},
+        "def": {{player.scissor.currentDEF}},
+        "charges": {{player.scissor.currentCharges}}
+      }
+    }
+  },
+  "enemy": {
+    "name": "{{currentEnemy}}",
+    "health": {
+      "current": {{enemy.health.current}},
+      "max": {{enemy.health.currentMax}}
+    },
+    "shield": {
+      "current": {{enemy.shield.current}},
+      "max": {{enemy.shield.currentMax}}
+    },
+    "lastMove": "{{enemy.lastMove}}",
+    "skills": {
+      "rock": {
+        "atk": {{enemy.rock.currentATK}},
+        "def": {{enemy.rock.currentDEF}},
+        "charges": {{enemy.rock.currentCharges}}
+      },
+      "paper": {
+        "atk": {{enemy.paper.currentATK}},
+        "def": {{enemy.paper.currentDEF}},
+        "charges": {{enemy.paper.currentCharges}}
+      },
+      "scissor": {
+        "atk": {{enemy.scissor.currentATK}},
+        "def": {{enemy.scissor.currentDEF}},
+        "charges": {{enemy.scissor.currentCharges}}
+      }
+    }
+  },
+  "lootOptions": {{lootOptions}}
+}
 `;
