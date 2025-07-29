@@ -90,10 +90,6 @@ By defeating enemies you will earn dungeon scrap (a soulbound item — meaning i
 
 In addition to scrap, random rewards (in the form of items, materials, and skins) will drop when you defeat each enemy. These rewards increase in size & rarity as you progress through the dungeon.
 
-## Daily Limit
-
-10 runs per day (this is subject to change in the future).
-
 # Dungetron 5000: Gigus
 
 The Gigus Dungeon (named after Gigus Maximus) is an extreme version of the dungeon with a high energy entry cost. It does not drop any scrap, but is the only place in gigaverse where you can earn gigus materials.
@@ -109,7 +105,3 @@ Combat works in the same way as in the Normal dungeon.
 ## Rewards
 
 Gigus materials are found in the Gigus dungeon. This is the only place in the game they can be found.
-
-## Daily Limit
-
-30 runs per day (this is subject to change in the future).

@@ -1,4 +1,4 @@
-import { FormEvent, MutableRefObject } from "react";
+import { FormEvent, MutableRefObject, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
@@ -17,6 +17,13 @@ export function MessageInput({
   placeholderText,
   abortControllerRef,
 }: MessageInputProps) {
+  const [isStopping, setIsStopping] = useState(false);
+
+  // Reset the stopping state when loading state changes to false
+  if (!isLoading && isStopping) {
+    setIsStopping(false);
+  }
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -24,6 +31,11 @@ export function MessageInput({
     if (!msg.trim()) return;
     form.reset();
     await onSubmit(msg);
+  };
+
+  const handleStop = () => {
+    setIsStopping(true);
+    abortControllerRef.current?.abort();
   };
 
   return (
@@ -42,11 +54,10 @@ export function MessageInput({
         <Button
           type="button"
           className="h-full w-52 max-w-[35%]"
-          onClick={() => {
-            abortControllerRef.current?.abort();
-          }}
+          onClick={handleStop}
+          disabled={isStopping}
         >
-          Stop
+          {isStopping ? "Stopped" : "Stop"}
         </Button>
       ) : (
         <Button

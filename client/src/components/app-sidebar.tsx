@@ -27,6 +27,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAgentStore } from "@/store/agentStore";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useInitializedAgent } from "@/hooks/agent";
 
 // This is sample data.
 const data = {
@@ -106,41 +107,13 @@ const data = {
 
 // Create a new ChatHistory component
 function ChatHistoryList() {
-  const agent = useAgentStore((state) => state.agent);
+  const { agent, isLoading: agentLoading } = useInitializedAgent();
   const queryClient = useQueryClient();
-
-  // Add a state to track if we've attempted to initialize
-  const [initAttempted, setInitAttempted] = useState(false);
-
-  // Try to initialize the agent if needed
-  useEffect(() => {
-    const initializeAgent = async () => {
-      try {
-        // Check if the agent is already initialized
-        await agent.getContexts();
-        setInitAttempted(true);
-      } catch (error) {
-        console.log("Agent not initialized yet, starting...");
-        try {
-          await agent.start();
-          // Refetch chats after initialization
-          queryClient.invalidateQueries({ queryKey: ["agent:chats"] });
-        } catch (initError) {
-          console.error("Failed to initialize agent:", initError);
-        } finally {
-          setInitAttempted(true);
-        }
-      }
-    };
-
-    if (!initAttempted) {
-      initializeAgent();
-    }
-  }, [agent, initAttempted, queryClient]);
 
   const chats = useQuery({
     queryKey: ["agent:chats"],
     queryFn: async () => {
+      if (!agent) return [];
       try {
         const contexts = await agent.getContexts();
         console.log("contexts", contexts);
@@ -150,15 +123,12 @@ function ChatHistoryList() {
         return [];
       }
     },
-    // Only run the query if we've attempted to initialize
-    enabled: initAttempted,
-    // Retry failed queries
+    enabled: !!agent,
     retry: 3,
-    // Refetch on window focus
     refetchOnWindowFocus: true,
   });
 
-  if (!initAttempted || chats.isLoading) {
+  if (agentLoading || chats.isLoading) {
     return <div className="px-4 py-2 text-sm">Loading chats...</div>;
   }
 

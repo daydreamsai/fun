@@ -3,177 +3,111 @@ import { Link } from "@tanstack/react-router";
 
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { useAgentStore } from "@/store/agentStore";
-import { useEffect, useState } from "react";
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-    },
-  },
-  hover: {
-    scale: 1.03,
-    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 10,
-    },
-  },
-};
-
-const buttonVariants = {
-  hover: {
-    scale: 1.05,
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 10,
-    },
-  },
-  tap: {
-    scale: 0.95,
-  },
-};
+import { useInitializedAgent } from "@/hooks/agent";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 export const Route = createLazyFileRoute("/")({
   component: Index,
 });
 
 function Index() {
-  const agent = useAgentStore((state) => state.agent);
+  const {
+    agent,
+    isLoading: agentLoading,
+    error: agentError,
+    isInitialized,
+  } = useInitializedAgent();
 
-  const [chats, setChats] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-
+  // Debug logging
   useEffect(() => {
-    async function fetchChats() {
-      console.log("fetching chats");
-      setIsLoading(true);
+    console.log("Index component - Agent state:", {
+      hasAgent: !!agent,
+      isInitialized,
+      agentLoading,
+      agentError: agentError?.message,
+    });
+  }, [agent, isInitialized, agentLoading, agentError]);
+
+  // Use react-query for fetching chats
+  const {
+    data: chats = [],
+    isLoading: chatsLoading,
+    error: chatsError,
+  } = useQuery({
+    queryKey: ["contexts", "gigaverse"],
+    queryFn: async () => {
+      console.log("Fetching contexts...");
+      if (!agent) {
+        console.log("No agent available for fetching contexts");
+        return [];
+      }
       try {
         const contexts = await agent.getContexts();
-
-        setChats(contexts.filter((ctx) => ctx.type === "gigaverse") as any);
-        setIsLoading(false);
+        console.log("Got contexts:", contexts);
+        const filtered = contexts.filter((ctx) => ctx.type === "gigaverse");
+        console.log("Filtered gigaverse contexts:", filtered);
+        return filtered;
       } catch (error) {
-        console.error("Error fetching chats:", error);
-        setIsLoading(false);
+        console.error("Error fetching contexts:", error);
+        throw error; // Re-throw to let react-query handle retries
       }
+    },
+    enabled: !!agent && isInitialized, // Only run query when agent is available and initialized
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false, // Disable for debugging
+    staleTime: 30000, // Consider data stale after 30 seconds
+  });
+
+  // Debug query state
+  useEffect(() => {
+    if (chatsError) {
+      console.error("Query error:", chatsError);
     }
+  }, [chatsError]);
 
-    fetchChats();
-  }, [agent]);
-
-  if (isLoading) {
+  if (agentError) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="p-4"
-      >
-        Loading game sessions...
-      </motion.div>
+      <div className="p-4">
+        <p className="text-red-500">
+          Error initializing agent: {agentError.message}
+        </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Please check your settings and refresh the page.
+        </p>
+      </div>
     );
   }
 
-  // Upcoming games to tease
-  const upcomingGames = [
-    {
-      id: "ponzi",
-      name: "Ponzi Land",
-      description: "A ponzi game onchain",
-      image: "/ponzi.jpeg",
-    },
-    {
-      id: "eternum",
-      name: "Eternum",
-      description: "An onchain 4x game or epic conquest",
-      image: "/eternum.png",
-    },
-    {
-      id: "space-explorer",
-      name: "Loot Survivor",
-      description: "The OG onchain roguelike",
-      image: "/skulls.png",
-    },
-  ];
+  if (agentLoading || chatsLoading) {
+    return <div className="p-4">Loading game sessions...</div>;
+  }
 
   return (
     <div className="overflow-y-scroll">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="p-6 w-full mx-auto max-w-7xl"
-      >
+      <div className="p-6 w-full mx-auto max-w-7xl">
         <div className="flex items-center justify-between mb-8 mt-8">
-          <motion.h1
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 100 }}
-            className="text-3xl font-bold"
-          >
-            <img src="/Daydreams.svg" className="h-12" />
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className=" text-muted-foreground mt-2 font-normal"
-            >
+          <h1 className="text-3xl font-bold">
+            <p className="text-muted-foreground mt-2 font-normal">
               agentic-automation for your web3 games
-            </motion.p>
-          </motion.h1>
+            </p>
+          </h1>
         </div>
         {/* Gigaverse Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-16"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Play Gigaverse</h2>
-          </div>
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}
-          >
+        <section className="mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {chats?.length > 0 ? (
-              chats.map((chat: any, index: number) => (
-                <div
-                  key={chat.key}
-                  // variants={itemVariants}
-                  // whileHover="hover"
-                  // custom={index}
-                >
+              chats.map((chat: any) => (
+                <div key={chat.key}>
                   <Link
                     to="/games/gigaverse/$chatId"
                     params={{ chatId: chat.key }}
                     className="block bg-background border border-primary/20 hover:border-primary transition-colors overflow-hidden shadow-sm"
                   >
                     {/* Image space */}
-                    <div className="h-48  relative overflow-hidden">
-                      <motion.img
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.3 }}
+                    <div className="h-48 relative overflow-hidden">
+                      <img
                         src="/giga.jpeg"
                         alt="Game Preview"
                         className="w-full h-full object-cover"
@@ -186,21 +120,12 @@ function Index() {
                 </div>
               ))
             ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="col-span-full text-center py-16 border "
-              >
+              <div className="col-span-full text-center py-16 border">
                 <h3 className="text-xl font-medium mb-2">
                   No game sessions yet
                 </h3>
                 <p className="mb-6">Start your first Gigaverse adventure!</p>
-                <motion.div
-                  whileHover="hover"
-                  whileTap="tap"
-                  variants={buttonVariants}
-                >
+                <div>
                   <Button asChild variant="outline">
                     <Link
                       to="/games/gigaverse/$chatId"
@@ -210,12 +135,12 @@ function Index() {
                       <span>Start New Game</span>
                     </Link>
                   </Button>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             )}
-          </motion.div>
-        </motion.section>
-      </motion.div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

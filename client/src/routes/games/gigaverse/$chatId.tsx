@@ -37,6 +37,7 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { usePriceStore } from "@/store/priceStore";
+import { useTemplateStore } from "@/store/templateStore";
 
 const searchParams = z.object({
   sidebar: z
@@ -163,7 +164,20 @@ function RouteComponent() {
     setMissingKeys(missing);
   }, []);
 
-  const { logs } = useLogs({
+  const { selectTemplate } = useTemplateStore();
+
+  // Wrap selectTemplate to restart agent when templates change
+  const selectTemplateAndRestart = async (
+    key: string,
+    section: string,
+    templateId: string
+  ) => {
+    selectTemplate(key, section, templateId);
+    // Restart agent to pick up new templates
+    await agent.start();
+  };
+
+  const { logs, isRunning } = useLogs({
     agent: agent,
     context: gigaverseContext,
     args: { id: chatId },
@@ -217,17 +231,8 @@ function RouteComponent() {
               tags: ["default"],
             },
           },
-          rules: {
-            label: "Gigaverse Rules",
-            default: {
-              id: "gigaverse-rules-default",
-              title: "Default",
-              section: "rules",
-              prompt: defaultRules,
-              tags: ["default"],
-            },
-          },
         }}
+        setSelected={selectTemplateAndRestart}
         onOpenChange={setShowTemplateEditor}
       />
       {/* API Key Notification */}
@@ -293,7 +298,7 @@ function RouteComponent() {
           </TooltipContent>
         </Tooltip>
         <MessageInput
-          isLoading={send.isPending}
+          isLoading={send.isPending || isRunning}
           disabled={ctxState.error !== null || missingKeys.length > 0}
           onSubmit={handleSubmitMessage}
           abortControllerRef={abortControllerRef}

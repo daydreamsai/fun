@@ -2,11 +2,16 @@ import { context, action, extension, formatXml, xml } from "@daydreamsai/core";
 import { string, z } from "zod";
 import { useSettingsStore } from "@/store/settingsStore";
 import { GameClient } from "./client/GameClient";
+import {
+  FishingActionData,
+  FishingItemBalanceChanges,
+} from "./client/types/game";
 import { useTemplateStore } from "@/store/templateStore";
 import { GetSkillsProgressResponse } from "./client/types/responses";
 import {
   GameData,
   GigaverseState,
+  ItemBalance,
   MarketplaceFloorResponse,
 } from "./client/types/game";
 import {
@@ -17,7 +22,12 @@ import {
 } from "./prompts";
 import { ActionPayload } from "./client/types/requests";
 import { Cache } from "@/agent/utils/cache";
-import { parseDungeonState, parseItems } from "./utils";
+import {
+  parseBalanceChange,
+  parseDungeonState,
+  parseEquipedGear,
+  parseItems,
+} from "./utils";
 import { render } from "./render";
 
 export const getApiBaseUrl = () => {
@@ -40,6 +50,8 @@ async function fetchGigaverseState(
   const energy = await client.getEnergy(address);
   const juice = await client.getJuice(address);
   const userBalances = await client.getUserBalances();
+
+  const fishingState = await client.getFishingState(address);
   const consumables = parseItems(
     userBalances,
     data.items,
@@ -65,6 +77,7 @@ async function fetchGigaverseState(
     consumables,
     balances: balances,
     lastUpdate: Date.now(),
+    fishingState,
   };
 }
 
@@ -124,6 +137,10 @@ export const gigaverseContext = context({
 
     const faction = await client.getFaction(address);
 
+    const equipedGear = await client.getEquipedGear(account.noob.docId);
+
+    const equipedGearParsed = parseEquipedGear(equipedGear, offchain);
+
     const playerSkills: GetSkillsProgressResponse =
       await client.getHeroSkillsProgress(account.noob.docId);
 
@@ -146,6 +163,8 @@ export const gigaverseContext = context({
 
     const energy = await client.getEnergy(address);
 
+    const fishingState = await client.getFishingState(address);
+
     return {
       address,
       client,
@@ -161,14 +180,23 @@ export const gigaverseContext = context({
           balances,
           consumables,
           energy,
+          gear: equipedGearParsed,
         },
         today,
+        fishingState,
       },
       actionToken: "" as string | number,
     };
   },
 
-  async create({ options }): Promise<GigaverseState & { gamesToPlay: number }> {
+  async create({ options }): Promise<
+    GigaverseState & {
+      gamesToPlay: number;
+      fishingData: FishingActionData;
+      fishingBalanceChanges: FishingItemBalanceChanges;
+      currentHarvestedItems: ItemBalance[];
+    }
+  > {
     const memory = await fetchGigaverseState(
       options.client,
       options.game,
@@ -180,6 +208,9 @@ export const gigaverseContext = context({
     return {
       ...memory,
       gamesToPlay: 0,
+      fishingData: {} as FishingActionData,
+      fishingBalanceChanges: [],
+      currentHarvestedItems: [],
     };
   },
 
@@ -223,8 +254,8 @@ export const gigaverseContext = context({
       );
 
       state.memory = {
+        ...state.memory,
         ...gigaverseState,
-        gamesToPlay: state.memory.gamesToPlay,
       };
     }
   },
@@ -233,10 +264,10 @@ export const gigaverseContext = context({
   },
 
   shouldContinue(ctx) {
-    // If we're in a dungeon and player is alive, continue
-    if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
-      return true;
-    }
+    // // If we're in a dungeon and player is alive, continue
+    // if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
+    //   return true;
+    // }
 
     // If player died or we're not in a dungeon, stop
     return false;
@@ -245,12 +276,6 @@ export const gigaverseContext = context({
   render({ memory, options: { game } }) {
     const { selected, templates } = useTemplateStore.getState();
 
-    // Get the current template from the Zustand store
-    const rulesTemplate = selected.gigaverse?.rules
-      ? templates.gigaverse.find((t) => t.id === selected.gigaverse?.rules)
-          ?.prompt
-      : defaultRules;
-
     const instructionsTemplate = selected.gigaverse?.instructions
       ? templates.gigaverse.find(
           (t) => t.id === selected.gigaverse?.instructions
@@ -258,11 +283,10 @@ export const gigaverseContext = context({
       : defaultInstructions;
 
     const sectionsVariables = {
-      energy: memory.energy,
+      energy: memory.energy.entities[0].parsedData.energy,
       ...memory.dungeon,
     };
 
-    const rules = rulesTemplate ? render(rulesTemplate, sectionsVariables) : "";
     const instructions = instructionsTemplate
       ? render(instructionsTemplate, sectionsVariables)
       : "";
@@ -317,22 +341,37 @@ export const gigaverseContext = context({
       [...memory.consumables].filter((t) => t.balance > 0)
     );
 
+    // TODO: dev do in a different template
+    // const fishingData = xml("fishing_data", undefined, [
+    //   {
+    //     tag: "fishing_data",
+    //     children: memory.fishingData,
+    //   },
+    // ]);
+
+    // const fishingBalanceChanges = xml("fishing_balance_changes", undefined, [
+    //   {
+    //     tag: "fishing_balance_changes",
+    //     children: memory.fishingBalanceChanges,
+    //   },
+    // ]);
+
     // Use the template from the store
     const prompt = render(template, {
       ...memory,
-      rules: render(rules ?? "", sectionsVariables),
       instructions: render(instructions ?? "", sectionsVariables),
-
       state: [
-        formatXml(gameData),
         formatXml(hero),
         formatXml(inventory),
         formatXml(consumables),
+        formatXml(gameData),
         memory.dungeon ? render(dungeonSection, sectionsVariables) : null,
       ]
         .filter((t) => !!t)
         .join("\n"),
     });
+
+    console.log(prompt);
 
     return prompt;
   },
@@ -390,9 +429,6 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
           };
         }
 
-        const currentTime = Date.now();
-        const threeMinutesInMs = 3 * 60 * 1000;
-
         const payload: ActionPayload = {
           action,
           actionToken,
@@ -433,6 +469,33 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
 
         memory.dungeon = state;
         memory.lastUpdate = Date.now();
+
+        if (response.gameItemBalanceChanges) {
+          const newItems = parseBalanceChange(
+            response.gameItemBalanceChanges,
+            options.game.offchain,
+            options.game.marketplaceFloor
+          );
+          if (Array.isArray(memory.currentHarvestedItems)) {
+            // Add new items to existing, avoiding duplicates by id+amount
+            const existing = memory.currentHarvestedItems;
+            const combined = [...existing];
+            for (const newItem of newItems) {
+              // Find if an item with same id and amount already exists
+              const idx = combined.findIndex(
+                (item) =>
+                  item.item.id === newItem.item.id &&
+                  item.balance === newItem.balance
+              );
+              if (idx === -1) {
+                combined.push(newItem);
+              }
+            }
+            memory.currentHarvestedItems = combined;
+          } else {
+            memory.currentHarvestedItems = newItems;
+          }
+        }
 
         if (action.startsWith("loot")) {
           return {
@@ -566,8 +629,8 @@ Enemy Shield: ${state.enemy.shield.current}
         );
 
         ctx.memory = {
+          ...ctx.memory,
           ...gigaverseState,
-          gamesToPlay: ctx.memory.gamesToPlay,
         };
 
         ctx.options.actionToken = "";
@@ -638,6 +701,80 @@ Enemy Shield: ${state.enemy.shield.current}
       return {
         success: true,
         result: skills,
+        message: response.message,
+      };
+    },
+  }),
+  action({
+    name: "gigaverse.startFishingRun",
+    description: "Start a fishing run.",
+    instructions: `\
+You should only ever use this function if the user has asked you to start a fishing run.
+`,
+
+    schema: {
+      cards: z
+        .array(z.number())
+        .optional()
+        .describe("The id of the card to play, which is found in the deck"),
+    },
+
+    async handler({ cards }, { options }) {
+      const response = await options.client.startFishingRun({
+        action: "start_run",
+        actionToken: options.actionToken
+          ? options.actionToken
+          : Date.now().toString(),
+        data: {
+          cards: [],
+          nodeId: "0",
+        },
+      });
+
+      if (response.actionToken) {
+        options.actionToken = response.actionToken;
+      }
+
+      return {
+        success: true,
+        result: response.data,
+        message: response.message,
+      };
+    },
+  }),
+  action({
+    name: "gigaverse.playFishingCards",
+    description: "Play fishing cards.",
+    instructions: `\
+Use this to play fishing cards.
+`,
+    schema: {
+      cards: z
+        .array(z.number())
+        .describe(
+          "The index of the card to play, which is found in the in your hand. "
+        ),
+    },
+    async handler({ cards }, { options, memory }) {
+      const response = await options.client.startFishingRun({
+        action: "play_cards",
+        actionToken: options.actionToken as string,
+        data: {
+          cards,
+          nodeId: "",
+        },
+      });
+
+      if (response.actionToken) {
+        options.actionToken = response.actionToken;
+      }
+
+      memory.fishingData = response.data.doc.data;
+      memory.fishingBalanceChanges = response.gameItemBalanceChanges;
+
+      return {
+        success: true,
+        result: response.data,
         message: response.message,
       };
     },

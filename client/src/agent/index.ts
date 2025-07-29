@@ -163,8 +163,6 @@ const cacheService = service({
     container.singleton("cache", () => {
       const store = container.resolve<MemoryStore>("memory");
 
-      console.log("here");
-
       const cache: Cache = {
         async get<T>(key: string, resolve: () => Promise<T>): Promise<T> {
           const cacheKey = `cache:${key}`;
@@ -199,9 +197,7 @@ const memoryMigrator = service({
 });
 
 export function createAgent() {
-  // Always get fresh settings when creating the agent
   const settings = useSettingsStore.getState();
-  // const user = useUserStore.getState();
 
   const container = createContainer();
   const memoryStorage = browserStorage();
@@ -215,7 +211,10 @@ export function createAgent() {
   return createDreams({
     logger: new Logger({ level: LogLevel.DEBUG }),
     container,
-    model: openrouter(settings.model || "deepseek/deepseek-r1"),
+    model: openrouter(settings.model),
+    modelSettings: {
+      temperature: 0,
+    },
     memory: createMemory(
       memoryStorage,
       createVectorStore(),

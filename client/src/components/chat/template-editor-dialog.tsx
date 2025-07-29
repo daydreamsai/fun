@@ -1,4 +1,4 @@
-import { AlertCircle, ScrollText, Plus, Trash } from "lucide-react";
+import { AlertCircle, ScrollText, Plus, Trash, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState, useEffect, useDeferredValue } from "react";
+import React, { useState, useEffect, useDeferredValue } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "../ui/badge";
 import { Label } from "../ui/label";
@@ -35,6 +35,7 @@ interface TemplateEditorDialogProps {
   variables?: string[];
   templateKey: string;
   sections?: Record<string, { label: string; default: Template }>;
+  setSelected?: (key: string, section: string, templateId: string) => void;
 }
 
 // Regex to find {{variable}} patterns
@@ -53,6 +54,7 @@ export function TemplateEditorDialog({
   variables = [],
   sections = {},
   templateKey,
+  setSelected,
 }: TemplateEditorDialogProps) {
   const [state, setState] = useState<State>({ page: "index" });
 
@@ -67,18 +69,44 @@ export function TemplateEditorDialog({
 
   const templates = store[templateKey]?.slice() ?? [];
 
+  // Combine defaults with user templates
+  const allTemplates = React.useMemo(() => {
+    const userTemplates = templates.filter(
+      (t) => !Object.values(sections).some((s) => s.default.id === t.id)
+    );
+    const defaults = Object.values(sections).map((s) => s.default);
+    return [...defaults, ...userTemplates];
+  }, [templates, sections]);
+
+  // Fork a template to create a user copy
+  const forkTemplate = (template: Template) => {
+    const forkedTemplate: Template = {
+      ...template,
+      id: randomUUIDv7(),
+      title: `${template.title} (Copy)`,
+      tags: [...template.tags, "forked"],
+    };
+    createTemplate(templateKey, forkedTemplate);
+    if (setSelected) {
+      setSelected(templateKey, template.section, forkedTemplate.id);
+    } else {
+      selectTemplate(templateKey, template.section, forkedTemplate.id);
+    }
+    setState({ page: "edit", id: forkedTemplate.id });
+  };
+
   useEffect(() => {
-    if (store[templateKey] === undefined || store[templateKey].length === 0) {
-      for (const section of Object.values(sections)) {
-        createTemplate(templateKey, section.default);
-        selectTemplate(
-          templateKey,
-          section.default.section,
-          section.default.id
-        );
+    // Ensure default is selected if nothing is selected
+    for (const [section, config] of Object.entries(sections)) {
+      if (!selected[templateKey]?.[section]) {
+        if (setSelected) {
+          setSelected(templateKey, section, config.default.id);
+        } else {
+          selectTemplate(templateKey, section, config.default.id);
+        }
       }
     }
-  }, [store]);
+  }, [selected, templateKey, sections, selectTemplate, setSelected]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,27 +136,43 @@ export function TemplateEditorDialog({
                     </Button>
                   </div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {templates
+                    {allTemplates
                       .filter((template) => template.section === section)
                       .map((template) => {
                         const isSelected =
                           selected[templateKey] &&
                           selected[templateKey][section] === template.id;
+                        const isDefault =
+                          sections[section].default.id === template.id;
                         return (
                           <TemplateCard
+                            key={template.id}
                             template={template}
                             isSelected={isSelected}
-                            isDefault={
-                              sections[section].default.id === template.id
-                            }
+                            isDefault={isDefault}
                             onEdit={() => {
-                              setState({ page: "edit", id: template.id });
+                              if (isDefault) {
+                                forkTemplate(template);
+                              } else {
+                                setState({ page: "edit", id: template.id });
+                              }
                             }}
+                            onFork={() => forkTemplate(template)}
                             onDelete={() => {
-                              deleteTemplate(templateKey, template.id);
+                              if (!isDefault) {
+                                deleteTemplate(templateKey, template.id);
+                              }
                             }}
                             onSelect={() => {
-                              selectTemplate(templateKey, section, template.id);
+                              if (setSelected) {
+                                setSelected(templateKey, section, template.id);
+                              } else {
+                                selectTemplate(
+                                  templateKey,
+                                  section,
+                                  template.id
+                                );
+                              }
                             }}
                           />
                         );
@@ -158,7 +202,7 @@ export function TemplateEditorDialog({
         {state.page === "edit" && (
           <TemplateForm
             initialTemplate={
-              templates.find((template) => template.id === state.id)!
+              allTemplates.find((template) => template.id === state.id)!
             }
             variables={variables}
             onCancel={() => {
@@ -201,6 +245,7 @@ function TemplateCard({
   onSelect,
   onEdit,
   onDelete,
+  onFork,
   isDefault,
 }: {
   template: Template;
@@ -208,6 +253,7 @@ function TemplateCard({
   onEdit: () => void;
   onSelect: () => void;
   onDelete: () => void;
+  onFork: () => void;
   isDefault: boolean;
 }) {
   return (
@@ -234,21 +280,37 @@ function TemplateCard({
         </div>
       </CardContent>
       <CardFooter className="p-4 mt-4 md:mt-auto flex">
-        <Button
-          variant="ghost"
-          className="text-muted-foreground"
-          disabled={isDefault || isSelected}
-          onClick={onDelete}
-        >
-          <Trash />
-        </Button>
-        <Button
-          variant="ghost"
-          className="ml-auto mr-2 text-muted-foreground"
-          onClick={onEdit}
-        >
-          Edit
-        </Button>
+        {isDefault ? (
+          <>
+            <div className="text-xs text-muted-foreground">Default</div>
+            <Button
+              variant="ghost"
+              className="ml-auto mr-2 text-muted-foreground"
+              onClick={onFork}
+            >
+              <Copy className="h-4 w-4 mr-1" />
+              Fork
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="ghost"
+              className="text-muted-foreground"
+              disabled={isSelected}
+              onClick={onDelete}
+            >
+              <Trash />
+            </Button>
+            <Button
+              variant="ghost"
+              className="ml-auto mr-2 text-muted-foreground"
+              onClick={onEdit}
+            >
+              Edit
+            </Button>
+          </>
+        )}
 
         <Button variant="default" disabled={isSelected} onClick={onSelect}>
           {isSelected ? "Selected" : "Select"}
