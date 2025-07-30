@@ -20,7 +20,17 @@ const proxyPort = 8000; // The port the Express proxy server will listen on
 
 // --- Proxy Implementation ---
 
-app.use(cors());
+// Configure CORS to allow all origins
+app.use(
+  cors({
+    origin: "*", // Allow all origins
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Allow all common HTTP methods
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"], // Allow common headers
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  })
+);
 
 // --- Custom API Endpoints ---
 
@@ -108,6 +118,36 @@ proxy.on("error", (err, req, res) => {
   if (!res.headersSent) {
     res.status(500).send("Internal Server Error: Could not proxy request.");
   }
+});
+
+// Add CORS headers to proxied responses
+proxy.on("proxyRes", (proxyRes, req, res) => {
+  // Add CORS headers to all responses
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+});
+
+// Handle OPTIONS preflight requests for all routes
+app.options("*", (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With"
+  );
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.sendStatus(204);
 });
 
 // Set up proxy middleware for each configuration
