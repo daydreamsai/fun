@@ -23,10 +23,17 @@ const proxyPort = 8000; // The port the Express proxy server will listen on
 // Configure CORS to allow all origins
 app.use(
   cors({
-    origin: "*", // Allow all origins
+    origin: true, // Allow all origins dynamically
     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Allow all common HTTP methods
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"], // Allow common headers
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+    ], // Allow common headers
+    exposedHeaders: ["Content-Length", "Content-Type"], // Expose these headers to the client
+    maxAge: 86400, // Cache preflight response for 24 hours
     preflightContinue: false,
     optionsSuccessStatus: 204,
   })
@@ -36,6 +43,21 @@ app.use(
 
 // Price endpoint to fetch token prices from Alchemy
 app.get("/price", async (req, res) => {
+  // Add CORS headers immediately
+  const origin = req.headers.origin || "*";
+  res.header("Access-Control-Allow-Origin", origin);
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept"
+  );
+  if (origin !== "*") {
+    res.header("Access-Control-Allow-Credentials", "true");
+  }
+
   try {
     // Get API key from environment variable
     const apiKey = process.env.ALCHEMY_API_KEY;
@@ -116,6 +138,21 @@ proxy.on("error", (err, req, res) => {
   // Send a generic 500 Internal Server Error response to the client
   // Check if headers have already been sent to prevent errors
   if (!res.headersSent) {
+    // Add CORS headers to error responses
+    const origin = req.headers.origin || "*";
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With, Accept"
+    );
+    if (origin !== "*") {
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
+
     res.status(500).send("Internal Server Error: Could not proxy request.");
   }
 });
@@ -123,37 +160,63 @@ proxy.on("error", (err, req, res) => {
 // Add CORS headers to proxied responses
 proxy.on("proxyRes", (proxyRes, req, res) => {
   // Add CORS headers to all responses
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin || "*";
+  res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
   );
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
+    "Content-Type, Authorization, X-Requested-With, Accept"
   );
-  res.setHeader("Access-Control-Allow-Credentials", "true");
+  // Only set credentials if not using wildcard origin
+  if (origin !== "*") {
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
 });
 
 // Handle OPTIONS preflight requests for all routes
-app.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
-  );
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.sendStatus(204);
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    const origin = req.headers.origin || "*";
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    );
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With, Accept"
+    );
+    if (origin !== "*") {
+      res.header("Access-Control-Allow-Credentials", "true");
+    }
+    res.sendStatus(204);
+  } else {
+    next();
+  }
 });
 
 // Set up proxy middleware for each configuration
 proxyConfigs.forEach((config) => {
   // Use app.use to match the path prefix for any HTTP method
   app.use(config.pathPrefix, (req, res) => {
+    // Add CORS headers immediately for all proxied requests
+    const origin = req.headers.origin || "*";
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With, Accept"
+    );
+    if (origin !== "*") {
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
+
     // Log the original request URL
     const originalUrl = req.originalUrl || req.url; // req.originalUrl is safer within app.use
 
