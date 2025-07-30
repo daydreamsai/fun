@@ -150,7 +150,8 @@ proxyConfigs.forEach((config) => {
     // Proxy the request to the target
     proxy.web(req, res, {
       target: config.target,
-      secure: true,
+      secure: false, // Skip certificate verification for development
+      changeOrigin: true, // Needed for virtual hosted sites
       withCredentials: true,
     });
   });
