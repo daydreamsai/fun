@@ -49,25 +49,49 @@ app.get("/price", async (req, res) => {
 
     const urlWithParams = `${fetchURL}?${params.toString()}`;
 
-    const response = await fetch(urlWithParams, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    // Create an AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    try {
+      const response = await fetch(urlWithParams, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+
+      if (fetchError.name === "AbortError") {
+        console.error("Alchemy API request timed out");
+        return res.status(504).json({
+          error: "Request timeout",
+          details: "The request to Alchemy API timed out after 5 seconds",
+        });
+      }
+      throw fetchError; // Re-throw to be caught by outer catch block
     }
-
-    const data = await response.json();
-    res.json(data);
   } catch (error) {
     console.error("Error fetching prices:", error);
-    res.status(500).json({
-      error: "Failed to fetch token prices",
-      details: error.message,
-    });
+
+    // Ensure we always send a response
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Failed to fetch token prices",
+        details: error.message,
+      });
+    }
   }
 });
 
