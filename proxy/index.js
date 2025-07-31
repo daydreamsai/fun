@@ -20,43 +20,7 @@ const proxyPort = 8000; // The port the Express proxy server will listen on
 
 // --- Proxy Implementation ---
 
-// Configure CORS to be as permissive as possible
-app.use(
-  cors({
-    origin: true, // Reflects the request origin, as defined by req.header('Origin')
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
-    allowedHeaders: [
-      "Origin",
-      "X-Requested-With",
-      "Content-Type",
-      "Accept",
-      "Authorization",
-      "Cache-Control",
-      "Pragma",
-    ],
-    exposedHeaders: ["Content-Length", "Content-Range"],
-    maxAge: 86400, // Cache preflight for 24 hours
-    optionsSuccessStatus: 204,
-  })
-);
-
-// Handle all OPTIONS requests globally
-app.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    req.headers["access-control-request-headers"] ||
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma"
-  );
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Max-Age", "86400");
-  res.sendStatus(204);
-});
+app.use(cors());
 
 // --- Custom API Endpoints ---
 
@@ -142,52 +106,51 @@ proxy.on("error", (err, req, res) => {
   // Send a generic 500 Internal Server Error response to the client
   // Check if headers have already been sent to prevent errors
   if (!res.headersSent) {
-    // Add CORS headers even on error
-    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-    res.header("Access-Control-Allow-Credentials", "true");
     res.status(500).send("Internal Server Error: Could not proxy request.");
   }
 });
 
 // Add CORS headers to proxied responses
 proxy.on("proxyRes", (proxyRes, req, res) => {
-  // Add CORS headers to every proxied response
-  // Use the request origin if available, otherwise use wildcard
-  const origin = req.headers.origin || "*";
-
-  // Remove any existing CORS headers from the proxied response
-  delete proxyRes.headers["access-control-allow-origin"];
-  delete proxyRes.headers["access-control-allow-methods"];
-  delete proxyRes.headers["access-control-allow-headers"];
-  delete proxyRes.headers["access-control-allow-credentials"];
-
-  // Set new CORS headers
-  res.setHeader("Access-Control-Allow-Origin", origin);
+  // Add CORS headers to the proxied response
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
   );
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma"
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader(
-    "Access-Control-Expose-Headers",
-    "Content-Length, Content-Range"
-  );
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
 });
 
 // Set up proxy middleware for each configuration
 proxyConfigs.forEach((config) => {
-  // Use app.use to match the path prefix for any HTTP method
-  // But skip OPTIONS as they're already handled globally
-  app.use(config.pathPrefix, (req, res, next) => {
-    // Skip OPTIONS requests as they're handled globally
-    if (req.method === "OPTIONS") {
-      return next();
-    }
+  // Handle OPTIONS requests (preflight) explicitly
+  app.options(config.pathPrefix + "/*", (req, res) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    );
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    );
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.sendStatus(204);
+  });
 
+  // Use app.use to match the path prefix for any HTTP method
+  app.use(config.pathPrefix, (req, res) => {
     // Log the original request URL
     const originalUrl = req.originalUrl || req.url; // req.originalUrl is safer within app.use
 
