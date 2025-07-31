@@ -1,8 +1,10 @@
 {
   "name": "proxy",
-  "module": "index.ts",
-  "type": "module",
+  "main": "index.js",
   "private": true,
+  "scripts": {
+    "start": "node index.js"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
