@@ -22,6 +22,11 @@ const proxyPort = 8000; // The port the Express proxy server will listen on
 
 app.use(cors());
 
+// Add body parsing middleware for handling request bodies
+app.use(express.json({ limit: "10mb" })); // Parse JSON bodies with 10MB limit
+app.use(express.urlencoded({ extended: true, limit: "10mb" })); // Parse URL-encoded bodies
+app.use(express.raw({ limit: "10mb" })); // Parse raw bodies
+
 // --- Custom API Endpoints ---
 
 // Price endpoint to fetch token prices from Alchemy
@@ -95,8 +100,45 @@ app.get("/price", async (req, res) => {
   }
 });
 
-// Create a proxy server instance
-const proxy = httpProxy.createProxyServer({});
+// Create a proxy server instance with enhanced settings
+const proxy = httpProxy.createProxyServer({
+  // Connection settings
+  timeout: 60000, // 60 seconds timeout for the proxy request
+  proxyTimeout: 60000, // 60 seconds timeout for the proxy connection
+
+  // WebSocket support
+  ws: true, // Enable WebSocket proxying
+
+  // Security and SSL settings
+  secure: false, // Don't verify SSL certificates (for development)
+  changeOrigin: true, // Changes the origin of the host header to the target URL
+
+  // Request handling
+  followRedirects: true, // Follow HTTP redirects
+  autoRewrite: true, // Automatically rewrite location headers
+
+  // Headers configuration
+  xfwd: true, // Adds X-Forwarded-* headers
+  preserveHeaderKeyCase: false, // Don't preserve header key case
+
+  // Buffer settings
+  buffer: null, // Use default buffer handling
+
+  // Cookie handling
+  cookieDomainRewrite: {
+    "*": "", // Remove domain from all cookies (useful for development)
+  },
+
+  // Additional options
+  ignorePath: false, // Don't ignore the path (we handle path stripping manually)
+  prependPath: true, // Prepend target's path to proxy path
+
+  // Agent settings (for controlling HTTP connections)
+  agent: null, // Use default agent
+
+  // Target verification
+  hostRewrite: false, // Don't rewrite host header automatically (changeOrigin handles this)
+});
 
 // Listen for the 'error' event on the proxy server.
 // This happens if the target backend is unreachable or sends an invalid response.
@@ -108,6 +150,62 @@ proxy.on("error", (err, req, res) => {
   if (!res.headersSent) {
     res.status(500).send("Internal Server Error: Could not proxy request.");
   }
+});
+
+// Listen for the 'proxyReq' event to modify outgoing requests
+proxy.on("proxyReq", (proxyReq, req, res, options) => {
+  // Log outgoing request details
+  console.log(`[PROXY-REQ] ${req.method} ${options.target.href}${req.url}`);
+
+  // Add custom headers to outgoing requests if needed
+  proxyReq.setHeader("X-Proxy-By", "Express Proxy Server");
+
+  // Handle request body for POST/PUT/PATCH requests
+  if (req.body && ["POST", "PUT", "PATCH"].includes(req.method)) {
+    const bodyData = JSON.stringify(req.body);
+    proxyReq.setHeader("Content-Type", "application/json");
+    proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
+    proxyReq.write(bodyData);
+  }
+});
+
+// Listen for the 'proxyRes' event to modify incoming responses
+proxy.on("proxyRes", (proxyRes, req, res) => {
+  // Log response details
+  console.log(
+    `[PROXY-RES] ${req.method} ${req.originalUrl} -> ${proxyRes.statusCode}`
+  );
+
+  // Add custom response headers if needed
+  res.setHeader("X-Proxy-Response", "true");
+
+  // Handle CORS headers if needed (though we already have cors middleware)
+  if (!res.getHeader("Access-Control-Allow-Origin")) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+});
+
+// Listen for WebSocket upgrade events
+proxy.on("proxyReqWs", (proxyReq, req, socket, options, head) => {
+  console.log(
+    `[WS-UPGRADE] WebSocket connection requested to ${options.target.href}`
+  );
+
+  // Add custom headers for WebSocket connections
+  proxyReq.setHeader("X-Proxy-WebSocket", "true");
+});
+
+// Listen for WebSocket errors
+proxy.on("error", (err, req, socket) => {
+  if (socket && socket.writable) {
+    console.error("WebSocket Proxy Error:", err);
+    socket.end("HTTP/1.1 500 WebSocket Error\r\n\r\n");
+  }
+});
+
+// Listen for the 'close' event on WebSocket connections
+proxy.on("close", (req, socket, head) => {
+  console.log("[WS-CLOSE] WebSocket connection closed");
 });
 
 // Set up proxy middleware for each configuration
@@ -150,9 +248,8 @@ proxyConfigs.forEach((config) => {
     // Proxy the request to the target
     proxy.web(req, res, {
       target: config.target,
-      secure: false, // Skip certificate verification for development
-      changeOrigin: true, // Needed for virtual hosted sites
-      withCredentials: true,
+      // Most settings are already configured in the proxy instance creation
+      // Only override target-specific settings here if needed
     });
   });
 });
