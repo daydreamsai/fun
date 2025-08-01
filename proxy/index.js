@@ -110,45 +110,8 @@ proxy.on("error", (err, req, res) => {
   }
 });
 
-// Add CORS headers to proxied responses
-proxy.on("proxyRes", (proxyRes, req, res) => {
-  // Add CORS headers to the proxied response
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-
-  // Handle preflight requests
-  if (req.method === "OPTIONS") {
-    res.statusCode = 204;
-    res.end();
-    return;
-  }
-});
-
 // Set up proxy middleware for each configuration
 proxyConfigs.forEach((config) => {
-  // Handle OPTIONS requests (preflight) explicitly
-  app.options(config.pathPrefix + "/*", (req, res) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    );
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-    );
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.sendStatus(204);
-  });
-
   // Use app.use to match the path prefix for any HTTP method
   app.use(config.pathPrefix, (req, res) => {
     // Log the original request URL
