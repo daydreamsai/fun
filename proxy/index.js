@@ -22,10 +22,9 @@ const proxyPort = 8000; // The port the Express proxy server will listen on
 
 app.use(cors());
 
-// Add body parsing middleware for handling request bodies
-app.use(express.json({ limit: "10mb" })); // Parse JSON bodies with 10MB limit
-app.use(express.urlencoded({ extended: true, limit: "10mb" })); // Parse URL-encoded bodies
-app.use(express.raw({ limit: "10mb" })); // Parse raw bodies
+// Note: We're NOT using body parsing middleware for proxy routes
+// as it can interfere with streaming the request body to the target.
+// Body parsing middleware should only be used for non-proxy endpoints.
 
 // --- Custom API Endpoints ---
 
@@ -102,42 +101,28 @@ app.get("/price", async (req, res) => {
 
 // Create a proxy server instance with enhanced settings
 const proxy = httpProxy.createProxyServer({
-  // Connection settings
-  timeout: 60000, // 60 seconds timeout for the proxy request
-  proxyTimeout: 60000, // 60 seconds timeout for the proxy connection
-
-  // WebSocket support
+  // Essential settings
+  changeOrigin: true, // Changes the origin of the host header to the target URL
+  secure: false, // Don't verify SSL certificates (for development)
   ws: true, // Enable WebSocket proxying
 
-  // Security and SSL settings
-  secure: false, // Don't verify SSL certificates (for development)
-  changeOrigin: true, // Changes the origin of the host header to the target URL
+  // Timeouts
+  timeout: 60000, // 60 seconds timeout
+  proxyTimeout: 60000, // 60 seconds proxy timeout
 
-  // Request handling
-  followRedirects: true, // Follow HTTP redirects
-  autoRewrite: true, // Automatically rewrite location headers
-
-  // Headers configuration
+  // Headers
   xfwd: true, // Adds X-Forwarded-* headers
-  preserveHeaderKeyCase: false, // Don't preserve header key case
 
-  // Buffer settings
-  buffer: null, // Use default buffer handling
-
-  // Cookie handling
-  cookieDomainRewrite: {
-    "*": "", // Remove domain from all cookies (useful for development)
-  },
-
-  // Additional options
+  // Path handling
   ignorePath: false, // Don't ignore the path (we handle path stripping manually)
-  prependPath: true, // Prepend target's path to proxy path
 
-  // Agent settings (for controlling HTTP connections)
-  agent: null, // Use default agent
+  // Response handling
+  followRedirects: true, // Follow HTTP redirects
 
-  // Target verification
-  hostRewrite: false, // Don't rewrite host header automatically (changeOrigin handles this)
+  // Cookie rewriting for development
+  cookieDomainRewrite: {
+    "*": "", // Remove domain from all cookies
+  },
 });
 
 // Listen for the 'error' event on the proxy server.
@@ -160,13 +145,9 @@ proxy.on("proxyReq", (proxyReq, req, res, options) => {
   // Add custom headers to outgoing requests if needed
   proxyReq.setHeader("X-Proxy-By", "Express Proxy Server");
 
-  // Handle request body for POST/PUT/PATCH requests
-  if (req.body && ["POST", "PUT", "PATCH"].includes(req.method)) {
-    const bodyData = JSON.stringify(req.body);
-    proxyReq.setHeader("Content-Type", "application/json");
-    proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
-    proxyReq.write(bodyData);
-  }
+  // Important: Since we're not using body parsing middleware,
+  // the request body will be streamed directly to the target server
+  // This is the correct behavior for a proxy
 });
 
 // Listen for the 'proxyRes' event to modify incoming responses
@@ -183,6 +164,24 @@ proxy.on("proxyRes", (proxyRes, req, res) => {
   if (!res.getHeader("Access-Control-Allow-Origin")) {
     res.setHeader("Access-Control-Allow-Origin", "*");
   }
+
+  // Ensure proper content encoding handling
+  if (proxyRes.headers["content-encoding"]) {
+    res.setHeader("Content-Encoding", proxyRes.headers["content-encoding"]);
+  }
+
+  // Ensure content type is passed through
+  if (proxyRes.headers["content-type"]) {
+    res.setHeader("Content-Type", proxyRes.headers["content-type"]);
+  }
+
+  // Remove problematic headers that might cause issues with Railway
+  delete proxyRes.headers["connection"];
+  delete proxyRes.headers["keep-alive"];
+  delete proxyRes.headers["transfer-encoding"];
+
+  // Set proper status code
+  res.statusCode = proxyRes.statusCode;
 });
 
 // Listen for WebSocket upgrade events
@@ -211,7 +210,7 @@ proxy.on("close", (req, socket, head) => {
 // Set up proxy middleware for each configuration
 proxyConfigs.forEach((config) => {
   // Use app.use to match the path prefix for any HTTP method
-  app.use(config.pathPrefix, (req, res) => {
+  app.use(config.pathPrefix, (req, res, next) => {
     // Log the original request URL
     const originalUrl = req.originalUrl || req.url; // req.originalUrl is safer within app.use
 
@@ -245,12 +244,32 @@ proxyConfigs.forEach((config) => {
     // IMPORTANT: Modify the req.url object that http-proxy will use.
     req.url = newUrl;
 
-    // Proxy the request to the target
-    proxy.web(req, res, {
-      target: config.target,
-      // Most settings are already configured in the proxy instance creation
-      // Only override target-specific settings here if needed
+    // Add error handling for the response
+    res.on("error", (err) => {
+      console.error("Response error:", err);
     });
+
+    // Ensure connection stays alive
+    req.on("error", (err) => {
+      console.error("Request error:", err);
+      if (!res.headersSent) {
+        res.status(500).end();
+      }
+    });
+
+    try {
+      // Proxy the request to the target
+      proxy.web(req, res, {
+        target: config.target,
+        // Most settings are already configured in the proxy instance creation
+        // Only override target-specific settings here if needed
+      });
+    } catch (err) {
+      console.error("Proxy.web error:", err);
+      if (!res.headersSent) {
+        res.status(502).json({ error: "Bad Gateway", details: err.message });
+      }
+    }
   });
 });
 
