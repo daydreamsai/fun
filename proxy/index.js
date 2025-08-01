@@ -16,26 +16,13 @@ const proxyConfigs = [
   },
 ];
 
-const proxyPort = process.env.PORT || 8000; // Use Railway's PORT env var, fallback to 8000 for local dev
+const proxyPort = 8000; // The port the Express proxy server will listen on
 
 // --- Proxy Implementation ---
 
 app.use(cors());
 
 // --- Custom API Endpoints ---
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    port: proxyPort,
-    proxyRoutes: proxyConfigs.map((c) => ({
-      pathPrefix: c.pathPrefix,
-      target: c.target,
-    })),
-  });
-});
 
 // Price endpoint to fetch token prices from Alchemy
 app.get("/price", async (req, res) => {
@@ -125,25 +112,24 @@ proxy.on("error", (err, req, res) => {
 
 // Add CORS headers to proxied responses
 proxy.on("proxyRes", (proxyRes, req, res) => {
-  // Remove any existing CORS headers from the target
-  delete proxyRes.headers["access-control-allow-origin"];
-  delete proxyRes.headers["access-control-allow-methods"];
-  delete proxyRes.headers["access-control-allow-headers"];
-  delete proxyRes.headers["access-control-allow-credentials"];
-
-  // Add our own CORS headers directly to the proxy response headers
-  proxyRes.headers["access-control-allow-origin"] = "*";
-  proxyRes.headers["access-control-allow-methods"] =
-    "GET, POST, PUT, DELETE, OPTIONS, PATCH";
-  proxyRes.headers["access-control-allow-headers"] =
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization";
-  proxyRes.headers["access-control-allow-credentials"] = "true";
-
-  console.log(
-    `[${new Date().toISOString()}] Added CORS headers to proxy response for ${
-      req.method
-    } ${req.originalUrl}`
+  // Add CORS headers to the proxied response
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
   );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
 });
 
 // Set up proxy middleware for each configuration
@@ -198,30 +184,12 @@ proxyConfigs.forEach((config) => {
     // IMPORTANT: Modify the req.url object that http-proxy will use.
     req.url = newUrl;
 
-    // Set CORS headers before proxying
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    );
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-    );
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-
     // Proxy the request to the target
     proxy.web(req, res, {
       target: config.target,
       secure: false, // Skip certificate verification for development
       changeOrigin: true, // Needed for virtual hosted sites
       withCredentials: true,
-      onError: (err, req, res) => {
-        console.error(
-          `[${new Date().toISOString()}] Proxy error for ${req.url}:`,
-          err.message
-        );
-      },
     });
   });
 });
@@ -238,8 +206,6 @@ app.use((req, res) => {
 // --- Start the Express Server ---
 app.listen(proxyPort, () => {
   console.log(`Express proxy server listening on port ${proxyPort}`);
-  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`CORS enabled for all domains`);
   console.log("Configured routes (with path stripping):");
   proxyConfigs.forEach((config) => {
     console.log(
