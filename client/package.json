@@ -13,7 +13,7 @@
     "@abstract-foundation/agw-client": "^1.6.3",
     "@abstract-foundation/agw-react": "^1.6.6",
     "@daydreamsai/ai-sdk-provider": "^0.1.2",
-    "@daydreamsai/core": "^0.3.16",
+    "@daydreamsai/core": "0.3.18",
     "@openrouter/ai-sdk-provider": "^1.1.2",
     "@radix-ui/react-accordion": "^1.2.8",
     "@radix-ui/react-alert-dialog": "^1.1.11",

@@ -218,7 +218,7 @@ export function createAgent() {
   });
 
   return createDreams({
-    logger: new Logger({ level: LogLevel.TRACE }),
+    logger: new Logger({ level: LogLevel.INFO }),
     container,
     model: openrouter(settings.model),
     modelSettings: {
@@ -230,7 +230,7 @@ export function createAgent() {
         vector: new InMemoryVectorProvider(),
         graph: new InMemoryGraphProvider(),
       },
-      logger: new Logger({ level: LogLevel.TRACE }),
+      logger: new Logger({ level: LogLevel.INFO }),
     }),
     extensions: [chat],
     services: [memoryMigrator, cacheService],
