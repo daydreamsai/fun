@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { useUserStore } from "../store/userStore";
-import { useWallet } from "@solana/wallet-adapter-react";
 
 export function useUser() {
-  const { publicKey, connected } = useWallet();
-  const walletAddress = publicKey?.toBase58();
-
   const {
     currentUser,
     isLoading,
@@ -32,7 +28,7 @@ export function useUser() {
 
     // Helpers
     isLoggedIn: !!currentUser,
-    isConnectedUser:
-      !!currentUser && !!walletAddress && currentUser.id === walletAddress,
+    // TODO: fix this
+    isConnectedUser: true,
   };
 }

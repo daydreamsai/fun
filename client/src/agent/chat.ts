@@ -1,5 +1,5 @@
 import { context, extension, input, output } from "@daydreamsai/core";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const chatContext = context({
   type: "chat",
@@ -35,11 +35,11 @@ export const chat = extension({
       schema: z.string(),
       required: true,
       instructions: `\
-To output a message use <output type="message">[content]</output>
-Always try to format the message content for easy reading.
-# Important
-Never use the <template-engine> inside the content of a message. Always write the full content of the message!
-`,
+  To output a message use <output type="message">[content]</output>
+  Always try to format the message content for easy reading.
+  # Important
+  Never use the <template-engine> inside the content of a message. Always write the full content of the message!
+  `,
       examples: [
         `<output type="message">Hello! How can I assist you today?</output>`,
       ],

@@ -70,6 +70,8 @@ export function useLogs<TContext extends AnyContext>({
 
   const workingMemory = useWorkingMemory({ agent, ...ref });
 
+  console.log({ workingMemory });
+
   useEffect(() => {
     const unsubscribe = agent.subscribeContext(contextId, (log, done) => {
       setLogs((logs) => [...logs.filter((l) => l.id !== log.id), log]);

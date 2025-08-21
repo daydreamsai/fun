@@ -5,7 +5,7 @@ import "./index.css";
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
 
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useSettingsStore } from "./store/settingsStore";
 
 // Initialize settings store before creating the agent
@@ -48,7 +48,9 @@ const root = ReactDOM.createRoot(rootElement, {
 try {
   root.render(
     <StrictMode>
-      <RouterProvider router={router} />
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
     </StrictMode>
   );
 } catch (error) {

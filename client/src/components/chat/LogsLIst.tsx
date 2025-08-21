@@ -116,6 +116,7 @@ export function LogsList({
   logs: AnyRef[];
   components?: ComponentsRecord;
 }) {
+  console.log({ logs });
   // // Get show message settings from the store
   // const showThoughtMessages = useSettingsStore(
   //   (state) => state.showThoughtMessages
