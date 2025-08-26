@@ -8,6 +8,7 @@ import {
   Github,
   Brain,
 } from "lucide-react";
+import { logger } from "@/utils/logger";
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
@@ -116,10 +117,10 @@ function ChatHistoryList() {
       if (!agent) return [];
       try {
         const contexts = await agent.getContexts();
-        console.log("contexts", contexts);
+        logger.debug("Fetched agent contexts", { count: contexts.length, contexts });
         return contexts.filter((ctx) => ctx.type === "gigaverse");
       } catch (error) {
-        console.error("Error fetching contexts:", error);
+        logger.error("Failed to fetch agent contexts", error);
         return [];
       }
     },

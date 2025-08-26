@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Maximize2 } from "lucide-react";
 import { useState } from "react";
 import { InventoryModal } from "./InventoryModal";
+import { logger } from "@/utils/logger";
 
 interface InventoryTabProps {
   state: ContextState<GigaverseContext>;
@@ -18,7 +19,7 @@ export function InventoryTab({ state }: InventoryTabProps) {
 
   const { exchangeRate } = usePriceStore();
 
-  console.log(gear);
+  logger.debug("Gear inventory loaded", { gearCount: gear.length, gear });
 
   return (
     <>

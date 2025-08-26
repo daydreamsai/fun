@@ -11,43 +11,37 @@ import {
   GetConsumablesResponse,
   GetBalancesResponse,
 } from "./client/types/responses";
+import { logger } from "@/utils/logger";
 
 export function parseDungeonState(
   response: BaseResponse
 ): GigaverseDungeonState | undefined {
-  const isDebugMode = import.meta?.env?.DEV;
-  
-  if (isDebugMode) {
-    console.log("=== PARSING DUNGEON STATE ===");
-    console.log("Response structure:", {
-      hasResponse: !!response,
-      hasData: !!response?.data,
-      hasRun: !!response?.data?.run,
-      hasEntity: !!response?.data?.entity,
-      responseKeys: response ? Object.keys(response) : [],
-      dataKeys: response?.data ? Object.keys(response.data) : [],
-    });
-  }
+  logger.debug("Parsing dungeon state", {
+    hasResponse: !!response,
+    hasData: !!response?.data,
+    hasRun: !!response?.data?.run,
+    hasEntity: !!response?.data?.entity
+  });
 
   if (!response) {
-    if (isDebugMode) console.log("❌ No response object");
+    logger.debug("No response object received");
     return undefined;
   }
 
   if (!response.data) {
-    if (isDebugMode) console.log("❌ No response.data");
+    logger.debug("No response.data found");
     return undefined;
   }
 
   // Check if we have basic dungeon info even without run data
   if (!response.data.entity) {
-    if (isDebugMode) console.log("❌ No response.data.entity");
+    logger.debug("No response.data.entity found");
     return undefined;
   }
 
   // If we have entity but no run, create a minimal state
   if (!response.data.run) {
-    console.log("⚠️ No response.data.run - creating minimal dungeon state");
+    logger.warn("No run data found, creating minimal state");
     return {
       currentRoom: response.data.entity.ROOM_NUM_CID || 1,
       currentDungeon: response.data.entity.DUNGEON_ID_CID || 1,
@@ -183,14 +177,12 @@ export function parseDungeonState(
     lootPhase: response.data.run.lootPhase || false,
   };
 
-  if (isDebugMode) {
-    console.log("✅ Successfully parsed dungeon state:", {
-      currentRoom: dungeonState.currentRoom,
-      currentDungeon: dungeonState.currentDungeon,
-      playerHealth: dungeonState.player?.health?.current,
-      enemyHealth: dungeonState.enemy?.health?.current,
-    });
-  }
+  logger.debug("Successfully parsed dungeon state", {
+    currentRoom: dungeonState.currentRoom,
+    currentDungeon: dungeonState.currentDungeon,
+    playerHealth: dungeonState.player?.health?.current,
+    enemyHealth: dungeonState.enemy?.health?.current
+  });
 
   return dungeonState;
 }

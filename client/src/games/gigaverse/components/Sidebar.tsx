@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { InferSchemaArguments, prepareContexts } from "@daydreamsai/core";
-import { Trash, ShieldQuestion, Settings } from "lucide-react";
+import { Trash, ShieldQuestion, Settings, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GigaverseContext, gigaverseContext } from "../context";
@@ -59,25 +59,138 @@ export function GigaverseSidebar({
     args,
   });
 
+  const queryClient = useQueryClient();
+
+  // ULTRA-ROBUST SOLUTION: Force synchronization after every agent action
   useEffect(() => {
-    return agent.subscribeContext(contextId, (log, done) => {
-      if (!done) return;
-      switch (log.ref) {
-        case "step": {
+    const unsubscribe = agent.subscribeContext(contextId, async (log, done) => {
+      // When a Gigaverse action completes, FORCE a full refresh
+      if (done && log.data?.actionName?.startsWith("gigaverse.")) {
+        console.log("🎯 GIGAVERSE ACTION DETECTED - FORCING FULL SYNC:", {
+          actionName: log.data.actionName,
+          logRef: log.ref,
+          timestamp: new Date(log.timestamp).toLocaleTimeString()
+        });
+        
+        // Strategy 1: Invalidate React Query cache
+        queryClient.invalidateQueries({
+          queryKey: ["context", contextId],
+        });
+        
+        // Strategy 2: Force immediate refetch
+        setTimeout(() => {
+          console.log("🔄 FORCING IMMEDIATE REFETCH");
           gigaverseState.refetch();
-          break;
-        }
-        case "action_result": {
-          if (log.name.startsWith("gigaverse")) {
-            gigaverseState.refetch();
+        }, 200);
+        
+        // Strategy 3: Fallback polling for 10 seconds to ensure sync
+        let attempts = 0;
+        const maxAttempts = 5;
+        const syncCheck = setInterval(() => {
+          attempts++;
+          console.log(`🔍 SYNC CHECK ${attempts}/${maxAttempts}`);
+          
+          gigaverseState.refetch();
+          
+          // Stop after max attempts or when we get dungeon data
+          if (attempts >= maxAttempts || gigaverseState.data?.dungeon) {
+            clearInterval(syncCheck);
+            if (gigaverseState.data?.dungeon) {
+              console.log("✅ SYNC SUCCESSFUL - Dungeon data found!");
+            } else {
+              console.log("⚠️ SYNC TIMEOUT - Dungeon data still missing after 5 attempts");
+            }
           }
-          break;
-        }
+        }, 2000);
       }
     });
-  }, [contextId]);
 
-  const queryClient = useQueryClient();
+    return unsubscribe;
+  }, [agent, contextId, queryClient, gigaverseState.refetch]);
+
+  // DEBUG: Massive logging to understand the state
+  useEffect(() => {
+    console.log("🔍 GIGAVERSE STATE DEBUG:", {
+      hasData: !!gigaverseState.data,
+      dataKeys: gigaverseState.data ? Object.keys(gigaverseState.data) : [],
+      hasDungeon: !!gigaverseState.data?.dungeon,
+      dungeonKeys: gigaverseState.data?.dungeon ? Object.keys(gigaverseState.data.dungeon) : [],
+      hasPlayer: !!gigaverseState.data?.dungeon?.player,
+      playerKeys: gigaverseState.data?.dungeon?.player ? Object.keys(gigaverseState.data.dungeon.player) : [],
+      hasPlayerHealth: !!gigaverseState.data?.dungeon?.player?.health,
+      playerHealthCurrent: gigaverseState.data?.dungeon?.player?.health?.current,
+      playerHealthMax: gigaverseState.data?.dungeon?.player?.health?.currentMax,
+      currentRoom: gigaverseState.data?.dungeon?.currentRoom,
+      isLoading: gigaverseState.isLoading,
+      isRefetching: gigaverseState.isRefetching,
+      error: gigaverseState.error?.message,
+      dataUpdatedAt: new Date(gigaverseState.dataUpdatedAt || 0).toLocaleTimeString(),
+      fullDungeon: gigaverseState.data?.dungeon
+    });
+  }, [gigaverseState.data, gigaverseState.dataUpdatedAt, gigaverseState.isLoading]);
+
+  // BACKUP SOLUTION: Continuous polling when we detect we're supposed to be in a dungeon
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    
+    // Start continuous polling if we suspect we should have dungeon data but don't
+    const shouldHaveDungeonData = gigaverseState.data && !gigaverseState.data.dungeon && !gigaverseState.isLoading;
+    const hasActiveDungeon = gigaverseState.data?.dungeon?.player?.health?.current > 0;
+    
+    if (shouldHaveDungeonData || hasActiveDungeon) {
+      console.log("🔄 STARTING CONTINUOUS SYNC POLLING:", {
+        reason: shouldHaveDungeonData ? "Missing expected dungeon data" : "Active dungeon detected",
+        hasData: !!gigaverseState.data,
+        hasDungeon: !!gigaverseState.data?.dungeon,
+        isLoading: gigaverseState.isLoading
+      });
+      
+      intervalId = setInterval(() => {
+        console.log("⏰ Continuous sync refresh");
+        gigaverseState.refetch();
+      }, 1500); // More frequent polling when syncing
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        console.log("🛑 Stopped continuous sync polling");
+      }
+    };
+  }, [
+    gigaverseState.data?.dungeon, // When dungeon data changes
+    gigaverseState.isLoading, // When loading state changes
+    gigaverseState.dataUpdatedAt // When data updates
+  ]);
+
+  const forceRefresh = () => {
+    console.log("🔄 MANUAL REFRESH triggered");
+    gigaverseState.refetch().then(() => {
+      console.log("✅ MANUAL REFRESH completed", {
+        dataUpdated: gigaverseState.dataUpdatedAt,
+        hasData: !!gigaverseState.data,
+        playerHealth: gigaverseState.data?.dungeon?.player?.health?.current,
+        enemyHealth: gigaverseState.data?.dungeon?.enemy?.health?.current,
+        room: gigaverseState.data?.dungeon?.currentRoom
+      });
+    });
+  };
+
+  // Log when gigaverseState changes
+  useEffect(() => {
+    console.log("📊 GIGAVERSE STATE CHANGED:", {
+      isLoading: gigaverseState.isLoading,
+      isRefetching: gigaverseState.isRefetching,
+      dataUpdatedAt: new Date(gigaverseState.dataUpdatedAt || 0).toLocaleTimeString(),
+      hasData: !!gigaverseState.data,
+      hasDungeon: !!gigaverseState.data?.dungeon,
+      playerHealth: gigaverseState.data?.dungeon?.player?.health?.current,
+      enemyHealth: gigaverseState.data?.dungeon?.enemy?.health?.current,
+      room: gigaverseState.data?.dungeon?.currentRoom,
+      lastBattleResult: gigaverseState.data?.dungeon?.lastBattleResult
+    });
+  }, [gigaverseState.dataUpdatedAt, gigaverseState.data]);
+
   const abstractAddress = getAbstractAddress();
 
   const setShowHelpWindow = useSettingsStore(
@@ -93,7 +206,7 @@ export function GigaverseSidebar({
           className="flex-1 text-muted-foreground"
           onClick={() => setShowHelpWindow(true)}
         >
-          <ShieldQuestion /> Help
+          <ShieldQuestion className="h-4 w-4" />
         </Button>
         <Button
           variant="outline"
@@ -102,8 +215,17 @@ export function GigaverseSidebar({
           asChild
         >
           <Link to="/settings">
-            <Settings /> Settings
+            <Settings className="h-4 w-4" />
           </Link>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-muted-foreground"
+          onClick={forceRefresh}
+          disabled={gigaverseState.isRefetching}
+        >
+          <RefreshCw className={`h-4 w-4 ${gigaverseState.isRefetching ? 'animate-spin' : ''}`} />
         </Button>
         <Button
           variant="outline"
@@ -124,8 +246,21 @@ export function GigaverseSidebar({
             });
           }}
         >
-          <Trash /> Clear Memory
+          <Trash className="h-4 w-4" />
         </Button>
+      </div>
+      
+      {/* Simple status indicator */}
+      <div className="px-2 py-1 text-xs text-muted-foreground bg-muted/50">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1">
+            <div className={`w-2 h-2 rounded-full ${gigaverseState.isRefetching ? 'bg-yellow-500 animate-pulse' : gigaverseState.isError ? 'bg-red-500' : 'bg-green-500'}`} />
+            Status: {gigaverseState.isRefetching ? 'Updating...' : gigaverseState.isError ? 'Error' : 'Ready'}
+          </span>
+          <span>
+            Last update: {new Date(gigaverseState.dataUpdatedAt || 0).toLocaleTimeString()}
+          </span>
+        </div>
       </div>
 
       <img src="/giga.jpeg" alt="Giga Banner" className="border-b" />
@@ -171,10 +306,7 @@ export function GigaverseSidebar({
             <OverviewTab
               state={gigaverseState.data}
               lastUpdated={gigaverseState.dataUpdatedAt}
-              refresh={async () => {
-                await stateQuery.refetch();
-                await gigaverseState.refetch();
-              }}
+              refresh={forceRefresh}
             />
           </TabsContent>
 

@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRef } from "react";
 import { useAgentStore } from "../store/agentStore";
+import { logger } from "@/utils/logger";
 
 export function useContextState<TContext extends AnyContext>({
   agent,
@@ -28,7 +29,7 @@ export function useContextState<TContext extends AnyContext>({
       return await agent.getContext(ref);
     },
     retry(_failureCount, error) {
-      console.log({ error });
+      logger.error("Context query failed", error);
       return false;
     },
     throwOnError: false,
@@ -70,7 +71,10 @@ export function useLogs<TContext extends AnyContext>({
 
   const workingMemory = useWorkingMemory({ agent, ...ref });
 
-  console.log({ workingMemory });
+  logger.debug("Working memory updated", {
+    dataLength: workingMemory.data?.length,
+    isLoading: workingMemory.isLoading
+  });
 
   useEffect(() => {
     const unsubscribe = agent.subscribeContext(contextId, (log, done) => {
@@ -199,9 +203,8 @@ export function useSend<TContext extends AnyContext>({
       onSuccess?.(data, variables);
     },
 
-    onError(error: any) {
-      console.log({ error });
-      console.error(error);
+    onError(error: unknown) {
+      logger.error("Send mutation failed", error);
     },
   });
 

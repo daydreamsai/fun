@@ -6,12 +6,23 @@ import { Dungeons, DungeonState } from "./Dungeons";
 import { Startup } from "./Startup";
 import { ListRestart } from "lucide-react";
 
+interface UpdateStats {
+  lastUpdateTime: number;
+  pendingUpdates: number;
+  totalUpdates: number;
+  isUpdating: boolean;
+}
+
 export function OverviewTab({
   state,
+  lastUpdated,
+  refresh,
+  updateStats,
 }: {
   state: ContextState<GigaverseContext> | undefined;
   lastUpdated: number;
   refresh: () => void;
+  updateStats?: UpdateStats;
 }) {
   if (!state) return null;
 
@@ -38,8 +49,12 @@ export function OverviewTab({
       <div className="">
         <h4 className="text-secondary-foreground uppercase text-center bg-secondary mb-2 flex items-center justify-between px-2">
           Noob #{player.account.noob.docId}
-          <button onClick={() => {}}>
-            <ListRestart />
+          <button 
+            onClick={refresh}
+            disabled={updateStats?.isUpdating}
+            className="p-1 rounded hover:bg-muted disabled:opacity-50"
+          >
+            <ListRestart className={`h-4 w-4 ${updateStats?.isUpdating ? 'animate-spin' : ''}`} />
           </button>
         </h4>
         <div className="">
@@ -110,6 +125,13 @@ export function OverviewTab({
         <div className="space-y-0.5">
           <p>Session ID: {state.id.split(":").pop()}</p>
           <p>Started: {new Date().toLocaleDateString()}</p>
+          {updateStats && (
+            <>
+              <p>Auto Updates: {updateStats.totalUpdates}</p>
+              <p>Last Sync: {new Date(updateStats.lastUpdateTime).toLocaleTimeString()}</p>
+              <p>Last Data: {new Date(lastUpdated).toLocaleTimeString()}</p>
+            </>
+          )}
         </div>
       </div>
       {/* <div className="mt-2 flex gap-2">

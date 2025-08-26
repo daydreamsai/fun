@@ -1,5 +1,3 @@
-import docs from "./docs/main.md?raw";
-
 export const gigaverseVariables: string[] = [
   "energy",
 
@@ -494,11 +492,14 @@ export const templateMinimal = `
   }
 }
 
-## Available Dungeons
+## Available Dungeons - Choose Wisely!
 
 {{availableDungeons}}
 
-**IMPORTANT:** Use the exact ID from above when starting new runs, not the default dungeonId: 1
+**🎯 CRITICAL DECISION:** 
+- Choose a ✅ AFFORDABLE dungeon (you must have enough energy)
+- Use the exact ID number from above (e.g., dungeonId: 3)  
+- Pick the best dungeon you can afford for optimal rewards
 
 ## Available Actions
 

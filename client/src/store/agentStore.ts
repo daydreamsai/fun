@@ -2,6 +2,7 @@ import { createAgent } from "@/agent";
 import { create } from "zustand";
 import { AnyAgent } from "@daydreamsai/core";
 import { useSettingsStore } from "@/store/settingsStore";
+import { logger } from "@/utils/logger";
 
 interface AgentState {
   agent: AnyAgent;
@@ -50,7 +51,7 @@ export const useAgentStore = create<AgentState>((set, get) => {
         }
 
         set({ isInitialized: true });
-        console.log("Agent successfully initialized and verified");
+        logger.info("Agent initialized and verified");
       } catch (error) {
         console.error("Failed to initialize agent:", error);
         // Reset initialization promise on error so it can be retried
@@ -100,7 +101,7 @@ export const useAgentStore = create<AgentState>((set, get) => {
       set({ initializationPromise: newInitPromise });
       await newInitPromise;
       set({ isInitialized: true });
-      console.log("New agent successfully initialized and verified");
+      logger.info("New agent initialized and verified");
     } catch (error) {
       console.error("Failed to initialize new agent:", error);
       set({ initializationPromise: null });

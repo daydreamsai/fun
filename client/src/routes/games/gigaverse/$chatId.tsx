@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { hasApiKey, useSettingsStore } from "@/store/settingsStore";
 import { useAgentStore } from "@/store/agentStore";
 import { HelpWindow, MessageInput } from "@/components/chat";
-import { useContextState, useLogs, useSend } from "@/hooks/agent";
+import { useContextState, useSend } from "@/hooks/agent";
+import { useStreamingMessages } from "@/hooks/useStreamingMessages";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { gigaverseContext } from "@/games/gigaverse/context";
@@ -24,7 +25,7 @@ import {
 import { GigaverseSidebar } from "@/games/gigaverse/components/Sidebar";
 import { GigaverseAction } from "@/games/gigaverse/components/Actions";
 import { ActionResult } from "@daydreamsai/core";
-import { LogsList } from "@/components/chat/LogsLIst";
+import { UnifiedMessagesList } from "@/components/chat/UnifiedMessagesList";
 import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
 import { ScrollText } from "lucide-react";
 import {
@@ -177,31 +178,23 @@ function RouteComponent() {
     await agent.start();
   };
 
-  const { logs, isRunning } = useLogs({
-    agent: agent,
+  const { messages, isStreaming, sendMessage, contextId } = useStreamingMessages({
+    agent: agent!,
     context: gigaverseContext,
     args: { id: chatId },
+    options: {
+      showThoughts: true,
+      showSystem: true,
+      showActions: true,
+    }
   });
 
-  const { send, abortControllerRef } = useSend({
-    agent: agent,
-    context: gigaverseContext,
-    args: { id: chatId },
-  });
 
   const handleSubmitMessage = async (message: string) => {
-    send.mutate({
-      input: {
-        type: "message",
-        data: {
-          user: "player",
-          content: message,
-        },
-      },
-    });
+    await sendMessage(message);
   };
 
-  const messagesContainerRef = useAutoScroll([logs], {
+  const messagesContainerRef = useAutoScroll([messages], {
     threshold: 150,
     behavior: "auto",
   });
@@ -256,23 +249,32 @@ function RouteComponent() {
           scrollPaddingBottom: "250px",
         }}
       >
-        <LogsList
-          logs={logs}
+        <UnifiedMessagesList
+          messages={messages}
+          streamingMessageId={isStreaming ? messages.find(m => m.status === 'streaming')?.id : null}
           components={{
-            action_call: ({ log, getLog }) => {
-              const result = getLog<ActionResult>(
-                (t) => t.ref === "action_result" && t.callId === log.id
-              );
-
-              if (log.name.startsWith("gigaverse")) {
+            action: ({ message }) => {
+              if (message.metadata?.actionType?.startsWith("gigaverse")) {
+                const actionResult = message.metadata?.result;
+                
                 return (
                   <GigaverseAction
-                    key={log.id}
-                    call={log}
-                    result={result}
+                    key={message.id}
+                    call={{
+                      id: message.metadata.callId || message.id,
+                      name: message.metadata.actionType,
+                      data: message.metadata.actionData,
+                      ref: "action_call" as const
+                    }}
+                    result={actionResult}
                     gameData={ctxState.data?.options.game}
                   />
                 );
+              }
+
+              // Always show error messages, even if not from gigaverse actions
+              if (message.status === "error") {
+                return null; // This will fall back to the default action component which shows errors properly
               }
 
               return null;
@@ -286,7 +288,7 @@ function RouteComponent() {
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              disabled={send.isPending}
+              disabled={isStreaming}
               onClick={() => setShowTemplateEditor(true)}
               className="h-full flex text-muted-foreground border-r-0"
             >
@@ -298,10 +300,9 @@ function RouteComponent() {
           </TooltipContent>
         </Tooltip>
         <MessageInput
-          isLoading={send.isPending || isRunning}
+          isLoading={isStreaming}
           disabled={ctxState.error !== null || missingKeys.length > 0}
           onSubmit={handleSubmitMessage}
-          abortControllerRef={abortControllerRef}
           placeholderText={
             missingKeys.length === 2
               ? "Please set up API keys in settings to start chatting"
