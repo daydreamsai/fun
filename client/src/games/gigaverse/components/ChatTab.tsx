@@ -27,6 +27,7 @@ export function ChatTab({ chatId }: ChatTabProps) {
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const agent = useAgentStore((state) => state.agent);
   const { selectTemplate } = useTemplateStore();
+  
 
   // Wrap selectTemplate to restart agent when templates change
   const selectTemplateAndRestart = async (
@@ -39,6 +40,7 @@ export function ChatTab({ chatId }: ChatTabProps) {
     await agent.start();
   };
 
+
   const { messages, isStreaming, sendMessage } = useStreamingMessages({
     agent: agent!,
     context: gigaverseContext,
@@ -50,17 +52,10 @@ export function ChatTab({ chatId }: ChatTabProps) {
     }
   });
 
-  console.log("💬 CHAT TAB RENDER:", {
-    chatId,
-    messageCount: messages.length,
-    messages: messages.map(m => ({
-      id: m.id,
-      type: m.type,
-      status: m.status,
-      content: m.content.substring(0, 50)
-    })),
-    isStreaming
-  });
+  if (!agent) {
+    return <div className="h-full flex items-center justify-center">Agent not available</div>;
+  }
+
 
   const handleSubmitMessage = async (message: string) => {
     await sendMessage(message);

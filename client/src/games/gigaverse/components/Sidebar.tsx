@@ -68,13 +68,9 @@ export function GigaverseSidebar({
   // ULTRA-ROBUST SOLUTION: Force synchronization after every agent action
   useEffect(() => {
     const unsubscribe = agent.subscribeContext(contextId, async (log, done) => {
+      
       // When a Gigaverse action completes, FORCE a full refresh
       if (done && log.data?.actionName?.startsWith("gigaverse.")) {
-        console.log("🎯 GIGAVERSE ACTION DETECTED - FORCING FULL SYNC:", {
-          actionName: log.data.actionName,
-          logRef: log.ref,
-          timestamp: new Date(log.timestamp).toLocaleTimeString()
-        });
         
         // Strategy 1: Invalidate React Query cache
         queryClient.invalidateQueries({

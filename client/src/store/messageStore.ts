@@ -159,25 +159,11 @@ export const useMessageStore = create<MessageStore>()(
         timestamp: Date.now(),
       };
 
-      console.log("🏪 MESSAGE STORE - Adding message:", {
-        contextId,
-        messageId: id,
-        type: messageData.type,
-        content: messageData.content.substring(0, 100),
-        status: messageData.status
-      });
-
       set((state) => {
         const newMessages = new Map(state.messages);
         const contextMessages = newMessages.get(contextId) || [];
         contextMessages.push(message);
         newMessages.set(contextId, contextMessages);
-
-        console.log("📦 MESSAGE STORE - State updated:", {
-          contextId,
-          totalMessages: contextMessages.length,
-          allContexts: Array.from(newMessages.keys())
-        });
 
         return { messages: newMessages };
       });
