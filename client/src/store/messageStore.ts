@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { subscribeWithSelector } from "zustand/middleware";
+import { subscribeWithSelector, persist } from "zustand/middleware";
 import { ActionResult, AnyRef } from "@daydreamsai/core";
 
 export interface UnifiedMessage {
@@ -141,10 +141,11 @@ function findAndUpdateMessage(
 }
 
 export const useMessageStore = create<MessageStore>()(
-  subscribeWithSelector((set, get) => ({
-    messages: new Map(),
-    streamingMessageId: null,
-    isStreaming: false,
+  persist(
+    subscribeWithSelector((set, get) => ({
+      messages: new Map(),
+      streamingMessageId: null,
+      isStreaming: false,
 
     addMessage: (
       contextId: string,
@@ -158,11 +159,25 @@ export const useMessageStore = create<MessageStore>()(
         timestamp: Date.now(),
       };
 
+      console.log("🏪 MESSAGE STORE - Adding message:", {
+        contextId,
+        messageId: id,
+        type: messageData.type,
+        content: messageData.content.substring(0, 100),
+        status: messageData.status
+      });
+
       set((state) => {
         const newMessages = new Map(state.messages);
         const contextMessages = newMessages.get(contextId) || [];
         contextMessages.push(message);
         newMessages.set(contextId, contextMessages);
+
+        console.log("📦 MESSAGE STORE - State updated:", {
+          contextId,
+          totalMessages: contextMessages.length,
+          allContexts: Array.from(newMessages.keys())
+        });
 
         return { messages: newMessages };
       });
@@ -316,7 +331,35 @@ export const useMessageStore = create<MessageStore>()(
         return { messages: newMessages };
       });
     },
-  }))
+  })),
+    {
+      name: "gigaverse-messages-storage",
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          if (!str) return null;
+          const stored = JSON.parse(str);
+          // Convert the messages array back to a Map
+          if (stored.state?.messages) {
+            stored.state.messages = new Map(Object.entries(stored.state.messages));
+          }
+          return stored;
+        },
+        setItem: (name, value) => {
+          // Convert the Map to a plain object for storage
+          const toStore = {
+            ...value,
+            state: {
+              ...value.state,
+              messages: value.state.messages ? Object.fromEntries(value.state.messages) : {}
+            }
+          };
+          localStorage.setItem(name, JSON.stringify(toStore));
+        },
+        removeItem: (name) => localStorage.removeItem(name),
+      },
+    }
+  )
 );
 
 export const useContextMessages = (contextId: string) =>

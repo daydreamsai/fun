@@ -7,54 +7,30 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { v7 as randomUUIDv7 } from "uuid";
-import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { Button } from "@/components/ui/button";
 import { hasApiKey, useSettingsStore } from "@/store/settingsStore";
 import { useAgentStore } from "@/store/agentStore";
-import { HelpWindow, MessageInput } from "@/components/chat";
-import { useContextState, useSend } from "@/hooks/agent";
-import { useStreamingMessages } from "@/hooks/useStreamingMessages";
+import { HelpWindow } from "@/components/chat";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { gigaverseContext } from "@/games/gigaverse/context";
-import {
-  defaultInstructions,
-  defaultRules,
-  gigaverseVariables,
-} from "@/games/gigaverse/prompts";
 import { GigaverseSidebar } from "@/games/gigaverse/components/Sidebar";
-import { GigaverseAction } from "@/games/gigaverse/components/Actions";
-import { ActionResult } from "@daydreamsai/core";
-import { UnifiedMessagesList } from "@/components/chat/UnifiedMessagesList";
-import { TemplateEditorDialog } from "@/components/chat/template-editor-dialog";
-import { ScrollText } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { usePriceStore } from "@/store/priceStore";
-import { useTemplateStore } from "@/store/templateStore";
 
 const searchParams = z.object({
   sidebar: z
-    .enum(["overview", "skills", "inventory", "roms"])
+    .enum(["play", "skills", "inventory", "market", "roms"])
     .optional()
-    .default("overview"),
+    .default("play"),
 });
 
 export const Route = createFileRoute("/games/gigaverse/$chatId")({
   validateSearch: zodValidator(searchParams),
   component: RouteComponent,
-  context({ params }) {
-    return {
-      sidebar: <GigaverSidebarWrapper chatId={params.chatId} />,
-    };
-  },
   loader({ params }) {
     // Check if user has required API keys
     const hasOpenRouterKey = hasApiKey("openrouterKey");
@@ -79,29 +55,6 @@ export const Route = createFileRoute("/games/gigaverse/$chatId")({
   },
 });
 
-function GigaverSidebarWrapper({ chatId }: { chatId: string }) {
-  return (
-    <Sidebar
-      collapsible="none"
-      className={cn("w-96 border-l min-h-svh max-h-svh md:shrink-0 h-full")}
-      side="right"
-    >
-      <SidebarContent className="bg-sidebar">
-        <ErrorBoundary
-          fallbackRender={({ error, resetErrorBoundary }: any) => (
-            <GigaverseSidebarErrorComponent
-              chatId={chatId}
-              error={error}
-              resetErrorBoundary={resetErrorBoundary}
-            />
-          )}
-        >
-          <GigaverseSidebar args={{ id: chatId }} />
-        </ErrorBoundary>
-      </SidebarContent>
-    </Sidebar>
-  );
-}
 
 function GigaverseSidebarErrorComponent({
   chatId,
@@ -138,11 +91,9 @@ function GigaverseSidebarErrorComponent({
 
 function RouteComponent() {
   const { chatId } = Route.useParams();
-
-  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [missingKeys, setMissingKeys] = useState<string[]>([]);
   const agent = useAgentStore((state) => state.agent);
-
+  
   const showHelpWindow = useSettingsStore((state) => state.showHelpWindow);
   const setShowHelpWindow = useSettingsStore(
     (state) => state.setShowHelpWindow
@@ -165,69 +116,10 @@ function RouteComponent() {
     setMissingKeys(missing);
   }, []);
 
-  const { selectTemplate } = useTemplateStore();
-
-  // Wrap selectTemplate to restart agent when templates change
-  const selectTemplateAndRestart = async (
-    key: string,
-    section: string,
-    templateId: string
-  ) => {
-    selectTemplate(key, section, templateId);
-    // Restart agent to pick up new templates
-    await agent.start();
-  };
-
-  const { messages, isStreaming, sendMessage, contextId } = useStreamingMessages({
-    agent: agent!,
-    context: gigaverseContext,
-    args: { id: chatId },
-    options: {
-      showThoughts: true,
-      showSystem: true,
-      showActions: true,
-    }
-  });
-
-
-  const handleSubmitMessage = async (message: string) => {
-    await sendMessage(message);
-  };
-
-  const messagesContainerRef = useAutoScroll([messages], {
-    threshold: 150,
-    behavior: "auto",
-  });
-
-  const ctxState = useContextState({
-    agent,
-    context: gigaverseContext,
-    args: { id: chatId },
-  });
-
   return (
     <>
       <HelpWindow open={showHelpWindow} onOpenChange={setShowHelpWindow} />
-      <TemplateEditorDialog
-        open={showTemplateEditor}
-        title="Gigaverse Instructions"
-        variables={gigaverseVariables}
-        templateKey="gigaverse"
-        sections={{
-          instructions: {
-            label: "Gigaverse Strategy",
-            default: {
-              id: "gigaverse-instructions-default",
-              title: "Default",
-              section: "instructions",
-              prompt: defaultInstructions,
-              tags: ["default"],
-            },
-          },
-        }}
-        setSelected={selectTemplateAndRestart}
-        onOpenChange={setShowTemplateEditor}
-      />
+      
       {/* API Key Notification */}
       {missingKeys.length > 0 && missingKeys.length < 2 && (
         <div className="bg-accent/20 p-3 text-accent-foreground text-sm flex justify-between items-center">
@@ -241,74 +133,20 @@ function RouteComponent() {
           </Button>
         </div>
       )}
-      <div
-        className="flex flex-col flex-1 px-6 mr-0.5 overflow-y-scroll pt-8 pb-40"
-        ref={messagesContainerRef}
-        style={{
-          scrollBehavior: "smooth",
-          scrollPaddingBottom: "250px",
-        }}
-      >
-        <UnifiedMessagesList
-          messages={messages}
-          streamingMessageId={isStreaming ? messages.find(m => m.status === 'streaming')?.id : null}
-          components={{
-            action: ({ message }) => {
-              if (message.metadata?.actionType?.startsWith("gigaverse")) {
-                const actionResult = message.metadata?.result;
-                
-                return (
-                  <GigaverseAction
-                    key={message.id}
-                    call={{
-                      id: message.metadata.callId || message.id,
-                      name: message.metadata.actionType,
-                      data: message.metadata.actionData,
-                      ref: "action_call" as const
-                    }}
-                    result={actionResult}
-                    gameData={ctxState.data?.options.game}
-                  />
-                );
-              }
-
-              // Always show error messages, even if not from gigaverse actions
-              if (message.status === "error") {
-                return null; // This will fall back to the default action component which shows errors properly
-              }
-
-              return null;
-            },
-          }}
-        />
-      </div>
-
-      <div className="bg-background flex mt-auto p-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              disabled={isStreaming}
-              onClick={() => setShowTemplateEditor(true)}
-              className="h-full flex text-muted-foreground border-r-0"
-            >
-              <ScrollText />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Instructions</p>
-          </TooltipContent>
-        </Tooltip>
-        <MessageInput
-          isLoading={isStreaming}
-          disabled={ctxState.error !== null || missingKeys.length > 0}
-          onSubmit={handleSubmitMessage}
-          placeholderText={
-            missingKeys.length === 2
-              ? "Please set up API keys in settings to start chatting"
-              : undefined
-          }
-        />
+      
+      {/* Main Gigaverse Content Area with Side Panel */}
+      <div className="flex flex-1 min-h-0">
+        <ErrorBoundary
+          fallbackRender={({ error, resetErrorBoundary }) => (
+            <GigaverseSidebarErrorComponent
+              chatId={chatId}
+              error={error}
+              resetErrorBoundary={resetErrorBoundary}
+            />
+          )}
+        >
+          <GigaverseSidebar args={{ id: chatId }} />
+        </ErrorBoundary>
       </div>
     </>
   );

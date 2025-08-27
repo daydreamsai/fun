@@ -1,8 +1,9 @@
 import { ContextState } from "@daydreamsai/core";
 import { GigaverseContext } from "../context";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SkillDefinition } from "../client/types/responses";
+import { useState } from "react";
 
 interface SkillsTabProps {
   state: ContextState<GigaverseContext>;
@@ -10,6 +11,7 @@ interface SkillsTabProps {
 
 export function SkillsTab({ state }: SkillsTabProps) {
   const { skills, player } = state.options.game;
+  const [activeSkillTab, setActiveSkillTab] = useState("dungeon");
 
   const handleUpgrade = async (skillId: number | undefined, statId: number) => {
     if (!skillId) {
@@ -26,22 +28,32 @@ export function SkillsTab({ state }: SkillsTabProps) {
 
       if (response.success) {
         console.log("✅ Skill upgraded successfully:", response.message);
-        // You could trigger a state refresh here or show a toast notification
-        // For now, we'll just log the success
       } else {
-        console.error(
-          "❌ Upgrade failed:",
-          response.message || "Unknown error"
-        );
+        console.error("❌ Upgrade failed:", response.message || "Unknown error");
       }
     } catch (error) {
       console.error("❌ Error upgrading skill:", error);
     }
   };
 
-  return (
-    <div className="">
-      {player.skills.entities.map((progress, index) => {
+  // Separate skills by type
+  const dungeonSkills = player.skills.entities.filter((progress) => {
+    const skill = skills.entities.find(
+      (skill) => parseInt(skill.docId) === progress.SKILL_CID
+    );
+    return skill && !skill.NAME_CID.toLowerCase().includes("fishing");
+  });
+
+  const fishingSkills = player.skills.entities.filter((progress) => {
+    const skill = skills.entities.find(
+      (skill) => parseInt(skill.docId) === progress.SKILL_CID
+    );
+    return skill && skill.NAME_CID.toLowerCase().includes("fishing");
+  });
+
+  const renderSkills = (skillsToRender: typeof player.skills.entities) => (
+    <div className="grid grid-cols-2 gap-4">
+      {skillsToRender.map((progress) => {
         const skill = skills.entities.find(
           (skill) => parseInt(skill.docId) === progress.SKILL_CID
         )! as SkillDefinition & {
@@ -49,34 +61,31 @@ export function SkillsTab({ state }: SkillsTabProps) {
           GAME_ITEM_ID_CID?: number;
         };
 
-        // Find the material balance for this skill
         const materialBalance = player.balances.find(
           (balance) => balance.item.id === skill.GAME_ITEM_ID_CID
         );
 
         return (
-          <div key={progress.SKILL_CID} className="">
-            {index > 0 && <Separator className="mb-4" />}
-            <div className="flex items-center justify-between">
-              <div className="truncate">{skill.NAME_CID}</div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {materialBalance && (
-                  <div className="flex items-center gap-1">
-                    <span>
-                      [{materialBalance.balance} avai.] <br />
-                      {skill.xpPerLvl && skill.xpPerLvl[progress.LEVEL_CID + 1]
-                        ? `${skill.xpPerLvl[progress.LEVEL_CID + 1]} needed +`
-                        : "Max Level"}
-                    </span>
-                  </div>
-                )}
+          <div key={progress.SKILL_CID} className="bg-card p-3 rounded-lg border">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold truncate">{skill.NAME_CID}</h4>
+              <div className="text-xs bg-primary/10 px-2 py-1 rounded">
+                Level {progress.LEVEL_CID}
               </div>
             </div>
-            <div className="text-muted-foreground">
-              Level {progress.LEVEL_CID}
-            </div>
-            <Separator className="my-2" />
-            <div className="mt-2 text-sm">
+            
+            {materialBalance && (
+              <div className="text-xs text-muted-foreground mb-2">
+                Material: {materialBalance.balance} available
+                {skill.xpPerLvl && skill.xpPerLvl[progress.LEVEL_CID + 1] ? (
+                  <span className="block">Need: {skill.xpPerLvl[progress.LEVEL_CID + 1]}</span>
+                ) : (
+                  <span className="block text-green-600">Max level reached</span>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
               {skill.stats.map((stat, i) => {
                 const requiredXP = skill.xpPerLvl?.[progress.LEVEL_CID + 1];
                 const hasEnoughBalance =
@@ -86,15 +95,12 @@ export function SkillsTab({ state }: SkillsTabProps) {
                 const isMaxLevel = !requiredXP;
 
                 return (
-                  <div
-                    className="grid grid-cols-3 items-center justify-start even:mb-2"
-                    key={stat.id}
-                  >
-                    <div className="flex items-center gap-2 ">
+                  <div key={stat.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <Button
                         size="sm"
-                        variant="secondary"
-                        className="h-6 w-6 p-0"
+                        variant={hasEnoughBalance && !isMaxLevel ? "default" : "outline"}
+                        className="h-6 w-6 p-0 text-xs"
                         onClick={() =>
                           handleUpgrade(skill.GAME_ITEM_ID_CID, stat.id)
                         }
@@ -102,16 +108,10 @@ export function SkillsTab({ state }: SkillsTabProps) {
                       >
                         +
                       </Button>
-                      {stat.name}{" "}
+                      <span className="text-sm">{stat.name}</span>
                     </div>
-                    <span className="text-muted-foreground">
-                      Lv. {progress.LEVEL_CID_array?.[i] ?? 0}
-                    </span>
-                    {/* <div>{progress.LEVEL_CID_array?.[i] ?? 0}</div> */}
-                    <div className="text-right">
-                      +
-                      {(progress.LEVEL_CID_array?.[i] ?? 0) *
-                        stat.increaseValue}
+                    <div className="text-xs text-muted-foreground">
+                      Lv. {progress.LEVEL_CID_array?.[i] ?? 0} (+{(progress.LEVEL_CID_array?.[i] ?? 0) * stat.increaseValue})
                     </div>
                   </div>
                 );
@@ -121,5 +121,22 @@ export function SkillsTab({ state }: SkillsTabProps) {
         );
       })}
     </div>
+  );
+
+  return (
+    <Tabs value={activeSkillTab} onValueChange={setActiveSkillTab}>
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="dungeon">Dungeon</TabsTrigger>
+        <TabsTrigger value="fishing">Fishing</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="dungeon" className="mt-4">
+        {renderSkills(dungeonSkills)}
+      </TabsContent>
+      
+      <TabsContent value="fishing" className="mt-4">
+        {renderSkills(fishingSkills)}
+      </TabsContent>
+    </Tabs>
   );
 }

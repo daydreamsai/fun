@@ -82,22 +82,40 @@ export function useStreamingMessages<TContext extends AnyContext>({
    * Utilitaire pour notifier l'ajout d'un message
    */
   const notifyMessageAdded = useCallback((messageId: string) => {
-    notifyMessageAdded(messageId);
-  }, [onMessageAdded]);
+    onMessageAdded?.(getMessages(contextId).find(m => m.id === messageId)!);
+  }, [onMessageAdded, getMessages, contextId]);
 
   /**
    * Traite un log d'agent et le convertit en message unifié
    */
   const processAgentLog = useCallback((log: AnyRef, isDone: boolean) => {
+    console.log("🔍 PROCESSING AGENT LOG:", {
+      logRef: log.ref,
+      logId: log.id,
+      isDone,
+      logContent: log.content,
+      logData: log.data,
+      alreadyProcessed: processedLogsRef.current.has(log.id)
+    });
+
     // Éviter les doublons
     if (processedLogsRef.current.has(log.id)) {
+      console.log("❌ SKIPPING - Already processed log:", log.id);
       return;
     }
     processedLogsRef.current.add(log.id);
 
     try {
       // Filtrer selon les préférences utilisateur
-      if (!shouldProcessLog(log, { showThoughts, showSystem, showActions })) {
+      const shouldProcess = shouldProcessLog(log, { showThoughts, showSystem, showActions });
+      console.log("🎯 SHOULD PROCESS LOG:", {
+        logRef: log.ref,
+        shouldProcess,
+        preferences: { showThoughts, showSystem, showActions }
+      });
+      
+      if (!shouldProcess) {
+        console.log("❌ FILTERED OUT - Log type not enabled:", log.ref);
         return;
       }
 
@@ -108,32 +126,40 @@ export function useStreamingMessages<TContext extends AnyContext>({
       });
 
       // Gérer les différents types de logs
+      console.log("🔄 PROCESSING LOG TYPE:", log.ref);
       switch (log.ref) {
         case 'input':
+          console.log("📝 HANDLING INPUT LOG");
           handleInputLog(log);
           break;
           
         case 'output':
+          console.log("🤖 HANDLING OUTPUT LOG");
           handleOutputLog(log, isDone);
           break;
           
         case 'thought':
+          console.log("💭 HANDLING THOUGHT LOG");
           handleThoughtLog(log, isDone);
           break;
           
         case 'action_call':
+          console.log("⚡ HANDLING ACTION CALL LOG");
           handleActionCallLog(log);
           break;
           
         case 'action_result':
+          console.log("✅ HANDLING ACTION RESULT LOG");
           handleActionResultLog(log);
           break;
           
         case 'step':
+          console.log("👣 HANDLING STEP LOG");
           handleStepLog(log, isDone);
           break;
           
         default:
+          console.log("❓ HANDLING GENERIC LOG:", log.ref);
           handleGenericLog(log);
       }
 
@@ -151,6 +177,7 @@ export function useStreamingMessages<TContext extends AnyContext>({
    */
   const handleInputLog = useCallback((log: AnyRef) => {
     const content = log.data?.content || log.content || 'User input';
+    console.log("📝 ADDING USER MESSAGE:", content);
     const messageId = addMessage(contextId, {
       type: MESSAGE_TYPES.USER,
       content,
@@ -160,6 +187,7 @@ export function useStreamingMessages<TContext extends AnyContext>({
         callId: log.id
       }
     });
+    console.log("✅ USER MESSAGE ADDED:", messageId);
     
     notifyMessageAdded(messageId);
   }, [contextId, addMessage, notifyMessageAdded]);
@@ -169,10 +197,18 @@ export function useStreamingMessages<TContext extends AnyContext>({
    */
   const handleOutputLog = useCallback((log: AnyRef, isDone: boolean) => {
     const content = log.data?.content || log.content || 'Agent response';
+    console.log("🤖 HANDLING AGENT OUTPUT:", {
+      content,
+      isDone,
+      shouldStream: LOG_TYPE_CONFIG.output.shouldStream && !isDone,
+      currentlyStreaming: isStreaming,
+      logData: log.data
+    });
     
     if (LOG_TYPE_CONFIG.output.shouldStream && !isDone) {
       // Démarrer ou continuer le streaming
       let streamingMessageId = useMessageStore.getState().streamingMessageId;
+      console.log("🌊 STREAMING MODE - Current streaming ID:", streamingMessageId);
       
       if (!streamingMessageId) {
         streamingMessageId = addMessage(contextId, {
@@ -185,14 +221,17 @@ export function useStreamingMessages<TContext extends AnyContext>({
             streamBuffer: ''
           }
         });
+        console.log("🆕 STARTED NEW STREAMING MESSAGE:", streamingMessageId);
         startStreaming(streamingMessageId);
         onStreamingStart?.();
       }
       
       appendToMessage(streamingMessageId, content);
+      console.log("➕ APPENDED TO STREAMING MESSAGE:", content);
     } else {
       // Message complet
       if (isStreaming) {
+        console.log("🛑 STOPPING STREAMING");
         stopStreaming();
         onStreamingEnd?.();
       }
@@ -207,6 +246,10 @@ export function useStreamingMessages<TContext extends AnyContext>({
           isComplete: true
         }
       });
+      console.log("✅ AGENT MESSAGE COMPLETED:", {
+        messageId: completedMessageId,
+        content: content.substring(0, 100)
+      });
       
       notifyMessageAdded(completedMessageId);
     }
@@ -216,9 +259,17 @@ export function useStreamingMessages<TContext extends AnyContext>({
    * Gère les logs de pensée agent
    */
   const handleThoughtLog = useCallback((log: AnyRef, isDone: boolean) => {
-    if (!showThoughts) return;
+    if (!showThoughts) {
+      console.log("❌ THOUGHTS DISABLED - Skipping thought log");
+      return;
+    }
     
     const content = log.content || 'Agent thinking...';
+    console.log("💭 ADDING THOUGHT MESSAGE:", {
+      content: content.substring(0, 100),
+      isDone,
+      showThoughts
+    });
     
     const messageId = addMessage(contextId, {
       type: MESSAGE_TYPES.THOUGHT,
@@ -230,6 +281,7 @@ export function useStreamingMessages<TContext extends AnyContext>({
         isComplete: isDone
       }
     });
+    console.log("✅ THOUGHT MESSAGE ADDED:", messageId);
     
     notifyMessageAdded(messageId);
   }, [contextId, showThoughts, addMessage, notifyMessageAdded]);
@@ -406,9 +458,17 @@ export function useStreamingMessages<TContext extends AnyContext>({
     }
   }, [contextId, clearMessages, isStreaming, stopStreaming]);
 
+  const messages = getMessages(contextId);
+  console.log("📊 CURRENT MESSAGES STATE:", {
+    contextId,
+    messageCount: messages.length,
+    messageTypes: messages.map(m => m.type),
+    isStreaming
+  });
+
   return {
     // État
-    messages: getMessages(contextId),
+    messages,
     isStreaming,
     
     // Actions
