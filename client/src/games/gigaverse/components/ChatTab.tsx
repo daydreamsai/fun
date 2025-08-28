@@ -80,7 +80,7 @@ export function ChatTab({ chatId }: ChatTabProps) {
   });
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <TemplateEditorDialog
         open={showTemplateEditor}
         title="Gigaverse Instructions"
@@ -103,7 +103,7 @@ export function ChatTab({ chatId }: ChatTabProps) {
       />
       
       <div 
-        className="flex-1 min-h-0 overflow-y-auto"
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
         ref={scrollAreaRef}
       >
         <div className="p-2">

@@ -117,12 +117,12 @@ function RouteComponent() {
   }, []);
 
   return (
-    <>
+    <div className="h-full flex flex-col overflow-hidden">
       <HelpWindow open={showHelpWindow} onOpenChange={setShowHelpWindow} />
       
       {/* API Key Notification */}
       {missingKeys.length > 0 && missingKeys.length < 2 && (
-        <div className="bg-accent/20 p-3 text-accent-foreground text-sm flex justify-between items-center">
+        <div className="bg-accent/20 p-3 text-accent-foreground text-sm flex justify-between items-center flex-shrink-0">
           <div>
             <span className="font-medium">Note:</span> You're missing the{" "}
             {missingKeys.join(", ")} API key. You can still use the app, but
@@ -135,7 +135,7 @@ function RouteComponent() {
       )}
       
       {/* Main Gigaverse Content Area with Side Panel */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <ErrorBoundary
           fallbackRender={({ error, resetErrorBoundary }) => (
             <GigaverseSidebarErrorComponent
@@ -148,6 +148,6 @@ function RouteComponent() {
           <GigaverseSidebar args={{ id: chatId }} />
         </ErrorBoundary>
       </div>
-    </>
+    </div>
   );
 }

@@ -178,9 +178,9 @@ export function GigaverseSidebar({
   );
 
   return (
-    <div className="flex h-full w-full">
+    <div className="flex h-full w-full overflow-hidden">
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1 min-w-0 max-w-[calc(100vw-320px)]">
+      <div className="flex flex-col flex-1 min-w-0 max-w-[calc(100vw-320px)] overflow-hidden">
         {/* Header with controls */}
         <div className="flex items-center gap-4 p-4 border-b">
           <img src="/giga.jpeg" alt="Giga Banner" className="h-12 w-12 rounded" />
@@ -337,10 +337,10 @@ export function GigaverseSidebar({
       </div>
 
       {/* Right Side Panel - Fixed Width Always Visible */}
-      <div className="w-80 flex-shrink-0 border-l bg-background/95 backdrop-blur flex flex-col h-full">
+      <div className="w-80 flex-shrink-0 border-l bg-background/95 backdrop-blur flex flex-col h-full overflow-hidden">
         {/* Dungeon State - Always Visible */}
         {gigaverseState.data?.memory?.dungeon ? (
-          <>
+          <div className="flex-shrink-0">
             {/* Dungeon Header */}
             <div className="bg-secondary/50">
               <h5 className="text-xs font-medium py-1 text-center uppercase">Dungeon</h5>
@@ -598,9 +598,9 @@ export function GigaverseSidebar({
                 </div>
               </>
             )}
-          </>
+          </div>
         ) : (
-          <div className="p-3 border-b flex-shrink-0">
+          <div className="p-3 border-b flex-shrink-0 overflow-hidden">
             <div className="text-sm text-muted-foreground text-center">
               No active dungeon
             </div>
@@ -608,11 +608,11 @@ export function GigaverseSidebar({
         )}
         
         {/* Chat Area - Takes remaining space */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="bg-secondary/50">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="bg-secondary/50 flex-shrink-0">
             <h5 className="text-xs font-medium py-1 text-center uppercase">Chat</h5>
           </div>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden">
             <ChatTab chatId={args.id} />
           </div>
         </div>
