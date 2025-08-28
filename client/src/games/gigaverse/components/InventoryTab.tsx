@@ -3,7 +3,6 @@ import { GigaverseContext } from "../context";
 import { formatEther } from "viem";
 import { usePriceStore } from "@/store/priceStore";
 import { logger } from "@/utils/logger";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface InventoryTabProps {
   state: ContextState<GigaverseContext>;
@@ -18,10 +17,9 @@ export function InventoryTab({ state }: InventoryTabProps) {
   logger.debug("Gear inventory loaded", { gearCount: gear.length, gear });
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Inventory content wrapper with flex-1 and ScrollArea */}
-      <div className="flex-1 overflow-hidden min-h-0">
-        <ScrollArea className="h-full">
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Inventory content wrapper with flex-1 and native scroll */}
+      <div className="flex-1 overflow-auto min-h-0">
           <div className="flex flex-col gap-4 pr-4 pb-20">
             {/* Equipped Section */}
             <div>
@@ -125,7 +123,6 @@ export function InventoryTab({ state }: InventoryTabProps) {
               </div>
             </div>
           </div>
-        </ScrollArea>
       </div>
     </div>
   );
