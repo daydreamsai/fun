@@ -18,8 +18,8 @@ importers:
         specifier: ^0.1.2
         version: 0.1.2(ai@5.0.0(zod@3.25.76))(zod@3.25.76)
       '@daydreamsai/core':
-        specifier: ^0.3.16
-        version: 0.3.16(typescript@5.9.2)
+        specifier: 0.3.18
+        version: 0.3.18(typescript@5.9.2)
       '@openrouter/ai-sdk-provider':
         specifier: ^1.1.2
         version: 1.1.2(ai@5.0.0(zod@3.25.76))(zod@3.25.76)
@@ -418,8 +418,8 @@ packages:
       ai: ^5.0.11
       zod: ^4.0.5
 
-  '@daydreamsai/core@0.3.16':
-    resolution: {integrity: sha512-VkubmPlOOMuI8oSH3Ll1H74Vpk/mMUQeNcEYG/WxIvshmcEL8MtDuHmX2XfImQZLjD3Pcg+mGVsOWSQ50EQoaA==}
+  '@daydreamsai/core@0.3.18':
+    resolution: {integrity: sha512-pkCvzKy81aQR7xvg0W++bjvt0ZjM0/Ltslp/CW8RvFPILIgvKHP84lh/IZnZ4oNmWVo7mO/nUfhGj6ZwtFhkEw==}
     peerDependencies:
       typescript: 5.8.3
 
@@ -1753,6 +1753,7 @@ packages:
 
   '@simplewebauthn/types@9.0.1':
     resolution: {integrity: sha512-tGSRP1QvsAvsJmnOlRQyw/mvK9gnPtjEc5fg2+m8n+QUa+D7rvrKkOYyfpy42GTs90X3RDOnqJgfHt+qO67/+w==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   '@socket.io/component-emitter@3.1.2':
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
@@ -4963,7 +4964,7 @@ snapshots:
       ai: 5.0.0(zod@3.25.76)
       zod: 3.25.76
 
-  '@daydreamsai/core@0.3.16(typescript@5.9.2)':
+  '@daydreamsai/core@0.3.18(typescript@5.9.2)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.2
       '@ai-sdk/ui-utils': 1.2.3(zod@4.0.16)
