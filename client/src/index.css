@@ -158,19 +158,59 @@
   }
 
   ::-webkit-scrollbar {
-    width: 5px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 5px;
+    background: hsl(var(--muted-foreground) / 0.6);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.8);
+  }
+  ::-webkit-scrollbar-corner {
+    background: hsl(var(--muted) / 0.3);
   }
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.6) hsl(var(--muted) / 0.3);
+  }
+
+  /* Force scrollbars to always be visible */
+  ::-webkit-scrollbar {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  ::-webkit-scrollbar-track {
+    background: #333 !important;
+    border-radius: 4px !important;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #666 !important;
+    border-radius: 4px !important;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #888 !important;
+  }
+
+  /* Force scrollbars for all elements */
+  * {
+    scrollbar-width: auto !important;
+    scrollbar-color: #666 #333 !important;
+  }
+
+  /* Override any hiding of scrollbars */
+  [data-radix-scroll-area-viewport] {
+    scrollbar-width: auto !important;
+  }
+  [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+    width: 12px !important;
+    display: block !important;
   }
 }
 

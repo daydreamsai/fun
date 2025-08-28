@@ -1,12 +1,12 @@
 import {
+  InMemoryGraphProvider,
+  InMemoryKeyValueProvider,
+  InMemoryVectorProvider,
   LogLevel,
   Logger,
-  type MemoryStore,
+  MemorySystem,
   createContainer,
   createDreams,
-  createMemory,
-  createMemoryStore,
-  createVectorStore,
   service,
 } from "@daydreamsai/core";
 import { chat } from "./chat";
@@ -63,8 +63,17 @@ async function idbClear(): Promise<void> {
 }
 // --- End IndexedDB Setup ---
 
-export const browserStorage = (): MemoryStore => {
-  const memoryStore = createMemoryStore();
+interface BrowserStorage {
+  get<T>(key: string): Promise<T | null>;
+  set(key: string, value: unknown): Promise<void>;
+  clear(): Promise<void>;
+  delete(key: string): Promise<boolean>;
+  keys(): Promise<string[]>;
+}
+
+export const browserStorage = async (): Promise<BrowserStorage> => {
+  const memoryStore = new InMemoryKeyValueProvider();
+  await memoryStore.initialize();
 
   return {
     async get<T>(key: string): Promise<T | null> {
@@ -109,20 +118,22 @@ export const browserStorage = (): MemoryStore => {
         // 1. Clear IndexedDB
         await idbClear();
         // 2. Clear in-memory cache
-        await memoryStore.clear();
+
+        // await memoryStore
       } catch (error) {
         console.error("IndexedDB clear failed:", error);
         // Decide how to handle partial failure (e.g., only memory cleared)
-        await memoryStore.clear(); // Ensure memory is cleared even if IDB fails
+        // await memoryStore.clear(); // Ensure memory is cleared even if IDB fails
         throw error; // Re-throw to indicate persistence layer failure
       }
     },
-    async delete(key: string): Promise<void> {
+    async delete(key: string): Promise<boolean> {
       try {
         // 1. Delete from IndexedDB
         await idbDelete(key);
         // 2. Delete from in-memory cache
         await memoryStore.delete(key);
+        return true;
       } catch (error) {
         console.error(`IndexedDB delete failed for key "${key}":`, error);
         await memoryStore.delete(key); // Ensure memory is updated even if IDB fails
@@ -159,33 +170,31 @@ export const browserStorage = (): MemoryStore => {
 };
 
 const cacheService = service({
-  register(container) {
-    container.singleton("cache", () => {
-      const store = container.resolve<MemoryStore>("memory");
+  async boot(container) {
+    const store = await container.resolve<Promise<BrowserStorage>>("memory");
 
-      const cache: Cache = {
-        async get<T>(key: string, resolve: () => Promise<T>): Promise<T> {
-          const cacheKey = `cache:${key}`;
-          let data = await store.get<T>(cacheKey);
+    const cache: Cache = {
+      async get<T>(key: string, resolve: () => Promise<T>): Promise<T> {
+        const cacheKey = `cache:${key}`;
+        let data = await store.get<T>(cacheKey);
 
-          if (!data) {
-            data = await resolve();
-            await store.set(cacheKey, data);
-          }
+        if (!data) {
+          data = await resolve();
+          await store.set(cacheKey, data);
+        }
 
-          return data;
-        },
-      };
+        return data;
+      },
+    };
 
-      return cache;
-    });
+    container.instance("cache", cache);
   },
 });
 
 const memoryMigrator = service({
   async boot(container) {
     const currentMemoryVersion = 2;
-    const store = container.resolve<MemoryStore>("memory");
+    const store = await container.resolve<Promise<BrowserStorage>>("memory");
     const version = await store.get<number>("version");
 
     if (version !== currentMemoryVersion) {
@@ -209,17 +218,20 @@ export function createAgent() {
   });
 
   return createDreams({
-    logger: new Logger({ level: LogLevel.DEBUG }),
+    logger: new Logger({ level: LogLevel.INFO }),
     container,
     model: openrouter(settings.model),
     modelSettings: {
       temperature: 0,
     },
-    memory: createMemory(
-      memoryStorage,
-      createVectorStore(),
-      openrouter("openai/gpt-4-turbo")
-    ),
+    memory: new MemorySystem({
+      providers: {
+        kv: new InMemoryKeyValueProvider(),
+        vector: new InMemoryVectorProvider(),
+        graph: new InMemoryGraphProvider(),
+      },
+      logger: new Logger({ level: LogLevel.INFO }),
+    }),
     extensions: [chat],
     services: [memoryMigrator, cacheService],
   });

@@ -1,137 +1,101 @@
 import { ContextState } from "@daydreamsai/core";
 import { GigaverseContext } from "../context";
-import { cn } from "@/lib/utils";
-import { perc } from "../utils";
-import { Dungeons, DungeonState } from "./Dungeons";
+import { DungeonState } from "./Dungeons";
 import { Startup } from "./Startup";
-import { ListRestart } from "lucide-react";
+
+interface UpdateStats {
+  lastUpdateTime: number;
+  pendingUpdates: number;
+  totalUpdates: number;
+  isUpdating: boolean;
+}
 
 export function OverviewTab({
   state,
+  lastUpdated,
+  refresh,
+  updateStats,
 }: {
   state: ContextState<GigaverseContext> | undefined;
   lastUpdated: number;
   refresh: () => void;
+  updateStats?: UpdateStats;
 }) {
   if (!state) return null;
 
   const { dungeon } = state.memory;
   const { game } = state.options;
-  const { player } = game;
-
-  const energy = player.energy.entities[0].parsedData;
-
-  // Calculate time until full energy
-  const energyNeeded = energy.maxEnergy - energy.energyValue;
-  const secondsUntilFull =
-    energyNeeded > 0
-      ? Math.ceil(energyNeeded / (energy.regenPerHour / 3600))
-      : 0;
-  const minutesUntilFull = Math.floor(secondsUntilFull / 60);
-  const hoursUntilFull = Math.floor(minutesUntilFull / 60);
-  const remainingMinutes = minutesUntilFull % 60;
 
   const playerHealth = dungeon?.player.health.current;
 
   return (
-    <div className="flex flex-col gap-4 pb-8">
-      <div className="">
-        <h4 className="text-secondary-foreground uppercase text-center bg-secondary mb-2 flex items-center justify-between px-2">
-          Noob #{player.account.noob.docId}
-          <button onClick={() => {}}>
-            <ListRestart />
-          </button>
-        </h4>
-        <div className="">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-medium uppercase">
-              Energy{" "}
-              <span className="text-xs text-muted-foreground animate-pulse">
-                {energy.isPlayerJuiced ? "Juiced" : "Not Juiced"}
-              </span>
+    <div className="space-y-3">
+      {/* Player Info Card */}
+      <div className="p-4 border rounded-lg bg-card">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <h4 className="text-lg font-semibold">Noob #{state.options.game.player.account.noob.docId}</h4>
+            <span className="text-sm bg-primary/10 px-2 py-0.5 rounded">
+              {state.options.game.player.energy.entities[0].parsedData.isPlayerJuiced ? "Juiced" : "Standard"}
             </span>
-            <span className="text-sm text-center">
-              {energy.energyValue} / {energy.maxEnergy}
-            </span>
+            <span className="text-sm text-muted-foreground">Lv.{state.options.game.player.account.noob.LEVEL_CID}</span>
           </div>
-          <div className="relative w-full bg-muted h-2.5 overflow-hidden">
-            <div
-              className={cn(
-                "h-2.5 transition-all duration-500",
-                energy.isPlayerJuiced ? "bg-accent animate-pulse" : "bg-primary"
-              )}
-              style={{
-                width: `${Math.min(100, perc(energy.energyValue, energy.maxEnergy))}%`,
-              }}
-            />
-            {/* Subtle regeneration indicator */}
-            {energy.energyValue < energy.maxEnergy && (
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-slide-x" />
-            )}
+          
+          {/* Energy Info */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Energy:</span>
+              <div className="flex-1 flex justify-between text-sm">
+                <span>{state.options.game.player.energy.entities[0].parsedData.energyValue} / {state.options.game.player.energy.entities[0].parsedData.maxEnergy}</span>
+                <span className="text-muted-foreground">+{state.options.game.player.energy.entities[0].parsedData.regenPerHour}/h</span>
+              </div>
+            </div>
+            
+            {/* Energy Bar */}
+            <div className="relative w-full bg-muted h-2 rounded-full overflow-hidden">
+              <div
+                className={`h-2 transition-all duration-500 rounded-full ${
+                  state.options.game.player.energy.entities[0].parsedData.isPlayerJuiced ? "bg-accent" : "bg-primary"
+                }`}
+                style={{
+                  width: `${Math.min(100, (state.options.game.player.energy.entities[0].parsedData.energyValue / state.options.game.player.energy.entities[0].parsedData.maxEnergy) * 100)}%`,
+                }}
+              />
+            </div>
+            
+            {/* Time until full */}
+            {(() => {
+              const energy = state.options.game.player.energy.entities[0].parsedData;
+              const energyNeeded = energy.maxEnergy - energy.energyValue;
+              if (energyNeeded > 0) {
+                const secondsUntilFull = Math.ceil(energyNeeded / (energy.regenPerHour / 3600));
+                const minutesUntilFull = Math.floor(secondsUntilFull / 60);
+                const hoursUntilFull = Math.floor(minutesUntilFull / 60);
+                const remainingMinutes = minutesUntilFull % 60;
+                return (
+                  <div className="text-sm text-muted-foreground text-right">
+                    {hoursUntilFull > 0 ? `${hoursUntilFull}h ${remainingMinutes}m` : `${minutesUntilFull}m`} until full
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
-          <div className="flex justify-between items-center mt-1">
-            <span className="text-xs text-muted-foreground">
-              +{energy.regenPerHour}/h
-            </span>
-            {energy.energyValue < energy.maxEnergy && (
-              <span className="text-xs text-muted-foreground">
-                Full in{" "}
-                {hoursUntilFull > 0
-                  ? `${hoursUntilFull}h ${remainingMinutes}m`
-                  : `${minutesUntilFull}m`}
-              </span>
-            )}
+          
+          {/* Player Details */}
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium">{state.options.game.player.account.usernames[0].NAME_CID}</span>
+            <span className="text-muted-foreground">{state.options.game.player.account.noob.OWNER_CID.substring(0, 10)}...</span>
+          </div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Session: {state.id.split(":").pop()?.substring(0, 8)}</span>
+            <span>Last Update: {new Date(lastUpdated).toLocaleTimeString()}</span>
           </div>
         </div>
       </div>
-      {/* <JuiceStats juice={juice} /> */}
 
-      {dungeon && game && playerHealth && playerHealth > 0 ? (
-        <DungeonState state={dungeon} game={game} />
-      ) : (
-        <Startup state={state} />
-      )}
-      <div className="text-sm space-y-2">
-        <h4 className="text-secondary-foreground uppercase text-center bg-secondary">
-          Player Info
-        </h4>
-        <div className="space-y-0.5">
-          <div>{player.account.usernames[0].NAME_CID}</div>
-          <div className="text-xs mt-0.5 text-muted-foreground">
-            {player.account.noob.OWNER_CID}
-          </div>
-        </div>
-        <div className="">Noob #{player.account.noob.docId}</div>
-      </div>
-      <div className="text-sm space-y-2">
-        <h4 className="text-secondary-foreground uppercase text-center bg-secondary">
-          Session Info
-        </h4>
-        <div className="space-y-0.5">
-          <p>Session ID: {state.id.split(":").pop()}</p>
-          <p>Started: {new Date().toLocaleDateString()}</p>
-        </div>
-      </div>
-      {/* <div className="mt-2 flex gap-2">
-        <Button
-          className="w-full"
-          variant="secondary"
-          onClick={() => {
-            refresh();
-          }}
-        >
-          Refresh
-        </Button>
-        <Button
-          className="w-full"
-          variant="secondary"
-          onClick={() => {
-            refresh();
-          }}
-        >
-          Start new Session
-        </Button>
-      </div> */}
+      {/* Always show Startup - dungeon info is now in right panel */}
+      <Startup state={state} />
     </div>
   );
 }

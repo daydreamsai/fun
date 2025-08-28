@@ -11,26 +11,156 @@ import {
   GetConsumablesResponse,
   GetBalancesResponse,
 } from "./client/types/responses";
+import { logger } from "@/utils/logger";
 
 export function parseDungeonState(
   response: BaseResponse
 ): GigaverseDungeonState | undefined {
-  if (!response.data?.run || !response.data?.entity) return undefined;
+  logger.debug("Parsing dungeon state", {
+    hasResponse: !!response,
+    hasData: !!response?.data,
+    hasRun: !!response?.data?.run,
+    hasEntity: !!response?.data?.entity
+  });
+
+  if (!response) {
+    logger.debug("No response object received");
+    return undefined;
+  }
+
+  if (!response.data) {
+    logger.debug("No response.data found");
+    return undefined;
+  }
+
+  // Check if we have basic dungeon info even without run data
+  if (!response.data.entity) {
+    logger.debug("No response.data.entity found");
+    return undefined;
+  }
+
+  // If we have entity but no run, create a minimal state
+  if (!response.data.run) {
+    logger.warn("No run data found, creating minimal state");
+    return {
+      currentRoom: response.data.entity.ROOM_NUM_CID || 1,
+      currentDungeon: response.data.entity.DUNGEON_ID_CID || 1,
+      currentEnemy: response.data.entity.ENEMY_CID || 1,
+      
+      // Create minimal player state
+      player: {
+        id: "minimal",
+        _id: "minimal",
+        health: { 
+          current: 1, 
+          starting: 1, 
+          currentMax: 1, 
+          startingMax: 1 
+        },
+        shield: { 
+          current: 0, 
+          starting: 0, 
+          currentMax: 0, 
+          startingMax: 0 
+        },
+        lastMove: "",
+        rock: { 
+          startingATK: 1, 
+          startingDEF: 1, 
+          currentATK: 1, 
+          currentDEF: 1, 
+          currentCharges: 3, 
+          maxCharges: 3 
+        },
+        paper: { 
+          startingATK: 1, 
+          startingDEF: 1, 
+          currentATK: 1, 
+          currentDEF: 1, 
+          currentCharges: 3, 
+          maxCharges: 3 
+        },
+        scissor: { 
+          startingATK: 1, 
+          startingDEF: 1, 
+          currentATK: 1, 
+          currentDEF: 1, 
+          currentCharges: 3, 
+          maxCharges: 3 
+        },
+        thisPlayerWin: false,
+        otherPlayerWin: false,
+        equipment: [],
+      },
+      
+      items: response.data.entity.GAME_ITEM_ID_CID_array || [],
+      
+      // Create minimal enemy state  
+      enemy: {
+        id: "minimal",
+        _id: "minimal",
+        health: { 
+          current: 1, 
+          starting: 1, 
+          currentMax: 1, 
+          startingMax: 1 
+        },
+        shield: { 
+          current: 0, 
+          starting: 0, 
+          currentMax: 0, 
+          startingMax: 0 
+        },
+        lastMove: "",
+        rock: { 
+          startingATK: 1, 
+          startingDEF: 1, 
+          currentATK: 1, 
+          currentDEF: 1, 
+          currentCharges: 3, 
+          maxCharges: 3 
+        },
+        paper: { 
+          startingATK: 1, 
+          startingDEF: 1, 
+          currentATK: 1, 
+          currentDEF: 1, 
+          currentCharges: 3, 
+          maxCharges: 3 
+        },
+        scissor: { 
+          startingATK: 1, 
+          startingDEF: 1, 
+          currentATK: 1, 
+          currentDEF: 1, 
+          currentCharges: 3, 
+          maxCharges: 3 
+        },
+        thisPlayerWin: false,
+        otherPlayerWin: false,
+        equipment: [],
+      },
+      
+      lastBattleResult: null,
+      lootOptions: [],
+      lootPhase: false,
+    };
+  }
 
   const [player, enemy] = response.data.run.players; // First player is the user
 
-  let lastBattleResult: any = null;
+  let lastBattleResult: string | null = null;
 
   // Determine battle result based on thisPlayerWin and otherPlayerWin properties
-  if (player.thisPlayerWin === true) {
+  if (player?.thisPlayerWin === true) {
     lastBattleResult = "win";
-  } else if (enemy.thisPlayerWin === true) {
+  } else if (enemy?.thisPlayerWin === true) {
     lastBattleResult = "lose";
-  } else if (enemy.lastMove) {
+  } else if (enemy?.lastMove) {
     lastBattleResult = "draw";
   }
 
-  return {
+  const dungeonState = {
     currentRoom: response.data.entity.ROOM_NUM_CID,
     currentDungeon: response.data.entity.DUNGEON_ID_CID,
     currentEnemy: response.data.entity.ENEMY_CID,
@@ -43,9 +173,18 @@ export function parseDungeonState(
 
     lastBattleResult,
 
-    lootOptions: response.data.run.lootOptions,
-    lootPhase: response.data.run.lootPhase,
+    lootOptions: response.data.run.lootOptions || [],
+    lootPhase: response.data.run.lootPhase || false,
   };
+
+  logger.debug("Successfully parsed dungeon state", {
+    currentRoom: dungeonState.currentRoom,
+    currentDungeon: dungeonState.currentDungeon,
+    playerHealth: dungeonState.player?.health?.current,
+    enemyHealth: dungeonState.enemy?.health?.current
+  });
+
+  return dungeonState;
 }
 
 export function parseItems(

@@ -1,6 +1,5 @@
 import * as React from "react";
 import {
-  Bot,
   MessageSquare,
   History,
   Settings,
@@ -8,6 +7,7 @@ import {
   Github,
   Brain,
 } from "lucide-react";
+import { logger } from "@/utils/logger";
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
@@ -23,26 +23,12 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "@tanstack/react-router";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAgentStore } from "@/store/agentStore";
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useInitializedAgent } from "@/hooks/agent";
 
 // This is sample data.
 const data = {
-  user: {
-    name: "sleever",
-    email: "m@sleever.ai",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "sleever",
-      logo: Bot,
-      plan: "Enterprise",
-    },
-  ],
   navMain: [
     // {
     //   title: "Home",
@@ -108,7 +94,6 @@ const data = {
 // Create a new ChatHistory component
 function ChatHistoryList() {
   const { agent, isLoading: agentLoading } = useInitializedAgent();
-  const queryClient = useQueryClient();
 
   const chats = useQuery({
     queryKey: ["agent:chats"],
@@ -116,16 +101,18 @@ function ChatHistoryList() {
       if (!agent) return [];
       try {
         const contexts = await agent.getContexts();
-        console.log("contexts", contexts);
+        logger.debug("Fetched agent contexts", { count: contexts.length, contexts });
         return contexts.filter((ctx) => ctx.type === "gigaverse");
       } catch (error) {
-        console.error("Error fetching contexts:", error);
+        logger.error("Failed to fetch agent contexts", error);
         return [];
       }
     },
     enabled: !!agent,
     retry: 3,
     refetchOnWindowFocus: true,
+    refetchInterval: 5000, // Refresh every 5 seconds to catch new chats
+    staleTime: 2000, // Consider data stale after 2 seconds
   });
 
   if (agentLoading || chats.isLoading) {
@@ -158,7 +145,7 @@ function ChatHistoryList() {
 
   return (
     <div>
-      {chats?.data.map((chat: any) => (
+      {chats?.data.map((chat) => (
         <SidebarMenuSubItem key={chat.key}>
           <SidebarMenuSubButton asChild>
             <Link to={"/games/gigaverse/$chatId"} params={{ chatId: chat.key }}>

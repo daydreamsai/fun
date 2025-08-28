@@ -70,7 +70,7 @@ export function Startup({ state }: StartupProps) {
 
   const { gear, consumables } = player;
 
-  console.log(consumables);
+  // console.log(consumables);
 
   const handleGameModeChange = (mode: "dungeon" | "fishing") => {
     setGameMode(mode);
@@ -151,40 +151,55 @@ export function Startup({ state }: StartupProps) {
   };
 
   return (
-    <Card className="w-full border-none">
-      <CardHeader>
-        <CardTitle>Gigaverse Configuration</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Tabs
-          value={gameMode}
-          onValueChange={(v) =>
-            handleGameModeChange(v as "dungeon" | "fishing")
-          }
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="dungeon">Dungeon</TabsTrigger>
-            {/* <TabsTrigger value="fishing">Fishing</TabsTrigger> */}
-          </TabsList>
+    <div className="bg-card p-3 rounded-lg border">
+      <h3 className="text-sm font-semibold mb-3">Start New Run</h3>
+      <Tabs
+        value={gameMode}
+        onValueChange={(v) =>
+          handleGameModeChange(v as "dungeon" | "fishing")
+        }
+      >
+        <TabsList className="grid w-full grid-cols-1 mb-3">
+          <TabsTrigger value="dungeon">Dungeon Runs</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="dungeon" className="space-y-6">
-            {/* Number of Runs */}
-            <div className="space-y-2">
-              <Label htmlFor="runs">Number of Runs</Label>
-              <Input
-                id="runs"
-                type="number"
-                min="1"
-                value={config.type === "dungeon" ? config.numberOfRuns : 1}
-                onChange={(e) => handleRunsChange(e.target.value)}
-                className="w-32"
-              />
+        <TabsContent value="dungeon" className="space-y-3">
+            {/* Number of Runs and Loot Strategy inline */}
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <Label htmlFor="runs" className="text-xs">Runs</Label>
+                <Input
+                  id="runs"
+                  type="number"
+                  min="1"
+                  value={config.type === "dungeon" ? config.numberOfRuns : 1}
+                  onChange={(e) => handleRunsChange(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="flex-1">
+                <Label className="text-xs">Strategy</Label>
+                <Select
+                  value={config.type === "dungeon" ? config.lootStrategy : "Balanced"}
+                  onValueChange={handleLootStrategyChange}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Balanced">Balanced</SelectItem>
+                    <SelectItem value="Glass Canon">Glass Canon</SelectItem>
+                    <SelectItem value="Tank">Tank</SelectItem>
+                    <SelectItem value="Two Move Specialist">Two Move</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Dungeon Selection */}
-            <div className="space-y-2">
-              <Label>Select Dungeon</Label>
-              <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Select Dungeon</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
                 {dungeons.map((dungeon) => {
                   const isCheckpointClear =
                     dungeon.CHECKPOINT_CID > 0
@@ -215,31 +230,25 @@ export function Startup({ state }: StartupProps) {
                           ? "default"
                           : "outline"
                       }
-                      className="h-auto flex-col py-4 px-3"
+                      className="h-auto flex-col py-2 px-2"
                       disabled={!canPlay}
                       onClick={() =>
                         handleDungeonSelect(dungeon.NAME_CID, dungeon.ID_CID)
                       }
                     >
-                      <span className="font-medium text-xs mb-2 uppercase">
+                      <span className="font-medium text-xs mb-1">
                         {dungeon.NAME_CID}
                       </span>
-                      <div className="flex flex-col gap-1 w-full">
-                        <Badge
-                          variant="secondary"
-                          className="w-full justify-center"
-                        >
-                          Energy: {dungeon.ENERGY_CID}
+                      <div className="flex gap-1 text-[10px]">
+                        <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                          ⚡{dungeon.ENERGY_CID}
                         </Badge>
-                        <Badge className="w-full justify-center">
-                          Level: {requiredSkillLevel}
+                        <Badge className="text-[10px] px-1 py-0">
+                          Lv.{requiredSkillLevel}
                         </Badge>
                         {!isCheckpointClear && (
-                          <Badge
-                            variant="destructive"
-                            className="w-full justify-center"
-                          >
-                            Locked
+                          <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                            🔒
                           </Badge>
                         )}
                       </div>
@@ -249,104 +258,17 @@ export function Startup({ state }: StartupProps) {
               </div>
             </div>
 
-            {/* Loot Strategy Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="loot-strategy">Loot Strategy</Label>
-              <Select
-                value={
-                  config.type === "dungeon" ? config.lootStrategy : "Balanced"
-                }
-                onValueChange={handleLootStrategyChange}
-              >
-                <SelectTrigger id="loot-strategy" className="w-full">
-                  <SelectValue placeholder="Select a loot strategy" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Balanced">Balanced</SelectItem>
-                  <SelectItem value="Glass Canon">Glass Canon</SelectItem>
-                  <SelectItem value="Tank">Tank</SelectItem>
-                  <SelectItem value="Two Move Specialist">
-                    Two Move Specialist
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Use Consumables Toggle */}
-            {/* <div className="flex items-center justify-between">
-              <Label htmlFor="consumables" className="flex flex-col gap-1">
-                <span>Use Consumables</span>
-                <span className="text-sm text-muted-foreground font-normal">
-                  Automatically use consumables during runs
-                </span>
-              </Label>
-              <Switch
-                id="consumables"
-                checked={
-                  config.type === "dungeon" ? config.useConsumables : false
-                }
-                onCheckedChange={handleConsumablesToggle}
-              />
-            </div> */}
-
-            <Separator />
-
-            {/* Current Equipment */}
-            <div className="space-y-2">
-              <Label>Current Equipment</Label>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/50">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Head
-                  </span>
-                  <span className="text-sm font-medium">
-                    {gear.head?.NAME_CID || "None"}
-                  </span>
-                  <img
-                    src={gear.head?.ICON_URL_CID}
-                    alt={gear.head?.NAME_CID || ""}
-                    className="w-10 h-10 rounded-md"
-                  />
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-secondary/50">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Body
-                  </span>
-                  <span className="text-sm font-medium">
-                    {gear.body?.NAME_CID || "None"}
-                  </span>
-                  <img
-                    src={gear.body?.ICON_URL_CID}
-                    alt={gear.body?.NAME_CID || ""}
-                    className="w-10 h-10 rounded-md"
-                  />
-                </div>
+            {/* Equipment Summary */}
+            <div className="flex gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Head:</span>
+                <span className="font-medium">{gear.head?.NAME_CID || "None"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Body:</span>
+                <span className="font-medium">{gear.body?.NAME_CID || "None"}</span>
               </div>
             </div>
-
-            {/* Available Consumables */}
-            {consumables.length > 0 && (
-              <div className="space-y-2">
-                <Label>Available Consumables</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {consumables.map((item) => (
-                    <div
-                      key={item.item.id}
-                      className="flex flex-col justify-between items-center p-1 rounded-lg bg-secondary/30 text-sm"
-                    >
-                      <span className="text-xs uppercase">
-                        {item.item.name} [x{item.balance}]
-                      </span>
-                      <img
-                        src={item.item.img}
-                        alt={item.item.name}
-                        className="w-10 h-10 rounded-md"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </TabsContent>
 
           <TabsContent value="fishing" className="space-y-6">
@@ -381,28 +303,18 @@ export function Startup({ state }: StartupProps) {
           </TabsContent>
         </Tabs>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 mt-6">
-          <Button
-            className="flex-1"
-            variant="default"
-            onClick={handleStartGame}
-            disabled={
-              (config.type === "dungeon" && !config.selectedDungeon) ||
-              (config.type === "fishing" && consumables.length === 0)
-            }
-          >
-            Start {gameMode === "dungeon" ? "Dungeon Run" : "Fishing"}
-          </Button>
-          <Button variant="outline">Save Configuration</Button>
-        </div>
-
-        {/* Current Configuration Preview */}
-        {/* <div className="mt-6 p-4 rounded-lg bg-muted">
-          <h4 className="text-sm font-medium mb-2">Current Configuration</h4>
-          <pre className="text-xs">{JSON.stringify(config, null, 2)}</pre>
-        </div> */}
-      </CardContent>
-    </Card>
+      {/* Action Button */}
+      <Button
+        className="w-full mt-3"
+        variant="default"
+        onClick={handleStartGame}
+        disabled={
+          (config.type === "dungeon" && !config.selectedDungeon) ||
+          (config.type === "fishing" && consumables.length === 0)
+        }
+      >
+        🚀 Start {gameMode === "dungeon" ? "Dungeon Run" : "Fishing"}
+      </Button>
+    </div>
   );
 }

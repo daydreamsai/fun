@@ -48,7 +48,16 @@ export function RomsTab({
       const statusKey = `${romId}-${claimId}`;
       setClaimingStatus((state) => ({ ...state, [statusKey]: true }));
     },
-    onSettled(_, __, { romId, claimId }) {
+    onSuccess(_, { romId, claimId }) {
+      // Keep the spinner going and wait before refetching
+      setTimeout(() => {
+        const statusKey = `${romId}-${claimId}`;
+        setClaimingStatus((state) => ({ ...state, [statusKey]: false }));
+        romsQuery.refetch();
+      }, 2000);
+    },
+    onError(_, { romId, claimId }) {
+      // Stop spinner immediately on error
       const statusKey = `${romId}-${claimId}`;
       setClaimingStatus((state) => ({ ...state, [statusKey]: false }));
     },
@@ -72,7 +81,7 @@ export function RomsTab({
   }
 
   return (
-    <div className="grid gap-2 px-2">
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
       {roms.map((rom) => {
         // Calculate loading states for this ROM's buttons
         const isClaimingEnergy = claimingStatus[`${rom.docId}-energy`] || false;
@@ -99,22 +108,22 @@ export function RomsTab({
         );
 
         return (
-          <Card key={rom._id} className="bg-card/80 border p-3">
-            <div className="flex items-center">
-              <h3 className="font-semibold uppercase">
-                GIGA-ROM #{rom.docId}{" "}
+          <Card key={rom._id} className="bg-card p-3 border">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold">
+                ROM #{rom.docId}
               </h3>
-              <Badge variant="secondary" className="ml-auto">
+              <Badge variant="secondary" className="text-xs">
                 {rom.factoryStats.faction}
               </Badge>
             </div>
-            <div className="flex gap-2 text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground mb-3 space-x-2">
               <span>{rom.factoryStats.tier}</span>
               <span>{rom.factoryStats.memory}</span>
               <span>#{rom.factoryStats.serialNumber}</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 mt-3">
+            <div className="space-y-2">
               <Production
                 type="energy"
                 value={calculatedEnergy}
@@ -160,10 +169,11 @@ export function RomsTab({
   );
 }
 
-const colors = {
-  energy: "bg-accent",
-  dust: "bg-accent",
-  shard: "bg-primary",
+const getCircleColor = (type: string, value: number) => {
+  if (value >= 1) {
+    return "bg-primary";
+  }
+  return "bg-accent";
 };
 
 function Production({
@@ -180,30 +190,33 @@ function Production({
   claim: () => void;
 }) {
   return (
-    <div className="flex flex-col text-center">
-      {/* <div className="">{type}</div> */}
-      <div className="flex items-center justify-center space-x-2 bg-muted p-1 rounded border border-border mb-1">
-        <div className={cn("w-4 h-4 rounded-full", colors[type])}></div>
-        <span className="text-xs font-medium tracking-wide">
-          {value?.toFixed(0)}/{""}
-          {max}
-        </span>
+    <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+      <div className="flex items-center gap-2">
+        <div className={cn("w-3 h-3 rounded-full", getCircleColor(type, value))}></div>
+        <span className="text-xs font-medium capitalize">{type}</span>
       </div>
-      <Button
-        variant={isClaiming ? "secondary" : "default"}
-        size="sm"
-        className="w-full text-xs h-6"
-        disabled={isClaiming || value < 1}
-        onClick={() => claim()}
-      >
-        {isClaiming ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
-        ) : value >= 1 ? (
-          "Claim"
-        ) : (
-          "Producing"
-        )}
-      </Button>
+      <div className="flex items-center justify-between">
+        <span className="text-xs">
+          {value?.toFixed(0)}/{max}
+        </span>
+        <div className="ml-3">
+          {(value >= 1 || isClaiming) && (
+            <Button
+              variant={isClaiming ? "secondary" : "default"}
+              size="sm"
+              className="text-xs h-6 px-2"
+              disabled={isClaiming}
+              onClick={() => claim()}
+            >
+              {isClaiming ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                "Claim"
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

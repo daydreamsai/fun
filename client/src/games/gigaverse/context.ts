@@ -1,5 +1,5 @@
 import { context, action, extension, formatXml, xml } from "@daydreamsai/core";
-import { string, z } from "zod";
+import { z } from "zod/v4";
 import { useSettingsStore } from "@/store/settingsStore";
 import { GameClient } from "./client/GameClient";
 import {
@@ -19,6 +19,7 @@ import {
   defaultRules,
   dungeonSection,
   template,
+  templateMinimal,
 } from "./prompts";
 import { ActionPayload } from "./client/types/requests";
 import { Cache } from "@/agent/utils/cache";
@@ -29,6 +30,7 @@ import {
   parseItems,
 } from "./utils";
 import { render } from "./render";
+import { logger } from "@/utils/logger";
 
 export const getApiBaseUrl = () => {
   if (import.meta.env.DEV) {
@@ -39,6 +41,15 @@ export const getApiBaseUrl = () => {
 };
 
 export type GigaverseContext = typeof gigaverseContext;
+
+// Fonction utilitaire pour extraire les charges de façon consistante
+function getPlayerCharges(player: any) {
+  return {
+    rock: player?.rock?.currentCharges ?? player?.rock?.charges,
+    paper: player?.paper?.currentCharges ?? player?.paper?.charges,
+    scissor: player?.scissor?.currentCharges ?? player?.scissor?.charges,
+  };
+}
 
 async function fetchGigaverseState(
   client: GameClient,
@@ -89,104 +100,109 @@ async function fetchDungeonState(
 
 export const gigaverseContext = context({
   type: "gigaverse",
-  schema: {
-    id: string(),
-  },
+  schema: z.object({
+    id: z.string(),
+  }),
   key: ({ id }) => id,
   maxSteps: 100,
   maxWorkingMemorySize: 20,
-  async setup(_, settings, agent) {
-    const {
-      gigaverseToken,
-      abstractAddress: address,
-      maxSteps,
-      maxWorkingMemorySize,
-    } = useSettingsStore.getState();
+  async setup(args, settings, agent) {
+    try {
+      const {
+        gigaverseToken,
+        abstractAddress: address,
+        maxSteps,
+        maxWorkingMemorySize,
+      } = useSettingsStore.getState();
 
-    settings.maxSteps = maxSteps;
-    settings.maxWorkingMemorySize = maxWorkingMemorySize;
+      settings.maxSteps = maxSteps;
+      settings.maxWorkingMemorySize = maxWorkingMemorySize;
 
-    const client = new GameClient(
-      getApiBaseUrl(),
-      gigaverseToken,
-      agent.logger
-    );
+      const client = new GameClient(
+        getApiBaseUrl(),
+        gigaverseToken,
+        agent.logger
+      );
 
-    const cache = agent.container.resolve<Cache>("cache");
+      const cache = agent.container.resolve<Cache>("cache");
 
-    const { items, skills, offchain } = await cache.get(
-      "gigaverse.data:v2",
-      async () => {
-        const items = await client.getAllGameItems();
-        const skills = await client.getAllSkills();
-        const offchain = await client.getStatic();
+      const { items, skills, offchain } = await cache.get(
+        "gigaverse.data:v2",
+        async () => {
+          const items = await client.getAllGameItems();
+          const skills = await client.getAllSkills();
+          const offchain = await client.getStatic();
 
-        return {
+          return {
+            items,
+            skills,
+            offchain,
+          };
+        }
+      );
+
+      const marketplaceFloor = await client.getMarketplaceItemFloor();
+
+      const today = await client.getToday();
+
+      const account = await client.getAccount(address);
+
+      const faction = await client.getFaction(address);
+
+      const equipedGear = await client.getEquipedGear(account.noob.docId);
+
+      const equipedGearParsed = parseEquipedGear(equipedGear, offchain);
+
+      const playerSkills: GetSkillsProgressResponse =
+        await client.getHeroSkillsProgress(account.noob.docId);
+
+      const userBalances = await client.getUserBalances();
+
+      const balances = parseItems(
+        userBalances,
+        items,
+        offchain,
+        marketplaceFloor
+      );
+
+      const consumables = parseItems(
+        userBalances,
+        items,
+        offchain,
+        marketplaceFloor,
+        true
+      );
+
+      const energy = await client.getEnergy(address);
+
+      const fishingState = await client.getFishingState(address);
+
+      return {
+        address,
+        client,
+        game: {
           items,
           skills,
           offchain,
-        };
-      }
-    );
-
-    const marketplaceFloor = await client.getMarketplaceItemFloor();
-
-    const today = await client.getToday();
-
-    const account = await client.getAccount(address);
-
-    const faction = await client.getFaction(address);
-
-    const equipedGear = await client.getEquipedGear(account.noob.docId);
-
-    const equipedGearParsed = parseEquipedGear(equipedGear, offchain);
-
-    const playerSkills: GetSkillsProgressResponse =
-      await client.getHeroSkillsProgress(account.noob.docId);
-
-    const userBalances = await client.getUserBalances();
-
-    const balances = parseItems(
-      userBalances,
-      items,
-      offchain,
-      marketplaceFloor
-    );
-
-    const consumables = parseItems(
-      userBalances,
-      items,
-      offchain,
-      marketplaceFloor,
-      true
-    );
-
-    const energy = await client.getEnergy(address);
-
-    const fishingState = await client.getFishingState(address);
-
-    return {
-      address,
-      client,
-      game: {
-        items,
-        skills,
-        offchain,
-        marketplaceFloor,
-        player: {
-          account,
-          faction,
-          skills: playerSkills,
-          balances,
-          consumables,
-          energy,
-          gear: equipedGearParsed,
+          marketplaceFloor,
+          player: {
+            account,
+            faction,
+            skills: playerSkills,
+            balances,
+            consumables,
+            energy,
+            gear: equipedGearParsed,
+          },
+          today,
+          fishingState,
         },
-        today,
-        fishingState,
-      },
-      actionToken: "" as string | number,
-    };
+        actionToken: "" as string | number,
+      };
+    } catch (setupError) {
+      console.error("❌ SETUP ERROR:", setupError);
+      throw setupError;
+    }
   },
 
   async create({ options }): Promise<
@@ -224,20 +240,37 @@ export const gigaverseContext = context({
     state.settings.maxSteps ??= maxSteps;
     state.settings.maxWorkingMemorySize ??= maxWorkingMemorySize;
 
+    // Use cache if data is fresh (< 10s old)
     if (
       state.memory.dungeon &&
       state.memory.lastUpdate &&
       Date.now() - state.memory.lastUpdate < 10 * 1000
     ) {
-      console.log("using cache");
       return;
-    } else {
-      console.log("skipping cache");
     }
 
     const dungeon = await fetchDungeonState(state.options.client);
 
     if (dungeon) {
+      // Validate critical data before storing
+      if (
+        !dungeon.player ||
+        !dungeon.player.rock ||
+        dungeon.player.rock.currentCharges === undefined
+      ) {
+        console.error(
+          "⚠️ Loader: Incomplete dungeon state from fetchDungeonState:",
+          {
+            hasPlayer: !!dungeon.player,
+            hasPlayerRock: !!dungeon.player?.rock,
+            rockCharges: dungeon.player?.rock?.currentCharges,
+            playerStructure: Object.keys(dungeon.player || {}),
+          }
+        );
+        // Don't store corrupted data
+        return;
+      }
+
       state.memory.dungeon = dungeon;
       if (dungeon.player.health.current === 0) {
         state.memory.energy = await state.options.client.getEnergy(
@@ -260,31 +293,77 @@ export const gigaverseContext = context({
     }
   },
   async onError(error, ctx) {
-    console.error(error);
+    console.error("❌ ERROR:", error.message);
+
+    // If player died, provide helpful context
+    if (ctx.memory?.dungeon?.player?.health?.current <= 0) {
+      console.error("💀 Player died");
+    }
   },
 
   shouldContinue(ctx) {
-    // // If we're in a dungeon and player is alive, continue
-    // if (ctx.memory.dungeon && ctx.memory.dungeon.player.health.current > 0) {
-    //   return true;
-    // }
+    // Player alive in dungeon - continue
+    if (ctx.memory?.dungeon && ctx.memory.dungeon.player.health.current > 0) {
+      return true;
+    }
 
-    // If player died or we're not in a dungeon, stop
-    return false;
+    // Player explicitly died - stop
+    if (ctx.memory?.dungeon && ctx.memory.dungeon.player.health.current <= 0) {
+      return false;
+    }
+
+    // Has energy and game context - continue to allow dungeon detection
+    const hasEnergy = ctx.memory?.energy?.entities?.[0]?.parsedData?.energy > 0;
+    const hasGameContext = !!ctx.options?.game;
+
+    return hasEnergy && hasGameContext;
   },
 
   render({ memory, options: { game } }) {
     const { selected, templates } = useTemplateStore.getState();
 
-    const instructionsTemplate = selected.gigaverse?.instructions
-      ? templates.gigaverse.find(
-          (t) => t.id === selected.gigaverse?.instructions
-        )?.prompt
-      : defaultInstructions;
+    const instructionsTemplate =
+      templates.gigaverse?.find(
+        (t) => t.id === selected.gigaverse?.instructions
+      )?.prompt || defaultInstructions;
 
+    // Format available dungeons as text for template with energy context
+    const currentEnergy = memory.energy?.entities?.[0]?.parsedData?.energy || 0;
+    const availableDungeons = game.today.dungeonDataEntities
+      .map((dungeon) => {
+        const canAfford = dungeon.ENERGY_CID <= currentEnergy;
+        const affordabilityIcon = canAfford ? "✅" : "❌";
+        const affordabilityText = canAfford ? "AFFORDABLE" : "TOO EXPENSIVE";
+        
+        return `${affordabilityIcon} **${dungeon.NAME_CID}** (ID: ${dungeon.ID_CID}) - ${affordabilityText}
+- Energy Cost: ${dungeon.ENERGY_CID} (you have ${currentEnergy})
+- Checkpoint Required: ${dungeon.CHECKPOINT_CID}`;
+      })
+      .join("\n\n");
+
+    logger.debug("Available dungeons loaded", {
+      count: game.today.dungeonDataEntities.length,
+      dungeons: game.today.dungeonDataEntities.map((d) => ({
+        id: d.ID_CID,
+        name: d.NAME_CID,
+        energy: d.ENERGY_CID,
+      }))
+    });
+
+    // Always use the raw memory data for rendering - validation only at combat time
     const sectionsVariables = {
-      energy: memory.energy.entities[0].parsedData.energy,
+      energy: memory.energy?.entities?.[0]?.parsedData?.energy ?? 0,
       ...memory.dungeon,
+      // Provide fallbacks for template rendering only
+      currentDungeon: memory.dungeon?.currentDungeon ?? "none",
+      currentRoom: memory.dungeon?.currentRoom ?? 0,
+      lootPhase: memory.dungeon?.lootPhase ?? false,
+      lastBattleResult: memory.dungeon?.lastBattleResult ?? "",
+      player: memory.dungeon?.player ?? null,
+      enemy: memory.dungeon?.enemy ?? null,
+      lootOptions: memory.dungeon?.lootOptions ?? [],
+      // Add formatted available dungeons
+      availableDungeons,
     };
 
     const instructions = instructionsTemplate
@@ -356,22 +435,48 @@ export const gigaverseContext = context({
     //   },
     // ]);
 
-    // Use the template from the store
-    const prompt = render(template, {
+    // Include dungeon section only if we actually have dungeon data
+    const shouldIncludeDungeonSection = !!memory.dungeon;
+
+    logger.debug("Dungeon section rendering", {
+      hasDungeonInMemory: !!memory.dungeon,
+      shouldIncludeDungeonSection,
+      currentRoom: memory.dungeon?.currentRoom,
+      currentDungeon: memory.dungeon?.currentDungeon,
+      playerHealth: memory.dungeon?.player?.health?.current
+    });
+
+    // Log render state only in debug mode
+    logger.debug("Render state", {
+      hasDungeon: !!memory.dungeon,
+      playerCharges: memory.dungeon?.player ? getPlayerCharges(memory.dungeon.player) : null,
+      lastUpdate: memory.lastUpdate
+    });
+
+    // Use the minimal template for testing (original backed up as templateOriginalBackup)
+    const prompt = render(templateMinimal, {
       ...memory,
+      ...sectionsVariables, // Add sectionsVariables to include availableDungeons
       instructions: render(instructions ?? "", sectionsVariables),
+      dungeonSection: shouldIncludeDungeonSection
+        ? render(dungeonSection, sectionsVariables)
+        : "",
       state: [
         formatXml(hero),
         formatXml(inventory),
         formatXml(consumables),
         formatXml(gameData),
-        memory.dungeon ? render(dungeonSection, sectionsVariables) : null,
       ]
         .filter((t) => !!t)
         .join("\n"),
     });
 
-    console.log(prompt);
+    // Log prompt details in debug mode only
+    logger.debug("Prompt generated", {
+      availableDungeonsLength: availableDungeons.length,
+      promptLength: prompt.length,
+      promptPreview: prompt.substring(0, 200) + "..."
+    });
 
     return prompt;
   },
@@ -395,7 +500,49 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
       ]),
     },
     async handler({ action }, { memory, options }, _agent) {
+      // Debug log current state before action
+      logger.debug("Action attempted", {
+        action,
+        playerCharges: memory.dungeon?.player ? getPlayerCharges(memory.dungeon.player) : null,
+        playerHealth: memory.dungeon?.player?.health?.current
+      });
+
       try {
+        // Check if player is dead before attempting any action
+        const playerHealth = memory.dungeon?.player?.health?.current ?? 0;
+        if (playerHealth <= 0) {
+          logger.warn("🏴 Player died in dungeon - cleaning up state", {
+            playerHealth,
+            timeSinceUpdate: Date.now() - (memory.lastUpdate || 0),
+            dungeonId: memory.dungeon?.currentDungeon,
+            oldActionToken: options.actionToken
+          });
+
+          // Clear the dungeon state AND action token so agent knows to start a new run
+          memory.dungeon = undefined;
+          memory.lastUpdate = Date.now();
+          options.actionToken = ""; // Clear the old action token!
+
+          logger.info("🧹 State cleaned up after death", {
+            dungeonCleared: !memory.dungeon,
+            actionTokenCleared: options.actionToken === "",
+            readyForNewRun: true
+          });
+
+          return {
+            success: false,
+            error: "Player is dead. Dungeon state cleared.",
+            message: `💀 Your character has died! Your run has ended.
+
+🔄 To continue playing:
+1. Start a new dungeon run using gigaverse.startNewRun
+2. Choose a dungeon you have enough energy for
+3. Begin your adventure again!
+
+Current status: Ready for new run`,
+          };
+        }
+
         const actionToken = options.actionToken ?? "";
         const enemyHealth = memory.dungeon?.enemy.health?.current ?? 0;
 
@@ -407,9 +554,19 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
         }
 
         if (memory.dungeon?.lootPhase && !action.startsWith("loot_")) {
+          const lootOptions = memory.dungeon?.lootOptions || [];
           return {
             success: false,
-            error: "You are in loot phase you must pick a loot action",
+            error: "You are in loot phase! You must pick a loot first.",
+            message: `🎁 LOOT PHASE ACTIVE!
+
+You defeated an enemy and need to choose your reward:
+${lootOptions.map((option, i) => `  ${i + 1}. ${option.name} - ${option.description || 'Mystery reward'}`).join("\n")}
+
+Use one of these actions:
+• loot_one - Choose first reward
+• loot_two - Choose second reward  
+• loot_three - Choose third reward`,
           };
         }
 
@@ -423,9 +580,11 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
           isAction(action) &&
           memory.dungeon?.player[action].currentCharges! <= 0
         ) {
+          const charges = getPlayerCharges(memory.dungeon.player);
+          const currentCharges = charges[action];
           return {
             success: false,
-            error: "You dont have charges for this move",
+            error: `You dont have charges for this move. ${action} has ${currentCharges} charges.`,
           };
         }
 
@@ -447,7 +606,7 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
           response.message.includes("Error: Invalid action token") &&
           response.actionToken
         ) {
-          console.log("retrying with new action token...");
+          logger.info("Retrying action with new token");
           response = await options.client.playMove({
             ...payload,
             actionToken: response.actionToken,
@@ -464,11 +623,58 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
           );
         }
 
+        // Debug server response structure
+        logger.debug("Action response received", {
+          hasRun: !!response.data?.run,
+          hasPlayers: !!response.data?.run?.players,
+          success: response.success
+        });
+
         const oldState = memory.dungeon!;
-        const state = parseDungeonState(response)!;
+        const state = parseDungeonState(response);
+
+
+        if (!state) {
+          throw new Error(
+            "❌ CRITICAL: parseDungeonState returned null after attack - server response corrupted"
+          );
+        }
+
+        if (
+          !state.player ||
+          !state.player.rock ||
+          state.player.rock.currentCharges === undefined
+        ) {
+          console.error("⚠️ Incomplete dungeon state after attack:", {
+            hasPlayer: !!state.player,
+            hasPlayerRock: !!state.player?.rock,
+            rockStructure: state.player?.rock
+              ? Object.keys(state.player.rock)
+              : "no rock",
+          });
+          throw new Error("❌ CRITICAL: Incomplete player data after attack");
+        }
 
         memory.dungeon = state;
         memory.lastUpdate = Date.now();
+        
+        // CRITICAL DEBUG: Log detailed battle results
+        logger.warn("🎯 ATTACK ACTION COMPLETED - STATE UPDATE", {
+          action: action.toUpperCase(),
+          battleResult: state?.lastBattleResult,
+          wasInLootPhase: oldState?.lootPhase,
+          nowInLootPhase: state?.lootPhase,
+          playerHealth: `${state?.player?.health?.current}/${state?.player?.health?.currentMax}`,
+          enemyHealth: `${state?.enemy?.health?.current}/${state?.enemy?.health?.currentMax}`,
+          playerMove: state?.player?.lastMove,
+          enemyMove: state?.enemy?.lastMove,
+          hasLootOptions: !!(state?.lootOptions?.length),
+          lootOptionsCount: state?.lootOptions?.length || 0,
+          room: `${state?.currentRoom}/${state?.currentDungeon}`,
+          charges: getPlayerCharges(state?.player)
+        });
+
+        // 🔍 CHARGE DEBUG: Log final memory state
 
         if (response.gameItemBalanceChanges) {
           const newItems = parseBalanceChange(
@@ -498,35 +704,84 @@ If the lootPhase == false then you can select the Rock, Paper, Scissors option.`
         }
 
         if (action.startsWith("loot")) {
+          logger.info("🎁 LOOT SELECTED", {
+            lootChoice: action,
+            lootPhase: state?.lootPhase,
+            playerHealth: `${state?.player?.health?.current}/${state?.player?.health?.currentMax}`,
+            enemyHealth: `${state?.enemy?.health?.current}/${state?.enemy?.health?.currentMax}`,
+            room: `${state?.currentRoom}/${state?.currentDungeon}`,
+            hasNextEnemy: !!(state?.enemy && state?.enemy?.health?.current > 0)
+          });
+
+          // Determine what happens after loot selection
+          const postLootStatus = state?.lootPhase ? 
+            "🎁 Still in loot phase - more rewards to choose!" :
+            state?.enemy?.health?.current > 0 ? 
+              "⚔️ Next enemy appeared! Ready for battle!" : 
+              state?.currentRoom ? 
+                `🚪 Advancing to room ${(state.currentRoom || 0) + 1}. New challenges await!` :
+                "🏁 Dungeon section completed!";
+
+          const nextAction = state?.lootPhase ? 
+            "Choose another loot option." :
+            state?.enemy?.health?.current > 0 ? 
+              `🥊 Battle the new enemy!
+Choose your attack:
+🪨 rock (${state.player.rock.currentCharges}/${state.player.rock.maxCharges} charges)
+📄 paper (${state.player.paper.currentCharges}/${state.player.paper.maxCharges} charges)  
+✂️ scissor (${state.player.scissor.currentCharges}/${state.player.scissor.maxCharges} charges)` :
+              "The dungeon continues! Keep exploring.";
+
           return {
             success: true,
-            message: response.message,
+            message: `🎉 LOOT OBTAINED: ${action.replace('_', ' ').toUpperCase()}!
+
+${response.message}
+
+${postLootStatus}
+
+${nextAction}`,
             result: response.data,
             previousLootOptions: oldState.lootOptions,
           };
         }
 
+        // Prepare battle summary message
+        const battleSummary = `⚔️ ${action.toUpperCase()} ATTACK EXECUTED!
+
+🔄 Battle Result: ${state.lastBattleResult}
+👤 You used: ${state.player.lastMove || action}
+👹 Enemy used: ${state.enemy.lastMove || 'unknown'}
+
+💚 Player: ${state.player.health.current}/${state.player.health.currentMax} HP (🛡️ ${state.player.shield.current})
+❤️ Enemy: ${state.enemy.health.current}/${state.enemy.health.currentMax} HP (🛡️ ${state.enemy.shield.current})
+
+🏠 Room ${state.currentRoom} | Dungeon ${state.currentDungeon}`;
+
+        const nextSteps = state.lootPhase ? 
+          `🎉 VICTORY! Enemy defeated! 
+🎁 Loot phase activated - choose your reward:
+${state.lootOptions.map((option, i) => `  ${i + 1}. ${option.name} - ${option.description || 'Mystery reward'}`).join("\n")}
+
+Use loot_one, loot_two, or loot_three to claim your prize!` : 
+          `⚔️ BATTLE CONTINUES!
+Choose your next move:
+🪨 rock (${state.player.rock.currentCharges}/${state.player.rock.maxCharges} charges)
+📄 paper (${state.player.paper.currentCharges}/${state.player.paper.maxCharges} charges)  
+✂️ scissor (${state.player.scissor.currentCharges}/${state.player.scissor.maxCharges} charges)`;
+
         return {
           success: true,
           result: response.data,
           gameItemBalanceChanges: response.gameItemBalanceChanges,
-          message: `\
-Successfully performed ${action} attack
+          message: `${battleSummary}
 
-Enemy Move: ${state.enemy.lastMove}
-Battle Result: ${state.lastBattleResult}
-
-Player Health: ${state.player.health.current}
-Player Shield: ${state.player.shield.current}
-
-Enemy Health: ${state.enemy.health.current}
-Enemy Shield: ${state.enemy.shield.current}
-`,
+${nextSteps}`,
         };
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        console.error("Error performing attack action:", error);
+        console.error("❌ Attack action failed:", errorMessage);
 
         return {
           success: false,
@@ -542,48 +797,61 @@ Enemy Shield: ${state.enemy.shield.current}
     description:
       "Start a new dungeon run. Use this when the player dies or wants to start a new run from outside the dungeon.",
     instructions: `\
-# Dungeons
+IMPORTANT: Use the Available Dungeons section from the main template to get the correct dungeon IDs and energy costs. 
+Do NOT use hardcoded values - the dungeon data is dynamic and changes.
+Check your current energy level and select a dungeon you can afford.
 
-## Gigatron 5000
- - DungeonId: 1
- - Costs: 40 Energy
- - Skill tree: Dungetron 5000
-## Gigus Mode
-  - DungeonId: 2
-  - Costs: 200 Energy
-  - Skill tree: Dungetron 5000
-## Underhaul
-  - DungeonId: 3
-  - Costs: 40 Energy
-  - Skill tree: Dungetron Underhaul
-  - Requirements: 
-    - 150 Giga Shards (itemId: 3)
-
+The main template contains the real-time dungeon data with correct IDs, names, and energy costs.
     `,
 
     schema: {
       dungeonId: z
         .number()
-        .default(1)
-        .describe("The ID of the dungeon to start."),
+        .describe(
+          "The ID of the dungeon to start. Must choose from the Available Dungeons list in the prompt."
+        ),
     },
     async handler(data, ctx) {
+      // Refresh energy before attempting to start
+      const freshEnergy = await ctx.options.client.getEnergy(
+        ctx.options.address
+      );
+
+      // Log available dungeons for comparison
+      const availableDungeons = ctx.options.game.today.dungeonDataEntities.map(
+        (d) => ({
+          id: d.ID_CID,
+          name: d.NAME_CID,
+          energy: d.ENERGY_CID,
+          checkpoint: d.CHECKPOINT_CID,
+        })
+      );
+
+      logger.info("Starting new dungeon run", {
+        dungeonId: data.dungeonId,
+        currentEnergy: freshEnergy.entities?.[0]?.parsedData?.energy,
+        gamesToPlay: ctx.memory.gamesToPlay,
+        hasOldDungeon: !!ctx.memory.dungeon
+      });
+
       try {
         const { dungeonId } = data;
+        const currentEnergy = freshEnergy.entities?.[0]?.parsedData?.energy || 0;
 
         if (ctx.memory.gamesToPlay <= 0) {
-          return {
-            success: false,
-            error: "You dont have any games to play. First add games to play.",
-          };
+          // Auto-recharge games for testing purposes
+          logger.debug("Auto-recharging games for testing");
+          ctx.memory.gamesToPlay = 5;
         }
 
         ctx.memory.gamesToPlay -= 1;
 
+        // For start_run, actionToken should typically be empty/fresh
+        // The server returns a new actionToken that we'll use for subsequent actions
         const payload = {
           action: "start_run",
-          actionToken: ctx.options.actionToken,
-          dungeonId,
+          actionToken: "", // Always start with empty token for new runs
+          dungeonId: Number(dungeonId), // Ensure it's a number
           data: {
             consumables: [],
             itemId: 0,
@@ -591,7 +859,80 @@ Enemy Shield: ${state.enemy.shield.current}
           },
         };
 
-        const response = await ctx.options.client.startRun(payload);
+        // Final validation before API call
+        const selectedDungeon = availableDungeons.find(d => d.id === dungeonId);
+        if (!selectedDungeon) {
+          throw new Error(`Selected dungeonId ${dungeonId} not found in available dungeons: ${availableDungeons.map(d => d.id).join(', ')}`);
+        }
+
+        if (selectedDungeon.energy > currentEnergy) {
+          throw new Error(`Insufficient energy for ${selectedDungeon.name}. Required: ${selectedDungeon.energy}, Available: ${currentEnergy}`);
+        }
+
+        logger.info("Calling startRun API", {
+          dungeonId: payload.dungeonId,
+          dungeonName: selectedDungeon.name,
+          energyCost: selectedDungeon.energy,
+          currentEnergy,
+          actionToken: payload.actionToken,
+          actionTokenType: typeof payload.actionToken,
+          fullPayload: payload,
+          availableDungeonsCount: availableDungeons.length
+        });
+
+        let response = await ctx.options.client.startRun(payload);
+
+        logger.debug("StartRun response", {
+          success: response.success,
+          hasActionToken: !!response.actionToken,
+          messagePreview: response.message?.substring(0, 100)
+        });
+
+        // For startRun, we should NEVER retry with actionToken from error response
+        // startRun must always use empty token for new runs
+        // Only retry once with empty token if server has a temporary issue
+        if (!response.success && response.message.includes("Invalid action token")) {
+          logger.warn("🔄 StartRun failed with invalid token, retrying ONCE with empty token", {
+            errorMessage: response.message,
+            responseActionToken: response.actionToken,
+            ourPayloadToken: payload.actionToken
+          });
+
+          // Retry exactly once with empty token
+          response = await ctx.options.client.startRun({
+            ...payload,
+            actionToken: "", // Always empty for startRun
+          });
+
+          if (!response.success) {
+            logger.error("❌ StartRun failed after retry, aborting", {
+              firstError: response.message,
+              dungeonId,
+              actionToken: payload.actionToken
+            });
+          }
+        }
+
+        // If startRun still failed, give up
+        if (!response.success) {
+          logger.error("StartRun failed definitively", {
+            lastError: response.message,
+            actionToken: response.actionToken,
+            dungeonId
+          });
+          
+          // Create explicit error message for the user
+          const errorMessage = `❌ DUNGEON START FAILED: ${response.message}
+
+🔍 Possible causes:
+• Server temporarily unavailable
+• Insufficient energy (need ${payload.dungeonId} energy)
+• Invalid dungeon selection
+
+Please try again in a moment or choose a different dungeon.`;
+          
+          throw new Error(errorMessage);
+        }
 
         if (response.actionToken) {
           ctx.options.actionToken = response.actionToken;
@@ -599,11 +940,15 @@ Enemy Shield: ${state.enemy.shield.current}
 
         if (!response.success) {
           throw new Error(
-            `Start new run failed with status ${response.success}`
+            `Start new run failed with message: ${response.message}`
           );
         }
 
         const state = parseDungeonState(response);
+
+        if (!state) {
+          throw new Error("Failed to parse dungeon state after starting run");
+        }
 
         ctx.memory.dungeon = state;
         ctx.memory.energy = await ctx.options.client.getEnergy(
@@ -611,10 +956,24 @@ Enemy Shield: ${state.enemy.shield.current}
         );
         ctx.memory.lastUpdate = Date.now();
 
+        logger.info("🎮 NEW RUN STARTED SUCCESSFULLY", {
+          dungeonId,
+          playerHealth: `${state.player?.health?.current}/${state.player?.health?.currentMax}`,
+          enemyHealth: `${state.enemy?.health?.current}/${state.enemy?.health?.currentMax}`,
+          room: `${state.currentRoom}/${state.currentDungeon}`,
+          charges: getPlayerCharges(state.player),
+          lootPhase: state.lootPhase
+        });
+
         return {
           success: true,
           result: response.data,
-          message: `Successfully started a new run in dungeon ${dungeonId}`,
+          message: `🎯 Successfully started dungeon ${dungeonId}!
+
+🗡️ Player: ${state.player?.health?.current}/${state.player?.health?.currentMax} HP
+👹 Enemy: ${state.enemy?.health?.current}/${state.enemy?.health?.currentMax} HP  
+🏠 Room: ${state.currentRoom}
+⚔️ Ready for battle! Use rock/paper/scissor attacks.`,
         };
       } catch (error: unknown) {
         const errorMessage =
@@ -633,7 +992,14 @@ Enemy Shield: ${state.enemy.shield.current}
           ...gigaverseState,
         };
 
+        // Clean up action token after any startRun error
         ctx.options.actionToken = "";
+
+        logger.info("🧹 StartRun error cleanup complete", {
+          actionTokenCleared: ctx.options.actionToken === "",
+          hasGigaverseState: !!gigaverseState,
+          errorType: errorMessage.substring(0, 50)
+        });
 
         return {
           success: false,

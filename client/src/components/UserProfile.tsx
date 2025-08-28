@@ -14,7 +14,7 @@ import {
 } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { BuyCredits } from "./buy-credits";
+
 import { CreditCard } from "lucide-react";
 
 export function UserProfile() {
@@ -182,13 +182,7 @@ export function UserProfile() {
         </Card>
       </TabsContent>
 
-      <TabsContent value="credits">
-        <Card>
-          <CardContent className="pt-6">
-            <BuyCredits />
-          </CardContent>
-        </Card>
-      </TabsContent>
+      <TabsContent value="credits"></TabsContent>
     </Tabs>
   );
 }

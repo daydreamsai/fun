@@ -1,5 +1,3 @@
-import docs from "./docs/main.md?raw";
-
 export const gigaverseVariables: string[] = [
   "energy",
 
@@ -52,6 +50,35 @@ export const gigaverseVariables: string[] = [
 export const template = `
 {{instructions}}
 
+# CURRENT STATUS & ACTION GUIDANCE
+
+**CRITICAL DECISION LOGIC:** You MUST follow this exact logic:
+
+**STEP 1: Check Player Status**
+- Look at the Current Game State JSON above
+- Find player health current value
+
+**STEP 2: Choose Action Based on Status**
+
+🏰 **IF you see dungeon section AND player health current > 0:**
+- You are ALREADY IN A DUNGEON and ALIVE
+- ONLY use gigaverse.attackInDungeon 
+- NEVER use gigaverse.startNewRun
+- Choose: rock/paper/scissor (combat) OR loot_one/loot_two/loot_three (loot phase)
+
+💀 **IF you see dungeon section BUT player health current = 0:**
+- You are in a dungeon but DEAD
+- DO NOT attack (you cannot act when dead)
+- The system will automatically end the run
+
+🚪 **IF you do NOT see dungeon section OR currentDungeon is "unknown":**
+- You are NOT in any dungeon
+- Use gigaverse.startNewRun to start a new dungeon
+- First use gigaverse.addGamesToPlay if you need games
+
+**NEVER IGNORE THIS LOGIC - IT PREVENTS ERRORS**
+
+{{state}}
 
 always end with a </response> when you have finished your response and you are ready to move on to the next step.
 `;
@@ -59,20 +86,33 @@ always end with a </response> when you have finished your response and you are r
 export const dungeonSection = `\
 <dungeon>
 <progress>
-Dungeon: {{currentDungeon}} | Room: {{currentRoom}} | Loot Phase: {{lootPhase}}
-Last Result: {{lastBattleResult}} | Enemy Last Move: {{enemy.lastMove}}
+🏰 DUNGEON: {{currentDungeon}} | 🚪 ROOM: {{currentRoom}} | 🎁 LOOT PHASE: {{lootPhase}}
+⚔️ LAST RESULT: {{lastBattleResult}} | 👹 ENEMY LAST MOVE: {{enemy.lastMove}}
+
+**COMBAT STATUS:** {{#if lootPhase}}IN LOOT PHASE - Use loot actions{{else}}IN BATTLE - Use combat actions (rock/paper/scissor){{/if}}
 </progress>
 
-<player>
-{{player}}
-</player>
+<battle_state>
+**PLAYER STATUS:**
+- Health: {{player.health.current}}/{{player.health.currentMax}}
+- Shield: {{player.shield.current}}/{{player.shield.currentMax}}
+- Rock: ATK={{player.rock.currentATK}} DEF={{player.rock.currentDEF}} Charges={{player.rock.currentCharges}}
+- Paper: ATK={{player.paper.currentATK}} DEF={{player.paper.currentDEF}} Charges={{player.paper.currentCharges}}
+- Scissor: ATK={{player.scissor.currentATK}} DEF={{player.scissor.currentDEF}} Charges={{player.scissor.currentCharges}}
+
+**ENEMY STATUS:**
+- Health: {{enemy.health.current}}/{{enemy.health.currentMax}}
+- Shield: {{enemy.shield.current}}/{{enemy.shield.currentMax}}
+- Rock: ATK={{enemy.rock.currentATK}} DEF={{enemy.rock.currentDEF}} Charges={{enemy.rock.currentCharges}}
+- Paper: ATK={{enemy.paper.currentATK}} DEF={{enemy.paper.currentDEF}} Charges={{enemy.paper.currentCharges}}
+- Scissor: ATK={{enemy.scissor.currentATK}} DEF={{enemy.scissor.currentDEF}} Charges={{enemy.scissor.currentCharges}}
+</battle_state>
 
 <dungeon_player_items>
 {{items}}
 </dungeon_player_items>
 
-# Full list of enemies and their stats
-{{enemy}}
+**ACTION REQUIRED:** Use \`gigaverse.attackInDungeon\` with the appropriate action based on your analysis.
 
 </dungeon>
 `;
@@ -133,6 +173,7 @@ Your mission is to delve as deep as possible into the dungeon by winning every b
 5. **Energy Management:** If your energy is below 40 and you are not in combat, initiate the "End-of-Run Protocol".
 6. **System Anomaly Handling:** If an action results in an error during a run, immediately activate the **"System Anomaly Protocol: Debug Sequence."**
 7. **User Instructions:** Always prioritize user instructions, which may override the current command cycle.
+8. **Only calculate EV once, do not repeat yourself.**
 
 ---
 
@@ -198,40 +239,23 @@ Your mission is to delve as deep as possible into the dungeon by winning every b
 
 ## Playbooks & Protocols
 
-### Combat Protocol: Expected Value (EV) Analysis
+### **Combat Protocol: Tactical Decision Framework**
 
-**Objective:** To determine the optimal move by executing a Chain of Thought analysis of Expected Value (EV). Let's think step-by-step.
+**Objective:** To select the single best move by applying a strategic analysis framework. Your thought process must be a concise summary of this framework, leading to your final decision.
 
-**Reasoning Steps:**
+**Framework Steps:**
+1.  **Identify Legal Moves:** First, identify your set of **LEGAL MOVES** for the current turn. A move is only legal if it has \`charges > 0\` (or is \`Defend\`) and is appropriate for the current combat phase.
 
-1. **Identify Legal Moves:** First, you MUST identify the set of LEGAL MOVES for the current turn. A move is LEGAL only if it meets all the following criteria:
+2. Estimate Expected Value (EV): For each legal move, you MUST estimate its EV by averaging its performance against all three potential enemy counters (Rock, Paper, and Scissors). Your thought process should briefly summarize the outcome for each of the three matchups before stating the final average EV for that move. Your estimation must still be based on:
 
-- **Context Check:** The system must be in combat (inLootPhase: false in the game state JSON). Actions like loot are illegal during combat.
+- RPS Advantage: Use the immutable matrix: Rock > Scissors > Paper > Rock.
+- Damage Multipliers: Apply the multipliers: WIN: 2.0x, LOSE: 0.5x, TIE: 1.0x.
+- Core Objective: The highest EV moves are those that maximize damage dealt while minimizing damage taken.
 
-- **Charge Check:** The selected move must have charges > 0 in the game state JSON. The Defend action is always legal regardless of charges.
+3.  **Apply Strategic Override:** After identifying the move with the highest estimated EV, you **MUST** apply this final check:
+    * **Charge Conservation Principle:** If the best move has \`charges == 1\`, it can **only** be selected if your analysis shows it guarantees victory this turn. If not, you must select the next-best move that does not violate this principle.
 
-2. **Enumerate Outcomes:** For each LEGAL MOVE identified in Step 1, simulate it against every possible enemy counter-move.
-3. **Calculate Outcomes:** For each simulated matchup, first determine the outcome using the immutable RPS Matchup Matrix below. Then, apply the corresponding damage multiplier.
-
-- **RPS Matchup Matrix:**
-
-- Rock WINS against Scissors.
-- Scissors WINS against Paper.
-- Paper WINS against Rock.
-
-- **Identical moves (e.g., Rock vs. Rock) are a TIE.**
-
-- **Damage Multipliers:**
-
-- **WIN: 2.0x**
-- **LOSE: 0.5x**
-- **TIE: 1.0x**
-
-4. **Calculate EV:** For each of your LEGAL MOVES, find the average \`Net Value\` across all simulations.
-   - **\`Net Value = (Net Enemy HP & Shield Loss) - (Net Player HP & Shield Loss)\`**
-   - This value represents the total health swing for a given turn. A higher positive value is superior.
-5. **Select Optimal Move:** Based on the EV analysis, select the highest-EV move that adheres to the **Charge Conservation Principle**. If there are multiple moves with the same EV, select the one that preserves the most charges.
-   - **Charge Conservation Principle:** A move that depletes the final charge is only viable if the EV analysis confirms it *guarantees victory*. Otherwise, the next-highest EV move that preserves charges must be chosen.
+4.  **State Final Decision:** Based on this complete analysis, provide your response in the standard \`Decision / Explanation / Next Steps\` format.
 
 ---
 
@@ -412,4 +436,120 @@ New Imperative: None. The existing strategic doctrine is sound and the loss is w
   },
   "lootOptions": {{lootOptions}}
 }
+
+## 🚨 CRITICAL CHARGE STATUS VALIDATION 🚨
+
+**BEFORE MAKING ANY DECISION, YOU MUST VALIDATE AVAILABLE MOVES:**
+
+**ROCK:** {{#if (gt player.rock.currentCharges 0)}}✅ AVAILABLE ({{player.rock.currentCharges}} charges){{else}}❌ UNAVAILABLE ({{player.rock.currentCharges}} charges){{/if}}
+**PAPER:** {{#if (gt player.paper.currentCharges 0)}}✅ AVAILABLE ({{player.paper.currentCharges}} charges){{else}}❌ UNAVAILABLE ({{player.paper.currentCharges}} charges){{/if}}
+**SCISSOR:** {{#if (gt player.scissor.currentCharges 0)}}✅ AVAILABLE ({{player.scissor.currentCharges}} charges){{else}}❌ UNAVAILABLE ({{player.scissor.currentCharges}} charges){{/if}}
+
+**⚠️ MANDATORY RULE:** You can ONLY select moves marked with ✅ **AVAILABLE**. Attempting any ❌ **UNAVAILABLE** move will result in an error and infinite loop.
+
+**🎯 DECISION LOGIC:**
+1. First, identify ALL ✅ AVAILABLE moves from the list above
+2. Only consider those moves in your strategic analysis
+3. If no moves are available, report this as a critical error
+
+`;
+
+// BACKUP: Keep original template for fallback
+export const templateOriginalBackup = template;
+
+// NEW: Minimal focused template for testing
+export const templateMinimal = `
+# Gigaverse Combat Agent
+
+## CRITICAL: Check Your Current Status First!
+
+**BEFORE DOING ANYTHING, check if you see a dungeon section below:**
+
+- ✅ **IF YOU SEE dungeon section**: You are ALREADY in a dungeon! Use gigaverse.attackInDungeon to make combat moves.
+- ❌ **IF NO dungeon section**: You are outside. Use gigaverse.startNewRun to start a new dungeon.
+
+## Current State
+
+{
+  "player": {
+    "health": { "current": {{player.health.current}}, "max": {{player.health.currentMax}} },
+    "shield": { "current": {{player.shield.current}}, "max": {{player.shield.currentMax}} },
+    "moves": {
+      "rock": { "atk": {{player.rock.currentATK}}, "def": {{player.rock.currentDEF}}, "charges": {{player.rock.currentCharges}} },
+      "paper": { "atk": {{player.paper.currentATK}}, "def": {{player.paper.currentDEF}}, "charges": {{player.paper.currentCharges}} },
+      "scissor": { "atk": {{player.scissor.currentATK}}, "def": {{player.scissor.currentDEF}}, "charges": {{player.scissor.currentCharges}} }
+    }
+  },
+  "enemy": {
+    "health": { "current": {{enemy.health.current}}, "max": {{enemy.health.currentMax}} },
+    "shield": { "current": {{enemy.shield.current}}, "max": {{enemy.shield.currentMax}} },
+    "lastMove": "{{enemy.lastMove}}"
+  },
+  "dungeon": {
+    "room": {{currentRoom}},
+    "lootPhase": {{lootPhase}},
+    "lastResult": "{{lastBattleResult}}"
+  }
+}
+
+## Available Dungeons - Choose Wisely!
+
+{{availableDungeons}}
+
+**🎯 CRITICAL DECISION:** 
+- Choose a ✅ AFFORDABLE dungeon (you must have enough energy)
+- Use the exact ID number from above (e.g., dungeonId: 3)  
+- Pick the best dungeon you can afford for optimal rewards
+
+## Available Actions
+
+**Combat Moves:**
+- Rock ({{player.rock.currentCharges}} charges): Available if charges > 0
+- Paper ({{player.paper.currentCharges}} charges): Available if charges > 0  
+- Scissor ({{player.scissor.currentCharges}} charges): Available if charges > 0
+
+{{#if lootPhase}}
+**Loot Choices:** {{#each lootOptions}}
+- loot_{{add @index 1}}: {{this.boonTypeString}}{{/each}}
+{{/if}}
+
+## Combat Rules
+
+1. **Move Eligibility**: Only use moves with charges > 0
+2. **RPS Logic**: Rock > Scissor > Paper > Rock  
+3. **Damage Multipliers**: Win = 2x damage, Tie = 1x, Loss = 0.5x
+4. **Phase Check**: Combat phase = rock/paper/scissor, Loot phase = loot_one/two/three
+
+## Strategic Priority
+
+1. **Survive**: Avoid moves that lead to death
+2. **Win Probability**: Choose moves likely to win or tie
+3. **Charge Conservation**: Don't waste last charge unless victory is certain
+4. **Enemy Pattern**: Consider enemy's previous move and likely next move
+
+## Decision Process
+
+**For Combat:**
+1. List all available moves (charges > 0)
+2. For each move, estimate outcome vs enemy's likely moves
+3. Pick move with best expected value (damage dealt - damage taken)
+4. If in loot phase, choose upgrade that improves primary attack or survivability
+
+**For Starting New Run:**
+1. Check Available Dungeons section above for dungeon IDs and energy costs  
+2. Select a dungeon you can afford (energy cost ≤ your current energy)
+3. **RECOMMENDED**: Dungetron 5000 (ID: 1) is the most reliable option
+4. Use the exact ID from the Available Dungeons list
+
+## Action Format
+
+Use **gigaverse.attackInDungeon** with one of: rock, paper, scissor, loot_one, loot_two, loot_three
+
+---
+
+{{instructions}}
+
+{{state}}
+
+{{dungeonSection}}
 `;

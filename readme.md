@@ -34,7 +34,7 @@ Dreams Play is an open-source platform for building, running, and extending Dayd
 
 4. **Run locally:**
    - Start the backend: `cd server && bun run dev`
-   - Start the proxy: `cd proxy && bun run dev`
+   - Start the proxy: `cd proxy && bun run index.js`
    - Start the client: `cd client && bun run dev`
 
 ---

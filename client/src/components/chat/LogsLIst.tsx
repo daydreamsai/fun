@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 import { ReactNode } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "react-error-boundary";
+import { logger } from "@/utils/logger";
 
 export function LogContainer({
   className,
@@ -116,6 +117,7 @@ export function LogsList({
   logs: AnyRef[];
   components?: ComponentsRecord;
 }) {
+  logger.debug("Rendering logs", { count: logs.length });
   // // Get show message settings from the store
   // const showThoughtMessages = useSettingsStore(
   //   (state) => state.showThoughtMessages
@@ -152,12 +154,12 @@ export function LogsList({
 
         return Component ? (
           <ErrorBoundary
-            fallbackRender={() => {
-              console.log({ log });
+            fallbackRender={({ error }) => {
+              logger.error("Log component render failed", { error, logId: log.id });
               return (
                 <LogContainer>
-                  <div>Error</div>
-                  <div>{JSON.stringify(log)}</div>
+                  <div>Error rendering log</div>
+                  <div className="text-xs text-muted-foreground">Log ID: {log.id}</div>
                 </LogContainer>
               );
             }}
