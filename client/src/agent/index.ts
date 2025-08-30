@@ -11,10 +11,12 @@ import {
 } from "@daydreamsai/core";
 import { chat } from "./chat";
 
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createDreamsRouterAuth, createDreamsRouter } from "@daydreamsai/ai-sdk-provider";
+import { privateKeyToAccount } from "viem/accounts";
 
 import { useSettingsStore } from "@/store/settingsStore";
-// import { useUserStore } from "@/store/userStore";
+import { x402Service } from "@/services/x402Service";
+import { walletJWTService } from "@/services/walletJWTService";
 
 import { openDB, type IDBPDatabase } from "idb";
 import { Cache } from "./utils/cache";
@@ -205,34 +207,77 @@ const memoryMigrator = service({
   },
 });
 
-export function createAgent() {
+export async function createAgent() {
   const settings = useSettingsStore.getState();
-
   const container = createContainer();
   const memoryStorage = browserStorage();
 
   container.instance("memory", memoryStorage);
 
-  const openrouter = createOpenRouter({
-    apiKey: settings.openrouterKey,
-  });
+  let dreamsRouter;
 
-  return createDreams({
-    logger: new Logger({ level: LogLevel.INFO }),
-    container,
-    model: openrouter(settings.model),
-    modelSettings: {
-      temperature: 0,
-    },
-    memory: new MemorySystem({
-      providers: {
-        kv: new InMemoryKeyValueProvider(),
-        vector: new InMemoryVectorProvider(),
-        graph: new InMemoryGraphProvider(),
-      },
+  try {
+    // First, check if we have a JWT from a connected wallet
+    const walletJWT = walletJWTService.getJWT();
+    
+    if (walletJWT) {
+      // Use JWT authentication from connected wallet
+      console.log("Using JWT authentication from connected wallet");
+      
+      dreamsRouter = createDreamsRouter({
+        apiKey: walletJWT,
+      });
+      
+      // Dispatch event for tracking
+      window.dispatchEvent(new CustomEvent("x402_request_sent"));
+    } else if (settings.x402WalletKey) {
+      // Fallback to private key authentication
+      console.log("Using private key authentication");
+      
+      await x402Service.initialize();
+      const account = privateKeyToAccount(settings.x402WalletKey as `0x${string}`);
+      const result = await createDreamsRouterAuth(account, {
+        payments: {
+          amount: settings.x402Amount,
+          network: settings.x402Network,
+        },
+      });
+      
+      dreamsRouter = result.dreamsRouter;
+      
+      // Dispatch event for tracking
+      window.dispatchEvent(new CustomEvent("x402_request_sent"));
+    } else {
+      // No authentication available
+      throw new Error(
+        "No authentication configured. Please either connect your wallet or set up a private key in settings."
+      );
+    }
+
+    return createDreams({
       logger: new Logger({ level: LogLevel.INFO }),
-    }),
-    extensions: [chat],
-    services: [memoryMigrator, cacheService],
-  });
+      container,
+      model: dreamsRouter(settings.model),
+      modelSettings: {
+        temperature: 0,
+      },
+      memory: new MemorySystem({
+        providers: {
+          kv: new InMemoryKeyValueProvider(),
+          vector: new InMemoryVectorProvider(),
+          graph: new InMemoryGraphProvider(),
+        },
+        logger: new Logger({ level: LogLevel.INFO }),
+      }),
+      extensions: [chat],
+      services: [memoryMigrator, cacheService],
+    });
+  } catch (error) {
+    console.error("Failed to initialize agent:", error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : "Failed to initialize AI agent. Please check your authentication configuration."
+    );
+  }
 }

@@ -4,13 +4,15 @@ import { persist, createJSONStorage } from "zustand/middleware";
 export const VALID_MODELS = [
   "google/gemini-2.5-flash-lite",
   "qwen/qwen3-235b-a22b",
+  "gpt-4o",
+  "claude-3-5-sonnet-latest",
 ] as const;
 
 export interface UserSettings {
   model: (typeof VALID_MODELS)[number];
-  openaiKey: string;
-  openrouterKey: string;
-  anthropicKey: string;
+  x402WalletKey: string;
+  x402Amount: string; // Amount in USDC (e.g., "100000" = $0.10)
+  x402Network: 'base-sepolia' | 'base';
   gigaverseToken: string;
   abstractAddress: string;
   showThoughtMessages: boolean;
@@ -22,9 +24,9 @@ export interface UserSettings {
 
 interface SettingsState extends UserSettings {
   setModel: (model: (typeof VALID_MODELS)[number]) => void;
-  setOpenAIKey: (key: string) => void;
-  setOpenRouterKey: (key: string) => void;
-  setAnthropicKey: (key: string) => void;
+  setX402WalletKey: (key: string) => void;
+  setX402Amount: (amount: string) => void;
+  setX402Network: (network: 'base-sepolia' | 'base') => void;
   setGigaverseToken: (token: string) => void;
   setAbstractAddress: (address: string) => void;
   setShowThoughtMessages: (show: boolean) => void;
@@ -36,9 +38,9 @@ interface SettingsState extends UserSettings {
 
 const DEFAULT_SETTINGS: UserSettings = {
   model: "google/gemini-2.5-flash-lite",
-  openaiKey: "",
-  openrouterKey: "",
-  anthropicKey: "",
+  x402WalletKey: "",
+  x402Amount: "100000", // Default $0.10 USDC per request
+  x402Network: "base-sepolia",
   gigaverseToken: "",
   abstractAddress: "",
   showThoughtMessages: true,
@@ -54,9 +56,9 @@ export const useSettingsStore = create<SettingsState>()(
       ...DEFAULT_SETTINGS,
 
       setModel: (model) => set({ model }),
-      setOpenAIKey: (openaiKey) => set({ openaiKey }),
-      setOpenRouterKey: (openrouterKey) => set({ openrouterKey }),
-      setAnthropicKey: (anthropicKey) => set({ anthropicKey }),
+      setX402WalletKey: (x402WalletKey) => set({ x402WalletKey }),
+      setX402Amount: (x402Amount) => set({ x402Amount }),
+      setX402Network: (x402Network) => set({ x402Network }),
       setGigaverseToken: (gigaverseToken) => set({ gigaverseToken }),
       setAbstractAddress: (abstractAddress) => set({ abstractAddress }),
       setShowThoughtMessages: (showThoughtMessages) =>
@@ -105,11 +107,12 @@ export function saveUserSettings(settings: UserSettings): void {
   const store = useSettingsStore.getState();
 
   if (settings.model) store.setModel(settings.model);
-  if (settings.openaiKey !== undefined) store.setOpenAIKey(settings.openaiKey);
-  if (settings.openrouterKey !== undefined)
-    store.setOpenRouterKey(settings.openrouterKey);
-  if (settings.anthropicKey !== undefined)
-    store.setAnthropicKey(settings.anthropicKey);
+  if (settings.x402WalletKey !== undefined)
+    store.setX402WalletKey(settings.x402WalletKey);
+  if (settings.x402Amount !== undefined)
+    store.setX402Amount(settings.x402Amount);
+  if (settings.x402Network !== undefined)
+    store.setX402Network(settings.x402Network);
   if (settings.gigaverseToken !== undefined)
     store.setGigaverseToken(settings.gigaverseToken);
   if (settings.showThoughtMessages !== undefined)
@@ -140,7 +143,7 @@ export function getApiKey(key: keyof UserSettings) {
 export function hasApiKey(
   key: keyof Pick<
     UserSettings,
-    "openaiKey" | "openrouterKey" | "anthropicKey" | "gigaverseToken"
+    "x402WalletKey" | "gigaverseToken"
   >
 ): boolean {
   const value = getApiKey(key);

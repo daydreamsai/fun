@@ -12,6 +12,9 @@ import { abstract } from "viem/chains"; // Use abstract for mainnet
 import { Separator } from "@/components/ui/separator";
 import { ModeToggle } from "@/components/mode-toggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { CostTracker } from "@/components/CostTracker";
+import { WalletSetup } from "@/components/WalletSetup";
+import { AbstractProvider } from "@/providers/AbstractProvider";
 
 import { QueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
@@ -38,7 +41,8 @@ export const Route = createRootRouteWithContext<{
         <ThemeProvider>
           {/* <TokenGate> */}
           <AbstractWalletProvider chain={abstract}>
-            <SidebarProvider className="font-body">
+            <AbstractProvider>
+              <SidebarProvider className="font-body">
               <AppSidebar className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" />
               <SidebarInset className="bg-transparent bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)] relative h-svh flex">
                 <div className="flex flex-col flex-1 h-full overflow-hidden">
@@ -48,6 +52,9 @@ export const Route = createRootRouteWithContext<{
                       <Separator orientation="vertical" className="h-4" />
                       <ModeToggle />
                     </div>
+                    <div className="px-4">
+                      <CostTracker compact />
+                    </div>
                   </header>
                   <ErrorBoundary FallbackComponent={CustomErrorComponent}>
                     <div className="flex-1 overflow-hidden">
@@ -56,7 +63,9 @@ export const Route = createRootRouteWithContext<{
                   </ErrorBoundary>
                 </div>
               </SidebarInset>
-            </SidebarProvider>
+              </SidebarProvider>
+              <WalletSetup />
+            </AbstractProvider>
           </AbstractWalletProvider>
           {/* </TokenGate> */}
         </ThemeProvider>
