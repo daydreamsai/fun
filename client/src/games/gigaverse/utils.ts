@@ -196,29 +196,44 @@ export function parseItems(
 ): ItemBalance[] {
   return consumables.entities
     .map((entity) => {
-      const { docId, NAME_CID } = items.entities.find(
+      const itemData = items.entities.find(
         (item) => item.docId === entity.ID_CID
-      )!;
-      const { DESCRIPTION_CID, TYPE_CID, ICON_URL_CID } =
-        offchain.gameItems.find((item) => item.docId === entity.ID_CID)!;
+      );
+      
+      if (!itemData) {
+        logger.warn(`Item not found in items.entities for ID_CID: ${entity.ID_CID}`);
+        return null;
+      }
+      
+      const offchainData = offchain.gameItems.find(
+        (item) => item.docId === entity.ID_CID
+      );
+      
+      if (!offchainData) {
+        logger.warn(`Item not found in offchain.gameItems for ID_CID: ${entity.ID_CID}`);
+        return null;
+      }
 
       const floorPrice = marketplaceFloor.entities.find(
-        (item) => item.GAME_ITEM_ID_CID === parseInt(docId)
+        (item) => item.GAME_ITEM_ID_CID === parseInt(itemData.docId)
       )?.ETH_MINT_PRICE_CID;
 
       return {
         item: {
-          id: parseInt(docId),
-          name: NAME_CID,
-          description: DESCRIPTION_CID,
-          type: TYPE_CID,
+          id: parseInt(itemData.docId),
+          name: itemData.NAME_CID,
+          description: offchainData.DESCRIPTION_CID,
+          type: offchainData.TYPE_CID,
           floorPrice: floorPrice ?? 0,
-          img: ICON_URL_CID,
+          img: offchainData.ICON_URL_CID,
         },
         balance: entity.BALANCE_CID,
       };
     })
-    .filter((item) => {
+    .filter((item): item is ItemBalance => {
+      if (item === null) {
+        return false;
+      }
       if (consumable) {
         // Only include items where type is "Consumable" (case-insensitive)
         return (

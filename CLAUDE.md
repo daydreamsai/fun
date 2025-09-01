@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Dreams Play is an open-source platform for building, running, and extending Daydreams agents and games. This is a monorepo containing two active components:
+Dreams Play is an open-source platform for building, running, and extending Daydreams agents and games. This monorepo contains two active components:
 
 - **client/** - React-based web application with AI agents and Gigaverse game integration
 - **proxy/** - Lightweight Express proxy for routing requests to external APIs (particularly Gigaverse)
@@ -40,7 +40,7 @@ cd client
 
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript and Vite
-- **Routing**: TanStack Router with file-based routing
+- **Routing**: TanStack Router with file-based routing  
 - **Styling**: Tailwind CSS with shadcn/ui components  
 - **State Management**: Zustand stores for global state
 - **Path Alias**: `@/` maps to `/client/src/`
