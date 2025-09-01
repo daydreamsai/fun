@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -347,7 +346,7 @@ export function MarketTab({ state }: MarketTabProps) {
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Market Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-6">
@@ -411,8 +410,7 @@ export function MarketTab({ state }: MarketTabProps) {
       </div>
 
       {/* Enhanced Table */}
-      <div className="flex-1 border bg-card overflow-hidden min-h-0">
-        <ScrollArea className="h-full">
+      <div className="flex-1 border bg-card rounded-lg overflow-auto min-h-0">
           <table className="w-full">
             <thead className="sticky top-0 z-10 bg-muted/50 backdrop-blur-sm border-b">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -460,7 +458,6 @@ export function MarketTab({ state }: MarketTabProps) {
               No items found
             </div>
           )}
-        </ScrollArea>
       </div>
 
       {/* Enhanced Footer */}

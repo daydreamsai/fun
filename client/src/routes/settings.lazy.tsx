@@ -149,8 +149,8 @@ function RouteComponent() {
   }
 
   return (
-    <div className="overflow-y-scroll pb-[20dvh]">
-      <div className="container mx-auto py-10 px-4 max-w-3xl">
+    <div className="h-full overflow-y-auto">
+      <div className="container mx-auto py-10 px-4 max-w-3xl pb-20">
         <Tabs defaultValue="api-keys" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="api-keys">API Settings</TabsTrigger>

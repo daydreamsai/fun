@@ -62,7 +62,7 @@ export function GigaverseAuth() {
   const gigaverseLogin = useGigaverseLogin();
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 max-h-full overflow-auto">
       <Label>Gigaverse Authentication</Label>
       <div className="flex flex-col space-y-3">
         {status === "connected" ? (
