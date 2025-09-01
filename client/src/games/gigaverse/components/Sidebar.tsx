@@ -242,7 +242,7 @@ export function GigaverseSidebar({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           {gigaverseState.isLoading ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="flex flex-col items-center gap-2">
@@ -269,7 +269,7 @@ export function GigaverseSidebar({
                   },
                 });
               }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col overflow-hidden min-h-0"
             >
               <div className="px-4 py-2 border-b">
                 <TabsList className="w-full max-w-lg grid-cols-5">
@@ -281,8 +281,8 @@ export function GigaverseSidebar({
                 </TabsList>
               </div>
 
-              <div className="flex-1 min-h-0">
-                <TabsContent value="play" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <TabsContent value="play" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
                   <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     <OverviewTab
                       state={gigaverseState.data}
@@ -292,15 +292,15 @@ export function GigaverseSidebar({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="inventory" className="h-full p-4 data-[state=active]:block">
-                  <div className="h-full">
+                <TabsContent value="inventory" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
+                  <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     {gigaverseState.data && (
                       <InventoryTab state={gigaverseState.data} />
                     )}
                   </div>
                 </TabsContent>
 
-                <TabsContent value="market" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <TabsContent value="market" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
                   <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     {gigaverseState.data && (
                       <MarketTab state={gigaverseState.data} />
@@ -308,7 +308,7 @@ export function GigaverseSidebar({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="roms" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <TabsContent value="roms" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
                   <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     {gigaverseState.data && (
                       <RomsTab
@@ -319,13 +319,13 @@ export function GigaverseSidebar({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="skills" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <TabsContent value="skills" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
                   <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     {gigaverseState.data && <SkillsTab state={gigaverseState.data} />}
                   </div>
                 </TabsContent>
 
-                <TabsContent value="memory" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <TabsContent value="memory" className="h-full p-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
                   <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     <MemoryTab agent={agent} args={args} />
                   </div>
