@@ -11,12 +11,11 @@ import {
 } from "@daydreamsai/core";
 import { chat } from "./chat";
 
-import { createDreamsRouterAuth, createDreamsRouter } from "@daydreamsai/ai-sdk-provider";
-import { privateKeyToAccount } from "viem/accounts";
+import { createDreamsRouter } from "@daydreamsai/ai-sdk-provider";
+// TODO: Import OpenRouter provider if fallback needed - user wants to remove this later
 
 import { useSettingsStore } from "@/store/settingsStore";
-import { x402Service } from "@/services/x402Service";
-import { walletJWTService } from "@/services/walletJWTService";
+import { apiKeyService } from "@/services/apiKeyService";
 
 import { openDB, type IDBPDatabase } from "idb";
 import { Cache } from "./utils/cache";
@@ -217,40 +216,27 @@ export async function createAgent() {
   let dreamsRouter;
 
   try {
-    // First, check if we have a JWT from a connected wallet
-    const walletJWT = walletJWTService.getJWT();
-    
-    if (walletJWT) {
-      // Use JWT authentication from connected wallet
-      console.log("Using JWT authentication from connected wallet");
+    // Check if we have Dreams Router API key configured
+    if (apiKeyService.isConfigured()) {
+      console.log("Using Dreams Router API key authentication");
       
+      const config = apiKeyService.getDreamsRouterConfig();
       dreamsRouter = createDreamsRouter({
-        apiKey: walletJWT,
+        apiKey: config.apiKey,
       });
       
       // Dispatch event for tracking
-      window.dispatchEvent(new CustomEvent("x402_request_sent"));
-    } else if (settings.x402WalletKey) {
-      // Fallback to private key authentication
-      console.log("Using private key authentication");
-      
-      await x402Service.initialize();
-      const account = privateKeyToAccount(settings.x402WalletKey as `0x${string}`);
-      const result = await createDreamsRouterAuth(account, {
-        payments: {
-          amount: settings.x402Amount,
-          network: settings.x402Network,
-        },
-      });
-      
-      dreamsRouter = result.dreamsRouter;
-      
-      // Dispatch event for tracking
-      window.dispatchEvent(new CustomEvent("x402_request_sent"));
-    } else {
+      window.dispatchEvent(new CustomEvent("dreams_router_request_sent"));
+    } 
+    // TODO: Add fallback to OpenRouter if no Dreams Router key - user wants to remove this later
+    // else if (settings.openRouterKey) {
+    //   console.log("Falling back to OpenRouter");
+    //   // Setup OpenRouter provider
+    // }
+    else {
       // No authentication available
       throw new Error(
-        "No authentication configured. Please either connect your wallet or set up a private key in settings."
+        "No Dreams Router API key configured. Please set up your API key in settings."
       );
     }
 
@@ -277,7 +263,7 @@ export async function createAgent() {
     throw new Error(
       error instanceof Error 
         ? error.message 
-        : "Failed to initialize AI agent. Please check your authentication configuration."
+        : "Failed to initialize AI agent. Please check your Dreams Router API key configuration."
     );
   }
 }

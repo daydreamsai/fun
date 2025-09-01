@@ -10,9 +10,9 @@ export const VALID_MODELS = [
 
 export interface UserSettings {
   model: (typeof VALID_MODELS)[number];
-  x402WalletKey: string;
-  x402Amount: string; // Amount in USDC (e.g., "100000" = $0.10)
-  x402Network: 'base-sepolia' | 'base';
+  dreamsRouterApiKey: string;
+  // TODO: Add fallback to OpenRouter if needed - user wants to remove this later
+  openRouterKey?: string; 
   gigaverseToken: string;
   abstractAddress: string;
   showThoughtMessages: boolean;
@@ -24,9 +24,8 @@ export interface UserSettings {
 
 interface SettingsState extends UserSettings {
   setModel: (model: (typeof VALID_MODELS)[number]) => void;
-  setX402WalletKey: (key: string) => void;
-  setX402Amount: (amount: string) => void;
-  setX402Network: (network: 'base-sepolia' | 'base') => void;
+  setDreamsRouterApiKey: (key: string) => void;
+  setOpenRouterKey: (key: string) => void;
   setGigaverseToken: (token: string) => void;
   setAbstractAddress: (address: string) => void;
   setShowThoughtMessages: (show: boolean) => void;
@@ -38,9 +37,8 @@ interface SettingsState extends UserSettings {
 
 const DEFAULT_SETTINGS: UserSettings = {
   model: "google/gemini-2.5-flash-lite",
-  x402WalletKey: "",
-  x402Amount: "100000", // Default $0.10 USDC per request
-  x402Network: "base-sepolia",
+  dreamsRouterApiKey: "",
+  openRouterKey: "",
   gigaverseToken: "",
   abstractAddress: "",
   showThoughtMessages: true,
@@ -56,9 +54,8 @@ export const useSettingsStore = create<SettingsState>()(
       ...DEFAULT_SETTINGS,
 
       setModel: (model) => set({ model }),
-      setX402WalletKey: (x402WalletKey) => set({ x402WalletKey }),
-      setX402Amount: (x402Amount) => set({ x402Amount }),
-      setX402Network: (x402Network) => set({ x402Network }),
+      setDreamsRouterApiKey: (dreamsRouterApiKey) => set({ dreamsRouterApiKey }),
+      setOpenRouterKey: (openRouterKey) => set({ openRouterKey }),
       setGigaverseToken: (gigaverseToken) => set({ gigaverseToken }),
       setAbstractAddress: (abstractAddress) => set({ abstractAddress }),
       setShowThoughtMessages: (showThoughtMessages) =>
@@ -107,12 +104,10 @@ export function saveUserSettings(settings: UserSettings): void {
   const store = useSettingsStore.getState();
 
   if (settings.model) store.setModel(settings.model);
-  if (settings.x402WalletKey !== undefined)
-    store.setX402WalletKey(settings.x402WalletKey);
-  if (settings.x402Amount !== undefined)
-    store.setX402Amount(settings.x402Amount);
-  if (settings.x402Network !== undefined)
-    store.setX402Network(settings.x402Network);
+  if (settings.dreamsRouterApiKey !== undefined)
+    store.setDreamsRouterApiKey(settings.dreamsRouterApiKey);
+  if (settings.openRouterKey !== undefined)
+    store.setOpenRouterKey(settings.openRouterKey);
   if (settings.gigaverseToken !== undefined)
     store.setGigaverseToken(settings.gigaverseToken);
   if (settings.showThoughtMessages !== undefined)
@@ -137,13 +132,13 @@ export function getApiKey(key: keyof UserSettings) {
 
 /**
  * Check if a specific API key or token is set
- * @param key The key to check ('openaiKey', 'openrouterKey', 'anthropicKey', or 'gigaverseToken')
+ * @param key The key to check ('dreamsRouterApiKey', 'openRouterKey', or 'gigaverseToken')
  * @returns True if the key exists and is not empty
  */
 export function hasApiKey(
   key: keyof Pick<
     UserSettings,
-    "x402WalletKey" | "gigaverseToken"
+    "dreamsRouterApiKey" | "openRouterKey" | "gigaverseToken"
   >
 ): boolean {
   const value = getApiKey(key);

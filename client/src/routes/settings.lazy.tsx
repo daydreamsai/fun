@@ -24,19 +24,16 @@ import {
   clearUserSettings,
   UserSettings,
 } from "@/store/settingsStore";
-import { Eye, EyeOff, Wallet, DollarSign, AlertCircle, Copy, ExternalLink } from "lucide-react";
+import { Eye, EyeOff, Key, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
-import { x402Service } from "@/services/x402Service";
 import { toast } from "sonner";
 import { useLoginWithAbstract } from "@abstract-foundation/agw-react";
 import { useAccount } from "wagmi";
 import { useAbstractClient } from "@abstract-foundation/agw-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfile } from "@/components/UserProfile";
-import { AbstractWalletConnect } from "@/components/AbstractWalletConnect";
-import { walletJWTService } from "@/services/walletJWTService";
+import { apiKeyService } from "@/services/apiKeyService";
 
 export const Route = createLazyFileRoute("/settings")({
   component: RouteComponent,
@@ -53,13 +50,9 @@ function RouteComponent() {
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [_gigaTokenStatus, setGigaTokenStatus] = useState<string | null>(null);
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({
-    x402WalletKey: false,
+    dreamsRouterApiKey: false,
     gigaverseToken: false,
   });
-  const [walletBalance, setWalletBalance] = useState<string | null>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [isCheckingBalance, setIsCheckingBalance] = useState(false);
-  const [hasWalletJWT, setHasWalletJWT] = useState(false);
 
   // Check if token exists on mount and when token changes
   useEffect(() => {
@@ -70,54 +63,8 @@ function RouteComponent() {
     }
   }, [settings.gigaverseToken]);
 
-  // Check wallet balance when wallet key changes
-  useEffect(() => {
-    if (settings.x402WalletKey) {
-      checkWalletBalance();
-    }
-  }, [settings.x402WalletKey]);
-
-  // Check for JWT from connected wallet
-  useEffect(() => {
-    const checkJWT = () => {
-      const hasJWT = walletJWTService.isAuthenticated();
-      setHasWalletJWT(hasJWT);
-    };
-    
-    checkJWT();
-    // Check periodically
-    const interval = setInterval(checkJWT, 5000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const checkWalletBalance = async () => {
-    setIsCheckingBalance(true);
-    try {
-      await x402Service.initialize();
-      const addr = x402Service.getAddress();
-      setWalletAddress(addr);
-      
-      const { formatted } = await x402Service.getUSDCBalance();
-      setWalletBalance(formatted);
-    } catch (error) {
-      console.error("Failed to check balance:", error);
-      setWalletBalance(null);
-    } finally {
-      setIsCheckingBalance(false);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
-  };
-
-  const getFaucetUrl = () => {
-    if (settings.x402Network === "base-sepolia") {
-      return "https://faucet.circle.com/";
-    }
-    return "https://app.uniswap.org/";
+  const validateApiKey = (key: string): boolean => {
+    return apiKeyService.validateApiKey(key);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,11 +72,18 @@ function RouteComponent() {
 
     // Only pass valid UserSettings keys
     if (
-      name === "x402WalletKey" ||
+      name === "dreamsRouterApiKey" ||
       name === "gigaverseToken" ||
       name === "model"
     ) {
       settings.setApiKey(name as keyof UserSettings, e.target.value);
+      
+      // Update API key service when Dreams Router key changes
+      if (name === "dreamsRouterApiKey") {
+        if (validateApiKey(e.target.value)) {
+          apiKeyService.setApiKey(e.target.value);
+        }
+      }
     } else {
       const value =
         e.target.type === "number" ? e.target.valueAsNumber : e.target.value;
@@ -208,181 +162,88 @@ function RouteComponent() {
   return (
     <div className="overflow-y-scroll pb-[20dvh]">
       <div className="container mx-auto py-10 px-4 max-w-3xl">
-        <Tabs defaultValue="x402" className="w-full">
+        <Tabs defaultValue="dreams-router" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="x402">x402 Payments</TabsTrigger>
+            <TabsTrigger value="dreams-router">Dreams Router</TabsTrigger>
             <TabsTrigger value="api-keys">API Settings</TabsTrigger>
             <TabsTrigger value="profile">User Profile</TabsTrigger>
           </TabsList>
-          <TabsContent value="x402">
+          <TabsContent value="dreams-router">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5" />
-                  x402 Micropayments
+                  <Key className="h-5 w-5" />
+                  Dreams Router API
                 </CardTitle>
                 <CardDescription>
-                  Configure your wallet for USDC micropayments. Each AI request costs approximately {(parseInt(settings.x402Amount) / 1000000).toFixed(2)} USDC.
+                  Configure your Dreams Router API key for AI model access. Get your API key from <a href="https://router.daydreams.systems" target="_blank" className="text-blue-500 hover:underline">router.daydreams.systems</a>.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Wallet Connection Section */}
-                <div className="space-y-4 p-4 border rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium">Wallet Authentication</h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Connect with Abstract wallet or use private key
-                      </p>
+                {/* Dreams Router API Key Section */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dreamsRouterApiKey">Dreams Router API Key</Label>
+                    <div className="flex relative">
+                      <Input
+                        id="dreamsRouterApiKey"
+                        name="dreamsRouterApiKey"
+                        type={visibleFields.dreamsRouterApiKey ? "text" : "password"}
+                        value={settings.dreamsRouterApiKey}
+                        onChange={handleChange}
+                        placeholder="Enter your Dreams Router API key..."
+                        className="pr-10 font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleVisibility("dreamsRouterApiKey")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                      >
+                        {visibleFields.dreamsRouterApiKey ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
                     </div>
-                    <AbstractWalletConnect />
+                    <p className="text-sm text-muted-foreground">
+                      Get your API key from <a href="https://router.daydreams.systems" target="_blank" className="text-blue-500 hover:underline">router.daydreams.systems</a>. Your key is stored locally and secure.
+                    </p>
                   </div>
-                  
-                  {hasWalletJWT && (
+
+                  {settings.dreamsRouterApiKey && apiKeyService.isConfigured() && (
                     <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
                       <AlertCircle className="h-4 w-4 text-green-600" />
                       <AlertDescription className="text-green-600 dark:text-green-400">
-                        Authenticated with Abstract wallet. JWT active.
+                        Dreams Router API key configured successfully.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {settings.dreamsRouterApiKey && !validateApiKey(settings.dreamsRouterApiKey) && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Invalid API key format. Please check your key.
                       </AlertDescription>
                     </Alert>
                   )}
                 </div>
 
-                {/* Only show private key option if no wallet JWT */}
-                {!hasWalletJWT && (
-                  <>
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
-                          Or use private key
-                        </span>
-                      </div>
-                    </div>
+                {/* TODO: Add fallback to OpenRouter option here - user wants to remove this later */}
+                {/* <div className="space-y-2">
+                  <Label htmlFor="openRouterKey">OpenRouter Fallback (Optional)</Label>
+                  <Input
+                    id="openRouterKey"
+                    name="openRouterKey"
+                    type="password"
+                    value={settings.openRouterKey || ""}
+                    onChange={handleChange}
+                    placeholder="Enter OpenRouter API key for fallback..."
+                  />
+                </div> */}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="x402WalletKey">Wallet Private Key</Label>
-                  <div className="flex relative">
-                    <Input
-                      id="x402WalletKey"
-                      name="x402WalletKey"
-                      type={visibleFields.x402WalletKey ? "text" : "password"}
-                      value={settings.x402WalletKey}
-                      onChange={(e) => settings.setX402WalletKey(e.target.value)}
-                      placeholder="0x..."
-                      className="pr-10 font-mono"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => toggleVisibility("x402WalletKey")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                    >
-                      {visibleFields.x402WalletKey ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
-                      )}
-                    </button>
-                  </div>
-                      <p className="text-sm text-muted-foreground">
-                        Your private key is stored locally and never sent to any server.
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {walletAddress && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Wallet Address</Label>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => copyToClipboard(walletAddress)}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    <code className="text-xs text-muted-foreground break-all">{walletAddress}</code>
-                  </div>
-                )}
-
-                {walletBalance !== null && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      <span className="font-medium">Balance:</span>
-                    </div>
-                    <Badge variant={parseFloat(walletBalance) < 10 ? "destructive" : "default"}>
-                      {walletBalance} USDC
-                    </Badge>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="x402Amount">Cost per Request</Label>
-                  <div className="space-y-2">
-                    <Slider
-                      id="x402Amount"
-                      min={10000}
-                      max={1000000}
-                      step={10000}
-                      value={[parseInt(settings.x402Amount)]}
-                      onValueChange={(value) => settings.setX402Amount(value[0].toString())}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>$0.01</span>
-                      <span className="font-medium">
-                        ${(parseInt(settings.x402Amount) / 1000000).toFixed(2)} USDC
-                      </span>
-                      <span>$1.00</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="x402Network">Network</Label>
-                  <Select
-                    value={settings.x402Network}
-                    onValueChange={(value) => settings.setX402Network(value as 'base-sepolia' | 'base')}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select network" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="base-sepolia">Base Sepolia (Testnet)</SelectItem>
-                      <SelectItem value="base">Base (Mainnet)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {walletBalance !== null && parseFloat(walletBalance) < 10 && (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Low balance detected. You need at least 10 USDC to use the service effectively.
-                    </AlertDescription>
-                  </Alert>
-                )}
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => window.open(getFaucetUrl(), "_blank")}
-                  className="gap-2"
-                >
-                  Get USDC <ExternalLink className="h-4 w-4" />
-                </Button>
-                <Button
-                  onClick={checkWalletBalance}
-                  disabled={!settings.x402WalletKey || isCheckingBalance}
-                >
-                  {isCheckingBalance ? "Checking..." : "Check Balance"}
-                </Button>
-              </CardFooter>
             </Card>
           </TabsContent>
           <TabsContent value="api-keys">
@@ -418,7 +279,7 @@ function RouteComponent() {
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      This application now uses x402 micropayments exclusively. Please configure your wallet in the x402 Payments tab.
+                      This application now uses Dreams Router API exclusively. Please configure your API key in the Dreams Router tab.
                     </AlertDescription>
                   </Alert>
                 </div>
