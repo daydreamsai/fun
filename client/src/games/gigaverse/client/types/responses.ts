@@ -244,6 +244,13 @@ export interface GetGigaJuiceResponse {
 export interface JuiceData {
   isJuiced: boolean;
   juicedSeconds: number;
+  _id: string;
+  docId: string;
+  tableName: string;
+  TIMESTAMP_CID: number;
+  createdAt: string;
+  updatedAt: string;
+  lastTx?: string;
 }
 
 export interface Listing {

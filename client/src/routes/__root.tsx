@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { ModeToggle } from "@/components/mode-toggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CostTracker } from "@/components/CostTracker";
-import { WalletSetup } from "@/components/WalletSetup";
+// Removed WalletSetup - wallet connection handled in settings
 import { AbstractProvider } from "@/providers/AbstractProvider";
 
 import { QueryClient } from "@tanstack/react-query";
@@ -64,7 +64,6 @@ export const Route = createRootRouteWithContext<{
                 </div>
               </SidebarInset>
               </SidebarProvider>
-              <WalletSetup />
             </AbstractProvider>
           </AbstractWalletProvider>
           {/* </TokenGate> */}

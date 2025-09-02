@@ -29,17 +29,20 @@ export function GigaverseSidebar({
 }: {
   args: InferSchemaArguments<GigaverseContext["schema"]>;
 }) {
+  // ALL hooks must be called at the top level, unconditionally
   const { sidebar: tab } = useSearch({ from: "/games/gigaverse/$chatId" });
-
   const navigate = useNavigate({ from: "/games/gigaverse/$chatId" });
-
   const agent = useAgentStore((state) => state.agent);
-  const contextId = agent.getContextId({ context: gigaverseContext, args });
+  
+  // Get contextId only if agent exists, otherwise use null
+  const contextId = agent?.getContextId({ context: gigaverseContext, args }) || null;
 
   const stateQuery = useQuery({
     enabled: false,
     queryKey: ["gigaverse", contextId],
     queryFn: async () => {
+      if (!agent) throw new Error("Agent not available");
+      
       const ctxState = await agent.getContext({
         context: gigaverseContext,
         args,
@@ -67,6 +70,8 @@ export function GigaverseSidebar({
 
   // ULTRA-ROBUST SOLUTION: Force synchronization after every agent action
   useEffect(() => {
+    if (!agent || !contextId) return;
+    
     const unsubscribe = agent.subscribeContext(contextId, async (log, done) => {
       
       // When a Gigaverse action completes, FORCE a full refresh
@@ -177,19 +182,23 @@ export function GigaverseSidebar({
     (state) => state.setShowHelpWindow
   );
 
+  // Early return AFTER all hooks
+  if (!agent) {
+    return <div className="p-4">Loading agent...</div>;
+  }
+
   return (
     <div className="flex h-full w-full overflow-hidden">
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 min-w-0 max-w-[calc(100vw-320px)] overflow-hidden">
         {/* Header with controls */}
         <div className="flex items-center gap-4 p-4 border-b">
-          <img src="/giga.jpeg" alt="Giga Banner" className="h-12 w-12 rounded" />
+          <img src="/giga-logo.gif" alt="Giga Banner" className="h-12 w-48 rounded object-cover border" />
           <div className="flex-1">
             <h1 className="text-2xl font-bold">Gigaverse</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <div className={`w-2 h-2 rounded-full ${gigaverseState.isRefetching ? 'bg-yellow-500 animate-pulse' : gigaverseState.isError ? 'bg-red-500' : 'bg-green-500'}`} />
               {gigaverseState.isRefetching ? 'Updating...' : gigaverseState.isError ? 'Error' : 'Ready'}
-              <span className="ml-2">Last update: {new Date(gigaverseState.dataUpdatedAt || 0).toLocaleTimeString()}</span>
             </div>
           </div>
           
@@ -314,6 +323,7 @@ export function GigaverseSidebar({
                       <RomsTab
                         address={abstractAddress}
                         gameClient={gigaverseState.data?.options.client}
+                        onRefresh={() => gigaverseState.refetch()}
                       />
                     )}
                   </div>

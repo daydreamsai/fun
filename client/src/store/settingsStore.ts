@@ -2,10 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 export const VALID_MODELS = [
-  "google/gemini-2.5-flash-lite",
-  "qwen/qwen3-235b-a22b",
-  "gpt-4o",
-  "claude-3-5-sonnet-latest",
+  "google-vertex/gemini-2.5-flash-lite",
 ] as const;
 
 export interface UserSettings {
@@ -36,7 +33,7 @@ interface SettingsState extends UserSettings {
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
-  model: "google/gemini-2.5-flash-lite",
+  model: "google-vertex/gemini-2.5-flash-lite",
   dreamsRouterApiKey: "",
   openRouterKey: "",
   gigaverseToken: "",

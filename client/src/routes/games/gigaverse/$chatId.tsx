@@ -33,11 +33,11 @@ export const Route = createFileRoute("/games/gigaverse/$chatId")({
   component: RouteComponent,
   loader({ params }) {
     // Check if user has required API keys
-    const hasOpenRouterKey = hasApiKey("openrouterKey");
+    const hasDreamsRouterKey = hasApiKey("dreamsRouterApiKey");
     const hasGigaverseToken = hasApiKey("gigaverseToken");
 
     // If neither key is available, redirect to settings
-    if (!hasOpenRouterKey && !hasGigaverseToken) {
+    if (!hasDreamsRouterKey && !hasGigaverseToken) {
       throw redirect({
         to: "/settings",
       });
@@ -66,6 +66,15 @@ function GigaverseSidebarErrorComponent({
   // throw new Error("failed");
   const router = useRouter();
   const { agent } = useAgentStore();
+  
+  if (!agent) {
+    return (
+      <div className="p-2">
+        <div>Loading agent...</div>
+      </div>
+    );
+  }
+  
   const contextId = agent.getContextId({
     context: gigaverseContext,
     args: { id: chatId },
@@ -106,11 +115,11 @@ function RouteComponent() {
   }, []);
 
   useEffect(() => {
-    const hasOpenRouterKey = hasApiKey("openrouterKey");
+    const hasDreamsRouterKey = hasApiKey("dreamsRouterApiKey");
     const hasGigaverseToken = hasApiKey("gigaverseToken");
 
     const missing: string[] = [];
-    if (!hasOpenRouterKey) missing.push("OpenRouter");
+    if (!hasDreamsRouterKey) missing.push("Dreams Router");
     if (!hasGigaverseToken) missing.push("Gigaverse");
 
     setMissingKeys(missing);

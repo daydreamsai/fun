@@ -13,9 +13,11 @@ import { GameClient } from "../client/GameClient";
 export function RomsTab({
   address,
   gameClient,
+  onRefresh,
 }: {
   address: string;
   gameClient: GameClient;
+  onRefresh?: () => void;
 }) {
   const [claimingStatus, setClaimingStatus] = useState<Record<string, boolean>>(
     {}
@@ -54,6 +56,10 @@ export function RomsTab({
         const statusKey = `${romId}-${claimId}`;
         setClaimingStatus((state) => ({ ...state, [statusKey]: false }));
         romsQuery.refetch();
+        // Also refresh the parent game data if energy was claimed
+        if (claimId === "energy" && onRefresh) {
+          onRefresh();
+        }
       }, 2000);
     },
     onError(_, { romId, claimId }) {

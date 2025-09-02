@@ -177,6 +177,9 @@ export const gigaverseContext = context({
 
       const fishingState = await client.getFishingState(address);
 
+      // Fetch juice data for this player
+      const juice = await client.getJuice(address);
+
       return {
         address,
         client,
@@ -192,6 +195,7 @@ export const gigaverseContext = context({
             balances,
             consumables,
             energy,
+            juice: juice, // Add the juice data to the player object
             gear: equipedGearParsed,
           },
           today,
