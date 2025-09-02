@@ -389,6 +389,23 @@ export class GameClient {
     const endpoint = "/game/equip";
     return this.httpClient.post<EquipResponse>(endpoint, payload);
   }
+
+  /**
+   * Get gear instances for a player
+   */
+  public async getGearInstances(address: string) {
+    this.logger.info("gigaverse-http-client", `Fetching gear instances for: ${address}`);
+    return this.httpClient.get<GearInstancesResponse>("/gear/instances/" + address);
+  }
+
+  /**
+   * Set/equip gear to a specific slot
+   */
+  public async setGear(payload: SetGearPayload): Promise<SetGearResponse> {
+    this.logger.info("gigaverse-http-client", "Setting gear...");
+    const endpoint = "/gear/set";
+    return this.httpClient.post<SetGearResponse>(endpoint, payload);
+  }
 }
 
 export interface GetFishingCardsResponse {
@@ -527,3 +544,34 @@ export type EquipedGear = {
 export type EquipedGearResponse = {
   entities: EquipedGear[];
 };
+
+export interface GearInstance {
+  _id: string;
+  docId: string;
+  GAME_ITEM_ID_CID: number;
+  OWNER_CID: string;
+  PLAYER_CID: string;
+  RARITY_CID: number;
+  DURABILITY_CID: number;
+  EQUIPPED_TO_SLOT_CID: number;
+  EQUIPPED_TO_INDEX_CID: number;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  REPAIR_COUNT_CID?: number;
+}
+
+export interface GearInstancesResponse {
+  entities: GearInstance[];
+}
+
+export interface SetGearPayload {
+  gearInstanceId?: string; // Optional - if not provided, it unequips
+  slotType: number;
+  slotIndex: number;
+}
+
+export interface SetGearResponse {
+  // The API returns 200 for success, errors throw exceptions
+  message?: string;
+}

@@ -524,7 +524,7 @@ export const templateMinimal = `
 
 1. **Survive**: Avoid moves that lead to death
 2. **Win Probability**: Choose moves likely to win or tie
-3. **Charge Conservation**: Don't waste last charge unless victory is certain
+3. **Charge Conservation**: Don't use up your last charge unless victory is certain
 4. **Enemy Pattern**: Consider enemy's previous move and likely next move
 
 ## Decision Process

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SkillDefinition } from "../client/types/responses";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 interface SkillsTabProps {
   state: ContextState<GigaverseContext>;
@@ -12,12 +13,16 @@ interface SkillsTabProps {
 export function SkillsTab({ state }: SkillsTabProps) {
   const { skills, player } = state.options.game;
   const [activeSkillTab, setActiveSkillTab] = useState("dungeon");
+  const [upgradingStatus, setUpgradingStatus] = useState<Record<string, boolean>>({});
 
   const handleUpgrade = async (skillId: number | undefined, statId: number) => {
     if (!skillId) {
       console.error("Skill ID is missing");
       return;
     }
+
+    const statusKey = `${skillId}-${statId}`;
+    setUpgradingStatus((state) => ({ ...state, [statusKey]: true }));
 
     try {
       const response = await state.options.client.levelUp({
@@ -28,11 +33,19 @@ export function SkillsTab({ state }: SkillsTabProps) {
 
       if (response.success) {
         console.log("✅ Skill upgraded successfully:", response.message);
+        // Keep the spinner going and wait before refreshing data
+        setTimeout(async () => {
+          setUpgradingStatus((state) => ({ ...state, [statusKey]: false }));
+          // Refresh the game data
+          await state.refresh();
+        }, 2000);
       } else {
         console.error("❌ Upgrade failed:", response.message || "Unknown error");
+        setUpgradingStatus((state) => ({ ...state, [statusKey]: false }));
       }
     } catch (error) {
       console.error("❌ Error upgrading skill:", error);
+      setUpgradingStatus((state) => ({ ...state, [statusKey]: false }));
     }
   };
 
@@ -94,19 +107,26 @@ export function SkillsTab({ state }: SkillsTabProps) {
                   materialBalance.balance >= requiredXP;
                 const isMaxLevel = !requiredXP;
 
+                const statusKey = `${parseInt(skill.docId)}-${stat.id}`;
+                const isUpgrading = upgradingStatus[statusKey] || false;
+
                 return (
                   <div key={stat.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
-                        variant={hasEnoughBalance && !isMaxLevel ? "default" : "outline"}
+                        variant={isUpgrading ? "secondary" : (hasEnoughBalance && !isMaxLevel ? "default" : "outline")}
                         className="h-6 w-6 p-0 text-xs"
                         onClick={() =>
-                          handleUpgrade(skill.GAME_ITEM_ID_CID, stat.id)
+                          handleUpgrade(parseInt(skill.docId), stat.id)
                         }
-                        disabled={!hasEnoughBalance || isMaxLevel}
+                        disabled={!hasEnoughBalance || isMaxLevel || isUpgrading}
                       >
-                        +
+                        {isUpgrading ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          "+"
+                        )}
                       </Button>
                       <span className="text-sm">{stat.name}</span>
                     </div>

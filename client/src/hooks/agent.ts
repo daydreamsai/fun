@@ -18,16 +18,18 @@ export function useContextState<TContext extends AnyContext>({
   agent,
   ...ref
 }: {
-  agent: AnyAgent;
+  agent: AnyAgent | null;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
 }) {
-  const contextId = agent.getContextId(ref);
+  const contextId = agent?.getContextId(ref) || null;
   return useQuery({
     queryKey: ["context", contextId],
     queryFn: async () => {
+      if (!agent) throw new Error("Agent not available");
       return await agent.getContext(ref);
     },
+    enabled: !!agent,
     retry(_failureCount, error) {
       logger.error("Context query failed", error);
       return false;
@@ -40,18 +42,20 @@ export function useWorkingMemory<TContext extends AnyContext>({
   agent,
   ...ref
 }: {
-  agent: AnyAgent;
+  agent: AnyAgent | null;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
 }) {
-  const contextId = agent.getContextId(ref);
+  const contextId = agent?.getContextId(ref) || null;
   return useQuery({
     queryKey: ["workingMemory", contextId],
     queryFn: async () => {
+      if (!agent || !contextId) throw new Error("Agent not available");
       return structuredClone(
         getWorkingMemoryAllLogs(await agent.getWorkingMemory(contextId))
       );
     },
+    enabled: !!agent,
     initialData: () => [],
   });
 }

@@ -11,10 +11,11 @@ import {
 } from "@daydreamsai/core";
 import { chat } from "./chat";
 
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createDreamsRouter } from "@daydreamsai/ai-sdk-provider";
+// TODO: Import OpenRouter provider if fallback needed - user wants to remove this later
 
 import { useSettingsStore } from "@/store/settingsStore";
-// import { useUserStore } from "@/store/userStore";
+import { apiKeyService } from "@/services/apiKeyService";
 
 import { openDB, type IDBPDatabase } from "idb";
 import { Cache } from "./utils/cache";
@@ -205,34 +206,64 @@ const memoryMigrator = service({
   },
 });
 
-export function createAgent() {
+export async function createAgent() {
   const settings = useSettingsStore.getState();
-
   const container = createContainer();
   const memoryStorage = browserStorage();
 
   container.instance("memory", memoryStorage);
 
-  const openrouter = createOpenRouter({
-    apiKey: settings.openrouterKey,
-  });
+  let dreamsRouter;
 
-  return createDreams({
-    logger: new Logger({ level: LogLevel.INFO }),
-    container,
-    model: openrouter(settings.model),
-    modelSettings: {
-      temperature: 0,
-    },
-    memory: new MemorySystem({
-      providers: {
-        kv: new InMemoryKeyValueProvider(),
-        vector: new InMemoryVectorProvider(),
-        graph: new InMemoryGraphProvider(),
-      },
+  try {
+    // Check if we have Dreams Router API key configured
+    if (apiKeyService.isConfigured()) {
+      console.log("Using Dreams Router API key authentication");
+      
+      const config = apiKeyService.getDreamsRouterConfig();
+      dreamsRouter = createDreamsRouter({
+        apiKey: config.apiKey,
+      });
+      
+      // Dispatch event for tracking
+      window.dispatchEvent(new CustomEvent("dreams_router_request_sent"));
+    } 
+    // TODO: Add fallback to OpenRouter if no Dreams Router key - user wants to remove this later
+    // else if (settings.openRouterKey) {
+    //   console.log("Falling back to OpenRouter");
+    //   // Setup OpenRouter provider
+    // }
+    else {
+      // No authentication available
+      throw new Error(
+        "No Dreams Router API key configured. Please set up your API key in settings."
+      );
+    }
+
+    return createDreams({
       logger: new Logger({ level: LogLevel.INFO }),
-    }),
-    extensions: [chat],
-    services: [memoryMigrator, cacheService],
-  });
+      container,
+      model: dreamsRouter(settings.model),
+      modelSettings: {
+        temperature: 0,
+      },
+      memory: new MemorySystem({
+        providers: {
+          kv: new InMemoryKeyValueProvider(),
+          vector: new InMemoryVectorProvider(),
+          graph: new InMemoryGraphProvider(),
+        },
+        logger: new Logger({ level: LogLevel.INFO }),
+      }),
+      extensions: [chat],
+      services: [memoryMigrator, cacheService],
+    });
+  } catch (error) {
+    console.error("Failed to initialize agent:", error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : "Failed to initialize AI agent. Please check your Dreams Router API key configuration."
+    );
+  }
 }

@@ -24,12 +24,16 @@ import {
   clearUserSettings,
   UserSettings,
 } from "@/store/settingsStore";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Key, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { useLoginWithAbstract } from "@abstract-foundation/agw-react";
 import { useAccount } from "wagmi";
 import { useAbstractClient } from "@abstract-foundation/agw-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfile } from "@/components/UserProfile";
+import { apiKeyService } from "@/services/apiKeyService";
 
 export const Route = createLazyFileRoute("/settings")({
   component: RouteComponent,
@@ -46,9 +50,7 @@ function RouteComponent() {
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [_gigaTokenStatus, setGigaTokenStatus] = useState<string | null>(null);
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({
-    openaiKey: false,
-    openrouterKey: false,
-    anthropicKey: false,
+    dreamsRouterApiKey: false,
     gigaverseToken: false,
   });
 
@@ -61,18 +63,27 @@ function RouteComponent() {
     }
   }, [settings.gigaverseToken]);
 
+  const validateApiKey = (key: string): boolean => {
+    return apiKeyService.validateApiKey(key);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
 
     // Only pass valid UserSettings keys
     if (
-      name === "openaiKey" ||
-      name === "openrouterKey" ||
-      name === "anthropicKey" ||
+      name === "dreamsRouterApiKey" ||
       name === "gigaverseToken" ||
       name === "model"
     ) {
       settings.setApiKey(name as keyof UserSettings, e.target.value);
+      
+      // Update API key service when Dreams Router key changes
+      if (name === "dreamsRouterApiKey") {
+        if (validateApiKey(e.target.value)) {
+          apiKeyService.setApiKey(e.target.value);
+        }
+      }
     } else {
       const value =
         e.target.type === "number" ? e.target.valueAsNumber : e.target.value;
@@ -149,13 +160,92 @@ function RouteComponent() {
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="container mx-auto py-10 px-4 max-w-3xl pb-20">
-        <Tabs defaultValue="api-keys" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+    <div className="overflow-y-scroll pb-[20dvh]">
+      <div className="container mx-auto py-10 px-4 max-w-3xl">
+        <Tabs defaultValue="dreams-router" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsTrigger value="dreams-router">Dreams Router</TabsTrigger>
             <TabsTrigger value="api-keys">API Settings</TabsTrigger>
             <TabsTrigger value="profile">User Profile</TabsTrigger>
           </TabsList>
+          <TabsContent value="dreams-router">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="h-5 w-5" />
+                  Dreams Router API
+                </CardTitle>
+                <CardDescription>
+                  Configure your Dreams Router API key for AI model access. Get your API key from <a href="https://router.daydreams.systems" target="_blank" className="text-blue-500 hover:underline">router.daydreams.systems</a>.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Dreams Router API Key Section */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dreamsRouterApiKey">Dreams Router API Key</Label>
+                    <div className="flex relative">
+                      <Input
+                        id="dreamsRouterApiKey"
+                        name="dreamsRouterApiKey"
+                        type={visibleFields.dreamsRouterApiKey ? "text" : "password"}
+                        value={settings.dreamsRouterApiKey}
+                        onChange={handleChange}
+                        placeholder="Enter your Dreams Router API key..."
+                        className="pr-10 font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleVisibility("dreamsRouterApiKey")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                      >
+                        {visibleFields.dreamsRouterApiKey ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Get your API key from <a href="https://router.daydreams.systems" target="_blank" className="text-blue-500 hover:underline">router.daydreams.systems</a>. Your key is stored locally and secure.
+                    </p>
+                  </div>
+
+                  {settings.dreamsRouterApiKey && apiKeyService.isConfigured() && (
+                    <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
+                      <AlertCircle className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-green-600 dark:text-green-400">
+                        Dreams Router API key configured successfully.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {settings.dreamsRouterApiKey && !validateApiKey(settings.dreamsRouterApiKey) && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Invalid API key format. Please check your key.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+
+                {/* TODO: Add fallback to OpenRouter option here - user wants to remove this later */}
+                {/* <div className="space-y-2">
+                  <Label htmlFor="openRouterKey">OpenRouter Fallback (Optional)</Label>
+                  <Input
+                    id="openRouterKey"
+                    name="openRouterKey"
+                    type="password"
+                    value={settings.openRouterKey || ""}
+                    onChange={handleChange}
+                    placeholder="Enter OpenRouter API key for fallback..."
+                  />
+                </div> */}
+
+              </CardContent>
+            </Card>
+          </TabsContent>
           <TabsContent value="api-keys">
             <Card>
               <CardHeader>
@@ -186,35 +276,21 @@ function RouteComponent() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="openrouterKey">OpenRouter API Key</Label>
-                  <div className="flex relative">
-                    <Input
-                      id="openrouterKey"
-                      name="openrouterKey"
-                      type={visibleFields.openrouterKey ? "text" : "password"}
-                      value={settings.openrouterKey}
-                      onChange={handleChange}
-                      placeholder="sk-..."
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => toggleVisibility("openrouterKey")}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
-                      aria-label={
-                        visibleFields.openrouterKey
-                          ? "Hide OpenRouter API Key"
-                          : "Show OpenRouter API Key"
-                      }
-                    >
-                      {visibleFields.openrouterKey ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
-                    </button>
-                  </div>
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      This application now uses Dreams Router API exclusively. Please configure your API key in the Dreams Router tab.
+                    </AlertDescription>
+                  </Alert>
                 </div>
+                {/* Removed OpenRouter API Key field */}
+                {false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="deprecated">Deprecated Field</Label>
+                    <Input disabled placeholder="No longer used" />
+                  </div>
+                )}
+                {/* Continue with other fields if needed */}
                 <div className="space-y-2">
                   <Label>Gigaverse Authentication</Label>
                   <div className="flex flex-col space-y-3">

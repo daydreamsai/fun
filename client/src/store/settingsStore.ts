@@ -2,15 +2,14 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 export const VALID_MODELS = [
-  "google/gemini-2.5-flash-lite",
-  "qwen/qwen3-235b-a22b",
+  "google-vertex/gemini-2.5-flash-lite",
 ] as const;
 
 export interface UserSettings {
   model: (typeof VALID_MODELS)[number];
-  openaiKey: string;
-  openrouterKey: string;
-  anthropicKey: string;
+  dreamsRouterApiKey: string;
+  // TODO: Add fallback to OpenRouter if needed - user wants to remove this later
+  openRouterKey?: string; 
   gigaverseToken: string;
   abstractAddress: string;
   showThoughtMessages: boolean;
@@ -22,9 +21,8 @@ export interface UserSettings {
 
 interface SettingsState extends UserSettings {
   setModel: (model: (typeof VALID_MODELS)[number]) => void;
-  setOpenAIKey: (key: string) => void;
+  setDreamsRouterApiKey: (key: string) => void;
   setOpenRouterKey: (key: string) => void;
-  setAnthropicKey: (key: string) => void;
   setGigaverseToken: (token: string) => void;
   setAbstractAddress: (address: string) => void;
   setShowThoughtMessages: (show: boolean) => void;
@@ -35,10 +33,9 @@ interface SettingsState extends UserSettings {
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
-  model: "google/gemini-2.5-flash-lite",
-  openaiKey: "",
-  openrouterKey: "",
-  anthropicKey: "",
+  model: "google-vertex/gemini-2.5-flash-lite",
+  dreamsRouterApiKey: "",
+  openRouterKey: "",
   gigaverseToken: "",
   abstractAddress: "",
   showThoughtMessages: true,
@@ -54,9 +51,8 @@ export const useSettingsStore = create<SettingsState>()(
       ...DEFAULT_SETTINGS,
 
       setModel: (model) => set({ model }),
-      setOpenAIKey: (openaiKey) => set({ openaiKey }),
-      setOpenRouterKey: (openrouterKey) => set({ openrouterKey }),
-      setAnthropicKey: (anthropicKey) => set({ anthropicKey }),
+      setDreamsRouterApiKey: (dreamsRouterApiKey) => set({ dreamsRouterApiKey }),
+      setOpenRouterKey: (openRouterKey) => set({ openRouterKey }),
       setGigaverseToken: (gigaverseToken) => set({ gigaverseToken }),
       setAbstractAddress: (abstractAddress) => set({ abstractAddress }),
       setShowThoughtMessages: (showThoughtMessages) =>
@@ -105,11 +101,10 @@ export function saveUserSettings(settings: UserSettings): void {
   const store = useSettingsStore.getState();
 
   if (settings.model) store.setModel(settings.model);
-  if (settings.openaiKey !== undefined) store.setOpenAIKey(settings.openaiKey);
-  if (settings.openrouterKey !== undefined)
-    store.setOpenRouterKey(settings.openrouterKey);
-  if (settings.anthropicKey !== undefined)
-    store.setAnthropicKey(settings.anthropicKey);
+  if (settings.dreamsRouterApiKey !== undefined)
+    store.setDreamsRouterApiKey(settings.dreamsRouterApiKey);
+  if (settings.openRouterKey !== undefined)
+    store.setOpenRouterKey(settings.openRouterKey);
   if (settings.gigaverseToken !== undefined)
     store.setGigaverseToken(settings.gigaverseToken);
   if (settings.showThoughtMessages !== undefined)
@@ -134,13 +129,13 @@ export function getApiKey(key: keyof UserSettings) {
 
 /**
  * Check if a specific API key or token is set
- * @param key The key to check ('openaiKey', 'openrouterKey', 'anthropicKey', or 'gigaverseToken')
+ * @param key The key to check ('dreamsRouterApiKey', 'openRouterKey', or 'gigaverseToken')
  * @returns True if the key exists and is not empty
  */
 export function hasApiKey(
   key: keyof Pick<
     UserSettings,
-    "openaiKey" | "openrouterKey" | "anthropicKey" | "gigaverseToken"
+    "dreamsRouterApiKey" | "openRouterKey" | "gigaverseToken"
   >
 ): boolean {
   const value = getApiKey(key);

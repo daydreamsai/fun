@@ -13,8 +13,8 @@ interface AgentState {
 }
 
 export const useAgentStore = create<AgentState>((set, get) => {
-  // Initial agent creation
-  const agent = createAgent();
+  // Agent will be created asynchronously
+  let agent: AnyAgent | null = null;
   let initPromise: Promise<void> | null = null;
 
   // Initialize function that can be called multiple times safely
@@ -22,7 +22,7 @@ export const useAgentStore = create<AgentState>((set, get) => {
     const state = get();
 
     // If already initialized, return immediately
-    if (state.isInitialized) {
+    if (state.isInitialized && state.agent) {
       return;
     }
 
@@ -34,23 +34,25 @@ export const useAgentStore = create<AgentState>((set, get) => {
     // Create new initialization promise
     initPromise = (async () => {
       try {
-        await agent.start();
+        // Create agent asynchronously
+        const newAgent = await createAgent();
+        await newAgent.start();
 
         // Give services time to fully initialize (particularly IndexedDB)
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Verify the agent is working by trying to get contexts
         try {
-          await agent.getContexts();
+          await newAgent.getContexts();
         } catch (verifyError) {
           console.warn("Agent verification failed, retrying...", verifyError);
           // Give it a bit more time
           await new Promise((resolve) => setTimeout(resolve, 500));
           // Try once more
-          await agent.getContexts();
+          await newAgent.getContexts();
         }
 
-        set({ isInitialized: true });
+        set({ agent: newAgent, isInitialized: true });
         logger.info("Agent initialized and verified");
       } catch (error) {
         console.error("Failed to initialize agent:", error);
@@ -68,7 +70,8 @@ export const useAgentStore = create<AgentState>((set, get) => {
 
   // Function to recreate the agent with fresh settings
   const recreateAgent = async () => {
-    const newAgent = createAgent();
+    try {
+      const newAgent = await createAgent();
 
     // Reset initialization state
     set({
@@ -103,7 +106,12 @@ export const useAgentStore = create<AgentState>((set, get) => {
       set({ isInitialized: true });
       logger.info("New agent initialized and verified");
     } catch (error) {
-      console.error("Failed to initialize new agent:", error);
+      console.error("Failed to create new agent:", error);
+      set({ initializationPromise: null });
+      throw error;
+    }
+    } catch (error) {
+      console.error("Failed to create agent:", error);
       set({ initializationPromise: null });
       throw error;
     }
@@ -114,7 +122,9 @@ export const useAgentStore = create<AgentState>((set, get) => {
     // Only recreate if relevant settings changed
     const relevantSettingsChanged =
       state.model !== prevState.model ||
-      state.openrouterKey !== prevState.openrouterKey ||
+      state.x402WalletKey !== prevState.x402WalletKey ||
+      state.x402Amount !== prevState.x402Amount ||
+      state.x402Network !== prevState.x402Network ||
       state.gigaverseToken !== prevState.gigaverseToken;
 
     if (relevantSettingsChanged) {
@@ -137,7 +147,7 @@ export const useAgentStore = create<AgentState>((set, get) => {
   }
 
   return {
-    agent,
+    agent: agent as AnyAgent, // Will be null initially but TypeScript needs this
     isInitialized: false,
     initializationPromise: null,
     initializeAgent,
